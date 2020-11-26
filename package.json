@@ -1,0 +1,40 @@
+{
+  "name": "vsxt",
+  "description": "VS Code XT Commands",
+  "author": "Daniel Miller",
+  "repository": "https://github.com/millerdev/vsxt",
+  "license": "Apache-2.0",
+  "version": "0.0.1",
+  "publisher": "millerdev",
+  "engines": {
+    "vscode": "^1.34.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:xtCommand"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "xtCommand",
+        "title": "XT Command"
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "XT Server Configuration",
+      "properties": {}
+    }
+  },
+  "main": "./client/extension",
+  "scripts": {},
+  "devDependencies": {
+    "@types/vscode": "^1.51.0",
+    "vscode-test": "^1.4.1"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^5.2.1"
+  }
+}

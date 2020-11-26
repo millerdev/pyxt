@@ -1,0 +1,44 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch Client",
+            "type": "extensionHost",
+            "request": "launch",
+            "runtimeExecutable": "${execPath}",
+            "sourceMaps": true,
+            "args": [
+                "--extensionDevelopmentPath=${workspaceRoot}"
+            ],
+            "outFiles": [
+                "${workspaceRoot}/client/**/*.js"
+            ],
+            "env": {
+                "VSCODE_DEBUG_MODE": "true"
+            }
+        },
+        {
+            "name": "Launch Server",
+            "type": "python",
+            "request": "launch",
+            "module": "server",
+            "args": [
+                "--tcp"
+            ],
+            "justMyCode": false,
+            "python": "${command:python.interpreterPath}",
+            "cwd": "${workspaceFolder}",
+            "env": {
+            }
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Server + Client",
+            "configurations": [
+                "Launch Server",
+                "Launch Client"
+            ]
+        }
+    ]
+}
