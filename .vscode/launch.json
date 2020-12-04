@@ -2,6 +2,18 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Extension Tests",
+            "type": "extensionHost",
+            "request": "launch",
+            "runtimeExecutable": "${execPath}",
+            "args": [
+                "--disable-extensions",
+                "--extensionDevelopmentPath=${workspaceFolder}",
+                "--extensionTestsPath=${workspaceFolder}/client/test/suite"
+            ],
+            "stopOnEntry": false,
+        },
+        {
             "name": "Launch Client",
             "type": "extensionHost",
             "request": "launch",
@@ -9,9 +21,6 @@
             "sourceMaps": true,
             "args": [
                 "--extensionDevelopmentPath=${workspaceRoot}"
-            ],
-            "outFiles": [
-                "${workspaceRoot}/client/**/*.js"
             ],
             "env": {
                 "VSCODE_DEBUG_MODE": "true"
@@ -22,14 +31,11 @@
             "type": "python",
             "request": "launch",
             "module": "server",
-            "args": [
-                "--tcp"
-            ],
+            "args": ["--tcp"],
             "justMyCode": false,
             "python": "${command:python.interpreterPath}",
             "cwd": "${workspaceFolder}",
-            "env": {
-            }
+            "env": {}
         }
     ],
     "compounds": [

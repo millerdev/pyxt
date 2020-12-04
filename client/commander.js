@@ -1,0 +1,147 @@
+const vscode = require('vscode')
+const _ = require("lodash")
+
+function subscribe(context, client) {
+    const clientCommand = async () => await command(client)
+    const clientOpen = async () => await command(client, "open ")
+    context.subscriptions.push(
+        vscode.commands.registerCommand("vsxt.command", clientCommand),
+        vscode.commands.registerCommand("vsxt.openFilePath", clientOpen)
+    )
+}
+
+async function command(client, prefix) {
+    try {
+        const filePath = await commandInput(client, prefix)
+        if (filePath) {
+            await openFile(filePath)
+        }
+    } catch (err) {
+        vscode.window.showErrorMessage(err)
+        console.error(err)
+    }
+}
+
+async function commandInput(client, prefix, completions) {
+    const input = vscode.window.createQuickPick()
+    try {
+        input.placeholder = "XT Command"
+        if (completions) {
+            setCompletions(input, completions)
+        } else {
+            getCompletions(input, client, prefix || "")
+        }
+        input.show()
+        if (prefix) {
+            input.value = prefix
+        }
+        const result = await getCommandResult(input, client)
+        input.hide()
+        if (!result) {
+            return
+        }
+        if (result.type === "items") {
+            return commandInput(client, result.value, result)
+        }
+        if (result.type === "success") {
+            return result.value
+        }
+        let message = result.message
+        if (!message) {
+            message = "Unknown error"
+            console.log(message, result)
+        }
+        throw new Error(message)
+    } finally {
+        input.dispose()
+    }
+}
+
+async function getCommandResult(input, client) {
+    const disposables = []
+    try {
+        return await new Promise(resolve => {
+            disposables.push(input.onDidChangeValue(errable(value => {
+                getCompletions(input, client, value)
+            })))
+            disposables.push(input.onDidAccept(errable(() => {
+                resolve(doCommand(input, client))
+            })))
+            disposables.push(input.onDidHide(errable(() => {
+                resolve()
+            })))
+        })
+    } finally {
+        disposables.forEach(d => d.dispose())
+    }
+}
+
+async function getCompletions(input, client, value) {
+    const completions = input._command_completions
+    if (completions && value.length >= completions.offset) {
+        const offset = completions.offset
+        const match = value.slice(offset)
+        const matching = completions.items.filter(x => _.startsWith(x.label, match))
+        if (matching.length) {
+            input.items = matching
+            return
+        }
+    }
+    input.busy = true
+    const result = await exec(client, "get_completions", [value])
+    setCompletions(input, result)
+    input.busy = false
+}
+
+function setCompletions(input, completions) {
+    const items = completions.items.map(label => ({label, alwaysShow: true}))
+    input.items = items
+    input._command_completions = {...completions, items}
+}
+
+function doCommand(input, client) {
+    const item = input.selectedItems[0]
+    let command = input.value || ""
+    if (item) {
+        const offset = input._command_completions.offset
+        command = command.slice(0, offset) + item.label
+    }
+    return exec(client, "do_command", [command])
+}
+
+async function exec(client, command, args) {
+    await client.onReady()
+    return client.sendRequest(
+        "workspace/executeCommand",
+        {"command": command, "arguments": args}
+    )
+}
+
+async function openFile(path) {
+    const document = await workspace.openTextDocument(path);
+    if (!document) {
+        throw new Error("Not found: " + path);
+    }
+    const editor = await window.showTextDocument(document);
+    if (!editor) {
+        throw new Error("Cannot open " + path);
+    }
+}
+
+function errable(func) {
+    // HACK VSCode swallows errors thrown by extensions
+    return function () {
+        try {
+            return func.apply(this, arguments)
+        } catch (err) {
+            console.error(err)
+            throw err
+        }
+    }
+}
+
+module.exports = {
+    subscribe,
+    command,
+    commandInput,
+}

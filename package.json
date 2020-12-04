@@ -13,13 +13,18 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:xtCommand"
+    "onCommand:vsxt.command",
+    "onCommand:vsxt.openFilePath"
   ],
   "contributes": {
     "commands": [
       {
-        "command": "xtCommand",
-        "title": "XT Command"
+        "command": "vsxt.command",
+        "title": "XT: Command"
+      },
+      {
+        "command": "vsxt.openFilePath",
+        "title": "XT: Open File"
       }
     ],
     "configuration": {
@@ -29,12 +34,17 @@
     }
   },
   "main": "./client/extension",
-  "scripts": {},
+  "scripts": {
+    "test": "mocha client/test"
+  },
   "devDependencies": {
     "@types/vscode": "^1.51.0",
+    "mocha": "^8.2.1",
+    "sinon": "^9.2.1",
     "vscode-test": "^1.4.1"
   },
   "dependencies": {
+    "lodash": "^4.17.20",
     "vscode-languageclient": "^5.2.1"
   }
 }
