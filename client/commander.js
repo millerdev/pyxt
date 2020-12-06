@@ -17,7 +17,7 @@ async function command(client, prefix) {
             await openFile(filePath)
         }
     } catch (err) {
-        vscode.window.showErrorMessage(err)
+        vscode.window.showErrorMessage(String(err))
         console.error(err)
     }
 }
@@ -118,11 +118,11 @@ async function exec(client, command, args) {
 }
 
 async function openFile(path) {
-    const document = await workspace.openTextDocument(path);
+    const document = await vscode.workspace.openTextDocument(path);
     if (!document) {
         throw new Error("Not found: " + path);
     }
-    const editor = await window.showTextDocument(document);
+    const editor = await vscode.window.showTextDocument(document);
     if (!editor) {
         throw new Error("Cannot open " + path);
     }
