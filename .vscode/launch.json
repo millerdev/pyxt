@@ -30,7 +30,7 @@
             "name": "Launch Server",
             "type": "python",
             "request": "launch",
-            "module": "server",
+            "module": "vsxt",
             "args": ["--tcp"],
             "justMyCode": false,
             "python": "${command:python.interpreterPath}",

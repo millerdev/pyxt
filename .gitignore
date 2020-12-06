@@ -1,5 +1,6 @@
 __pycache__
 
+/.noseids
 /.vscode-dev
 /node_modules
 /notes.md

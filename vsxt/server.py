@@ -1,12 +1,11 @@
 import logging
-
-from pygls.server import LanguageServer
+import inspect
 
 from .cmd.openfile import open_file
 from .results import error, result
+from .types import XTServer
 
 log = logging.getLogger(__name__)
-XTServer = LanguageServer
 xt_server = XTServer()
 
 
@@ -15,18 +14,18 @@ def xt_command(func):
 
 
 @xt_command
-def do_command(server: XTServer, params):
+async def do_command(server: XTServer, params):
     input_value, = params
     if input_value:
         command, input_value = parse_command(input_value)
         if not command:
             return error(f"Unknown command: {input_value!r}")
-        return command(server, input_value)
+        return await command(server, input_value)
     return result([])
 
 
 @xt_command
-def get_completions(server: XTServer, params):
+async def get_completions(server: XTServer, params):
     input_value, = params
     if input_value:
         command, input_value = parse_command(input_value)
@@ -34,7 +33,8 @@ def get_completions(server: XTServer, params):
         command = None
     if not command:
         return {"items": list(COMMANDS), "offset": 0}
-    return command(server, input_value, complete=True)
+    result = command(server, input_value, complete=True)
+    return (await result) if inspect.isawaitable(result) else result
 
 
 def parse_command(input_value):

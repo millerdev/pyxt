@@ -43,7 +43,7 @@ function startLangServer() {
         throw new Error("`python.pythonPath` is not set")
     }
     const cwd = path.join(__dirname, "..", "..")
-    const args = ["-m", "server"]
+    const args = ["-m", "vsxt"]
     const serverOptions = {args, pythonPath, options: { cwd }}
     return new LanguageClient(pythonPath, serverOptions, getClientOptions())
 }
