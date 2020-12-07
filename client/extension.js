@@ -3,6 +3,7 @@ const net = require('net')
 const path = require('path')
 const workspace = require('vscode').workspace
 const LanguageClient = require('vscode-languageclient').LanguageClient
+const api = require("./api")
 const commander = require("./commander")
 const DEBUG_PORT = 2087
 let client
@@ -14,6 +15,7 @@ function activate(context) {
         client = startLangServer()
     }
     context.subscriptions.push(client.start())
+    api.publish(client)
     commander.subscribe(context, client)
 }
 

@@ -1,5 +1,6 @@
-const vscode = require('vscode')
 const _ = require("lodash")
+const vscode = require('vscode')
+const errable = require("./errors").errable
 
 function subscribe(context, client) {
     const clientCommand = async () => await command(client)
@@ -125,18 +126,6 @@ async function openFile(path) {
     const editor = await vscode.window.showTextDocument(document);
     if (!editor) {
         throw new Error("Cannot open " + path);
-    }
-}
-
-function errable(func) {
-    // HACK VSCode swallows errors thrown by extensions
-    return function () {
-        try {
-            return func.apply(this, arguments)
-        } catch (err) {
-            console.error(err)
-            throw err
-        }
     }
 }
 
