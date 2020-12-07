@@ -14,7 +14,7 @@
   ],
   "activationEvents": [
     "onCommand:vsxt.command",
-    "onCommand:vsxt.openFilePath"
+    "onCommand:vsxt.openFile"
   ],
   "contributes": {
     "commands": [
@@ -23,7 +23,7 @@
         "title": "XT: Command"
       },
       {
-        "command": "vsxt.openFilePath",
+        "command": "vsxt.openFile",
         "title": "XT: Open File"
       }
     ],
