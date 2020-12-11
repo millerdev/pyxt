@@ -3,4 +3,5 @@ __pycache__
 /.noseids
 /.vscode-dev
 /node_modules
+/nosetests.xml
 /notes.md

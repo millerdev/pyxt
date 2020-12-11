@@ -2,6 +2,7 @@ import logging
 import inspect
 
 from .cmd.openfile import open_file
+from .editor import Editor
 from .results import error, result
 from .types import XTServer
 
@@ -20,7 +21,8 @@ async def do_command(server: XTServer, params):
         command, input_value = parse_command(input_value)
         if not command:
             return error(f"Unknown command: {input_value!r}")
-        return await command(server, input_value)
+        editor = Editor(server)
+        return await command(editor, input_value)
     return result([])
 
 
@@ -33,7 +35,8 @@ async def get_completions(server: XTServer, params):
         command = None
     if not command:
         return {"items": list(COMMANDS), "offset": 0}
-    result = command(server, input_value, complete=True)
+    editor = Editor(server)
+    result = command(editor, input_value, complete=True)
     return (await result) if inspect.isawaitable(result) else result
 
 

@@ -1,28 +1,25 @@
-import asyncio
 from contextlib import contextmanager
 from dataclasses import dataclass
-from functools import wraps
-from os.path import dirname, exists, join
+from os.path import exists, join
 from pathlib import Path
 
-from nose.tools import nottest
 from testil import eq, tempdir
 
 from .. import openfile as mod
+from ...tests.util import async_test
 
 
 def test_open_file():
-    @async_test
-    async def test(path, expect):
-        with fake_server() as server:
-            result = await mod.open_file(server, path)
-            base = dirname(server.active_path)
+    with fake_editor() as editor:
+        @async_test
+        async def test(path, expect):
+            result = await mod.open_file(editor, path)
             eq(result["type"], "success", result)
-            eq(result["value"], expect.format(base=base))
+            eq(result["value"], expect.format(base=editor.current_path))
 
-    yield test, "file.txt", "{base}/file.txt"
-    yield test, "dir/file.txt", "{base}/dir/file.txt"
-    yield test, "../file.txt", "{base}/../file.txt"
+        yield test, "file.txt", "{base}/file.txt"
+        yield test, "dir/file.txt", "{base}/dir/file.txt"
+        yield test, "../file.txt", "{base}/../file.txt"
 
 
 def test_parepare_to_open():
@@ -42,42 +39,27 @@ def test_parepare_to_open():
 
 
 @contextmanager
-def fake_server():
+def fake_editor(folders=()):
     with tempdir() as tmp:
         base = Path(tmp) / "base"
         base.mkdir()
-        yield FakeServer(str(base / "current.txt"))
+        (base / "file.txt").touch()
+        (base / "dir").mkdir()
+        (base / "dir/file.txt").touch()
+        for i, folder in enumerate(folders):
+            (base / folder).mkdir()
+            (base / folder / f"file{i}.txt").touch()
+        yield FakeEditor(str(base))
 
 
 @dataclass
-class FakeServer:
-    active_path: str = None
+class FakeEditor:
+    current_path: str = None
     work_path: str = None
 
     @property
-    def lsp(self):
-        return self
+    async def current_dir(self):
+        return self.current_path
 
-    @property
-    def _props(self):
-        return {
-            "window.activeTextEditor.document.uri.fsPath": self.active_path,
-        }
-
-    async def send_request_async(self, command, params):
-        if command == "vsxt.getProp":
-            prop, = params
-            return self._props[prop]
-        raise RuntimeError(f"unknown command: {command}")
-
-
-@nottest
-def async_test(func):
-    @wraps(func)
-    def test(*args, **kw):
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(func(*args, **kw))
-        finally:
-            loop.close()
-    return test
+    async def workspace_dir(self):
+        return self.work_path
