@@ -60,3 +60,7 @@ def command(
     if isinstance(name, str):
         name = name.split()
     return command_decorator
+
+
+class Incomplete(Exception):
+    pass

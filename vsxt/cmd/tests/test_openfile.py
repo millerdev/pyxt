@@ -3,9 +3,10 @@ from dataclasses import dataclass
 from os.path import dirname, exists, join
 from pathlib import Path
 
-from testil import eq, tempdir
+from testil import assert_raises, eq, tempdir
 
 from .. import openfile as mod
+from ...command import Incomplete
 from ...tests.util import async_test
 
 
@@ -15,13 +16,18 @@ def test_open_file():
         async def test(path, expect):
             parser = mod.open_file.parser.with_context(editor)
             args = await parser.parse(path)
-            result = await mod.open_file(editor, args)
-            eq(result["type"], "success", result)
-            eq(result["value"], expect.format(base=editor.dirname()))
+            if expect is Incomplete:
+                with assert_raises(Incomplete):
+                    await mod.open_file(editor, args)
+            else:
+                result = await mod.open_file(editor, args)
+                eq(result["type"], "success", result)
+                eq(result["value"], expect.format(base=editor.dirname()))
 
         yield test, "file.txt", "{base}/file.txt"
         yield test, "dir/file.txt", "{base}/dir/file.txt"
         yield test, "../file.txt", "{base}/../file.txt"
+        yield test, "", Incomplete
 
 
 def test_parepare_to_open():
