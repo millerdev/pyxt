@@ -7,8 +7,9 @@ from os.path import dirname, isabs, join
 
 from testil import assert_raises, eq as eq_, replattr, tempdir, Config
 
-import vsxt.parser as mod
-from vsxt.parser import (Arg, Choice, Int, String, Regex, RegexPattern,
+from .util import async_test
+from .. import parser as mod
+from ..parser import (Arg, Choice, Int, String, Regex, RegexPattern,
     File, CommandParser, SubArgs, SubParser, VarArgs, CompleteWord, Conditional,
     identifier, Options, Error, ArgumentError, ParseError)
 
@@ -35,7 +36,8 @@ arg_parser = CommandParser(yesno)
 
 
 def test_CommandParser():
-    def test_parser(argstr, options, parser):
+    @async_test
+    async def test_parser(argstr, options, parser):
         if isinstance(options, Exception):
             def check(err):
                 eq_(type(err), type(options))
@@ -43,11 +45,11 @@ def test_CommandParser():
                 eq_(err.errors, options.errors)
                 eq_(err.parse_index, options.parse_index)
             with assert_raises(type(options), msg=check):
-                parser.parse(argstr)
+                await parser.parse(argstr)
         else:
             opts = parser.default_options()
             opts.__dict__.update(options)
-            eq_(parser.parse(argstr), opts)
+            eq_(await parser.parse(argstr), opts)
 
     test = partial(test_parser, parser=CommandParser(yesno))
     yield test, "", Options(yes=True)
@@ -136,16 +138,19 @@ def test_CommandParser():
     yield test, "high  4", ["4runner"], 6
 
 
-def test_CommandParser_empty():
-    eq_(arg_parser.parse(''), Options(yes=True))
+@async_test
+async def test_CommandParser_empty():
+    eq_(await arg_parser.parse(''), Options(yes=True))
 
 
-def test_CommandParser_too_many_args():
+@async_test
+async def test_CommandParser_too_many_args():
     with assert_raises(ArgumentError, msg="unexpected argument(s): unexpected"):
-        arg_parser.parse('yes unexpected')
+        await arg_parser.parse('yes unexpected')
 
 
-def test_CommandParser_incomplete():
+@async_test
+async def test_CommandParser_incomplete():
     field = Choice('arg', 'all')
     parser = CommandParser(field)
 
@@ -155,7 +160,7 @@ def test_CommandParser_incomplete():
             ParseError("'a' is ambiguous: arg, all", Choice('arg', 'all'), 0, 2)
         ])
     with assert_raises(ArgumentError, msg=check):
-        parser.parse('a')
+        await parser.parse('a')
 
 
 def test_CommandParser_arg_string():
@@ -220,7 +225,8 @@ def test_CommandParser_with_SubParser():
     yield test, "cat si", ["siamese", "simple"], 4
 
 
-def test_CommandParser_with_SubParser_errors():
+@async_test
+async def test_CommandParser_with_SubParser_errors():
     sub = SubArgs("num", Int("num"), abc="xyz")
     arg = SubParser("var", sub)
     parser = CommandParser(arg)
@@ -234,7 +240,7 @@ def test_CommandParser_with_SubParser_errors():
             [ParseError("invalid literal for int() with base 10: 'x'",
                         Int("num"), 4, 5)])
     with assert_raises(ArgumentError, msg=check):
-        parser.parse('num x')
+        await parser.parse('num x')
 
 
 def test_CommandParser_with_Conditional():
@@ -275,8 +281,9 @@ def test_CommandParser_with_Conditional():
     yield test, "num ", []
     yield test, "num  ", []
 
-    def test(text, args):
-        eq_(parser.parse(text), args)
+    @async_test
+    async def test(text, args):
+        eq_(await parser.parse(text), args)
     yield test, "", Options(level=0, yes=True)
     yield test, " ", Options(level=0, yes=True)
     yield test, "h", Options(level=4, yes=True)
@@ -286,11 +293,13 @@ def test_CommandParser_with_Conditional():
 
 
 def test_CommandParser_order():
-    def test(text, result):
+    @async_test
+    async def test(text, result):
         if isinstance(result, Options):
-            eq_(parser.parse(text), result)
+            eq_(await parser.parse(text), result)
         else:
-            assert_raises(result, parser.parse, text)
+            with assert_raises(result):
+                await parser.parse(text)
     parser = CommandParser(
         Choice(('selection', True), ('all', False)),
         Choice(('forward', False), ('reverse', True), name='reverse'),

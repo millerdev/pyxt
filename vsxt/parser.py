@@ -105,7 +105,7 @@ class CommandParser(object):
         if index < len(text):
             yield Arg(None, text, index, args)
 
-    def parse(self, text, index=0):
+    async def parse(self, text, index=0):
         """Parse arguments from the given text
 
         :param text: Argument string.

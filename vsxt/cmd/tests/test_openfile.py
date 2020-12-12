@@ -6,24 +6,7 @@ from pathlib import Path
 from testil import eq, tempdir
 
 from .. import openfile as mod
-from ...server import parse_command
 from ...tests.util import async_test
-
-
-def test_parse_command():
-    def test(input_value, expected_args="", found=True):
-        command, args = parse_command(input_value)
-        if found:
-            assert command is not None, f"command not found: {input_value}"
-        else:
-            assert command is None, f"unexpected command: {command}"
-        eq(args, expected_args)
-
-    yield test, "op", "op", False
-    yield test, "ope n", "ope", False
-    yield test, "open"
-    yield test, "open file", "file"
-    yield test, "open a b", "a b"
 
 
 def test_open_file():
@@ -31,7 +14,7 @@ def test_open_file():
         @async_test
         async def test(path, expect):
             parser = mod.open_file.parser.with_context(editor)
-            args = parser.parse(path)
+            args = await parser.parse(path)
             result = await mod.open_file(editor, args)
             eq(result["type"], "success", result)
             eq(result["value"], expect.format(base=editor.dirname()))

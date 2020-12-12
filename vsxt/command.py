@@ -1,6 +1,6 @@
 from .parser import CommandParser
 
-COMMAND_REGISTRY = {}
+REGISTRY = {}
 
 
 def command(
@@ -54,7 +54,7 @@ def command(
         func.parse = parse
         func.arg_string = arg_string
         for name_ in func.names:
-            COMMAND_REGISTRY[name_] = func
+            REGISTRY[name_] = func
         return func
 
     if isinstance(name, str):

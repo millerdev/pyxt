@@ -1,7 +1,7 @@
 import logging
 import inspect
 
-from .command import COMMAND_REGISTRY as COMMANDS
+from . import command as cmd
 from .editor import Editor
 from .results import error, result
 from .types import XTServer
@@ -27,7 +27,7 @@ async def do_command(server: XTServer, params):
         if not command:
             return error(f"Unknown command: {input_value!r}")
         editor = Editor(server)
-        args = command.parser.parse(input_value)
+        args = await command.parser.parse(input_value)
         return await command(editor, args)
     return result([])
 
@@ -40,7 +40,7 @@ async def get_completions(server: XTServer, params):
     else:
         command = None
     if not command:
-        return {"items": sorted(COMMANDS), "offset": 0}
+        return {"items": sorted(cmd.REGISTRY), "offset": 0}
     editor = Editor(server)
     result = command.parser.get_completions(editor, input_value)
     return (await result) if inspect.isawaitable(result) else result
@@ -49,10 +49,11 @@ async def get_completions(server: XTServer, params):
 def parse_command(input_value):
     assert input_value, repr(input_value)
     parts = input_value.split(" ", maxsplit=1)
-    cmd = parts[0]
+    name = parts[0]
     if len(parts) > 1:
         assert len(parts) == 2, parts
         input_value = parts[1]
     else:
         input_value = ""
-    return COMMANDS.get(cmd), (input_value if cmd in COMMANDS else cmd)
+    COMMANDS = cmd.REGISTRY
+    return COMMANDS.get(name), (input_value if name in COMMANDS else name)
