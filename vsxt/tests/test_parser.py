@@ -1,13 +1,12 @@
 import logging
 import os
 import re
-from dataclasses import dataclass
 from functools import partial
-from os.path import dirname, isabs, join
+from os.path import isabs, join
 
 from testil import assert_raises, eq as eq_, replattr, tempdir, Config
 
-from .util import async_test
+from .util import FakeEditor, async_test
 from .. import parser as mod
 from ..parser import (Arg, Choice, Int, String, Regex, RegexPattern,
     File, CommandParser, SubArgs, SubParser, VarArgs, CompleteWord, Conditional,
@@ -167,14 +166,15 @@ async def test_CommandParser_incomplete():
 
 
 def test_CommandParser_arg_string():
-    def test(options, argstr):
+    @async_test
+    async def test(options, argstr):
         if isinstance(argstr, Exception):
             def check(err):
                 eq_(err, argstr)
             with assert_raises(type(argstr), msg=check):
-                parser.arg_string(options)
+                await parser.arg_string(options)
         else:
-            result = parser.arg_string(options)
+            result = await parser.arg_string(options)
             eq_(result, argstr)
 
     parser = CommandParser(yesno, Choice('arg', 'all'))
@@ -611,14 +611,6 @@ def test_File():
     eq_(str(field), 'path')
     eq_(repr(field), "File('path')")
 
-    @dataclass
-    class FakeEditor:
-        file_path: str
-        project_path: str = None
-
-        def dirname(self):
-            return dirname(self.file_path)
-
     with tempdir() as tmp:
         os.mkdir(join(tmp, "dir"))
         os.mkdir(join(tmp, "space dir"))
@@ -641,20 +633,18 @@ def test_File():
         test = make_completions_checker(field)
         yield test, "", []
 
-        editor = FakeEditor(
-            file_path=join(tmp, "dir/file.txt"),
-            project_path=join(tmp, "dir"),
-        )
+        project_path = join(tmp, "dir")
+        editor = FakeEditor(join(tmp, "dir/file.txt"), project_path)
         field = field.with_context(editor)
 
         test = make_completions_checker(field)
         yield test, ".../", ["a.txt", "B file", "b.txt"], 4
-        with replattr(editor, "project_path", editor.project_path + "/"):
+        with replattr(editor, "_project_path", project_path + "/"):
             yield test, ".../", ["a.txt", "B file", "b.txt"], 4
             yield test, "...//", ["a.txt", "B file", "b.txt"], 5
         with replattr(
-            (editor, "project_path", None),
-            (editor, "file_path", join(tmp, "space dir/file")),
+            (editor, "_project_path", None),
+            (editor, "_file_path", join(tmp, "space dir/file")),
             sigcheck=False
         ):
             yield test, "", ["file"], 0
@@ -1112,7 +1102,7 @@ def make_arg_string_checker(field):
             def check(err):
                 eq_(err, argstr)
             with assert_raises(type(argstr), msg=check):
-                field.arg_string(value)
+                await field.arg_string(value)
         else:
             if index is not False:
                 if index is None:

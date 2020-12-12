@@ -1,5 +1,7 @@
 import asyncio
+from dataclasses import dataclass
 from functools import wraps
+from os.path import dirname
 
 from nose.tools import nottest
 
@@ -14,3 +16,22 @@ def async_test(func):
         finally:
             loop.close()
     return test
+
+
+@dataclass
+class FakeEditor:
+    _file_path: str = None
+    _project_path: str = None
+
+    @property
+    async def file_path(self):
+        return self._file_path
+
+    @property
+    async def project_path(self):
+        return self._project_path
+
+    @property
+    async def dirname(self):
+        filepath = await self.file_path
+        return dirname(filepath) if filepath else None

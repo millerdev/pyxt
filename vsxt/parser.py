@@ -165,7 +165,7 @@ class CommandParser(object):
     def get_help(self, text):
         raise NotImplementedError
 
-    def arg_string(self, options, strip=True):
+    async def arg_string(self, options, strip=True):
         """Compile command string from options
 
         :param options: Options object.
@@ -178,7 +178,7 @@ class CommandParser(object):
                 value = getattr(options, field.name)
             except AttributeError:
                 raise Error("missing option: {}".format(field.name))
-            args.append(field.arg_string(value))
+            args.append(await field.arg_string(value))
         return " ".join(args).rstrip(" ") if strip else " ".join(args)
 
 
@@ -460,7 +460,7 @@ class Field(object):
         """
         return []
 
-    def arg_string(self, value):
+    async def arg_string(self, value):
         """Convert parsed value to argument string"""
         raise NotImplementedError("abstract method")
 
@@ -589,7 +589,7 @@ class Choice(Field):
         names = [n for n in self.names if n.startswith(token)]
         return names or [n for n in self.alternates if n.startswith(token)]
 
-    def arg_string(self, value):
+    async def arg_string(self, value):
         if value == self.default:
             return ""
         try:
@@ -620,7 +620,7 @@ class Int(Field):
             return str(self)
         return ""
 
-    def arg_string(self, value):
+    async def arg_string(self, value):
         if value == self.default:
             return ""
         if isinstance(value, int):
@@ -652,7 +652,7 @@ class Float(Int):
             return str(self)
         return ""
 
-    def arg_string(self, value):
+    async def arg_string(self, value):
         if value == self.default:
             return ""
         if isinstance(value, float):
@@ -719,7 +719,7 @@ class String(Field):
         msg = 'unterminated string: {}{}'.format(delim, text[start:])
         raise ParseError(msg, self, index, len(text))
 
-    def arg_string(self, value):
+    async def arg_string(self, value):
         if value == self.default:
             return ""
         if not isinstance(value, str):
@@ -767,16 +767,16 @@ class File(String):
         )
 
     @property
-    def path(self):
+    async def path(self):
         if self.editor is None:
             return None
-        return self.editor.dirname()
+        return await self.editor.dirname
 
     @property
-    def project_path(self):
+    async def project_path(self):
         if self.editor is None:
             return None
-        return self.editor.project_path
+        return await self.editor.project_path
 
     @staticmethod
     def relative(path):
@@ -794,14 +794,16 @@ class File(String):
             return path, stop
         if path.startswith('~'):
             path = os.path.expanduser(path)
-        elif self.project_path:
+        elif path.startswith("..."):
+            project_path = await self.project_path
             if path == '...':
-                path = self.project_path
+                path = project_path
             elif path.startswith('.../'):
-                path = os.path.join(self.project_path, self.relative(path[4:]))
-        if os.path.isabs(path) or self.path is None:
+                path = os.path.join(project_path, self.relative(path[4:]))
+        basepath = await self.path
+        if os.path.isabs(path) or basepath is None:
             return path, stop
-        return os.path.join(self.path, path), stop
+        return os.path.join(basepath, path), stop
 
     async def get_completions(self, arg):
         from os.path import exists, expanduser, isabs, isdir, join, realpath, sep, split
@@ -811,19 +813,23 @@ class File(String):
             token = (await super().consume(arg.text, arg.start))[0] or ""
         if token == '~':
             return [CompleteWord('~/', (lambda:''))]
-        if token == '...' and self.project_path:
+        if token == '...' and await self.project_path:
             return [CompleteWord('.../', (lambda:''))]
         if token.startswith('~'):
             path = expanduser(token)
-        elif token.startswith('.../') and self.project_path and isabs(self.project_path):
-            path = join(self.project_path, self.relative(token[4:]))
+        elif token.startswith('.../'):
+            project_path = await self.project_path
+            if project_path and isabs(project_path):
+                path = join(project_path, self.relative(token[4:]))
+            else:
+                path = token
         else:
             path = token
         if not isabs(path):
-            if self.path is None:
+            if await self.path is None:
                 return []
             else:
-                path = join(realpath(self.path), path)
+                path = join(realpath(await self.path), path)
         root, name = split(path)
         if not exists(root):
             return []
@@ -875,16 +881,17 @@ class File(String):
             return user_path(self.default)
         return await super().get_placeholder(arg)
 
-    def arg_string(self, value):
+    async def arg_string(self, value):
         if value and value.endswith((os.path.sep, "/")):
             raise Error("not a file: {}={!r}".format(self.name, value))
-        if self.path and value.startswith(os.path.join(self.path, "")):
-            value = value[len(self.path) + 1:]
+        path = await self.path
+        if path and value.startswith(os.path.join(path, "")):
+            value = value[len(path) + 1:]
         else:
             home = os.path.expanduser("~/")
             if value.startswith(home):
                 value = "~/" + value[len(home):]
-        return super().arg_string(value)
+        return await super().arg_string(value)
 
 
 class DynamicList(String):
@@ -1154,7 +1161,7 @@ class Regex(Field):
             chars.append("l")
         return "".join(chars)
 
-    def arg_string(self, value):
+    async def arg_string(self, value):
         if value == self.default:
             return ""
         if self.replace:
@@ -1268,8 +1275,8 @@ class VarArgs(Field):
             index = sub.end
         return []
 
-    def arg_string(self, value):
-        return " ".join(self.field.arg_string(v) for v in value)
+    async def arg_string(self, value):
+        return " ".join(await self.field.arg_string(v) for v in value)
 
 
 class SubParser(Field):
@@ -1370,9 +1377,9 @@ class SubParser(Field):
             word.start -= arg.start
         return words
 
-    def arg_string(self, value):
+    async def arg_string(self, value):
         sub, opts = value
-        return sub.name + " " + sub.parser.arg_string(opts, strip=False)
+        return sub.name + " " + await sub.parser.arg_string(opts, strip=False)
 
 
 class SubArgs(object):
@@ -1452,8 +1459,8 @@ class Conditional(Field):
     async def get_completions(self, arg):
         return await self.field.get_completions(arg)
 
-    def arg_string(self, value):
-        return self.field.arg_string(value)
+    async def arg_string(self, value):
+        return await self.field.arg_string(value)
 
 
 class Options(object):

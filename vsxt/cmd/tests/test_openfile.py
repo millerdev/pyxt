@@ -1,13 +1,12 @@
 from contextlib import contextmanager
-from dataclasses import dataclass
-from os.path import dirname, exists, join
+from os.path import exists, join
 from pathlib import Path
 
 from testil import assert_raises, eq, tempdir
 
 from .. import openfile as mod
 from ...command import Incomplete
-from ...tests.util import async_test
+from ...tests.util import FakeEditor, async_test
 
 
 def test_open_file():
@@ -22,7 +21,7 @@ def test_open_file():
             else:
                 result = await mod.open_file(editor, args)
                 eq(result["type"], "success", result)
-                eq(result["value"], expect.format(base=editor.dirname()))
+                eq(result["value"], expect.format(base=await editor.dirname))
 
         yield test, "file.txt", "{base}/file.txt"
         yield test, "dir/file.txt", "{base}/dir/file.txt"
@@ -58,12 +57,3 @@ def fake_editor(folders=()):
             (base / folder).mkdir()
             (base / folder / f"file{i}.txt").touch()
         yield FakeEditor(str(base / "file.txt"), str(base))
-
-
-@dataclass
-class FakeEditor:
-    filepath: str = None
-    project_path: str = None
-
-    def dirname(self):
-        return dirname(self.filepath) if self.filepath else None
