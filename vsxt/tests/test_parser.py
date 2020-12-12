@@ -155,9 +155,10 @@ async def test_CommandParser_too_many_args():
 async def test_CommandParser_incomplete():
     field = Choice('arg', 'all')
     parser = CommandParser(field)
+    arg = await Arg(field, 'a', 0, Options())
 
     def check(err):
-        eq_(err.options, Options(arg=Arg(field, 'a', 0, Options())))
+        eq_(err.options, Options(arg=arg))
         eq_(err.errors, [
             ParseError("'a' is ambiguous: arg, all", Choice('arg', 'all'), 0, 2)
         ])
@@ -323,8 +324,9 @@ def test_CommandParser_order():
 
 
 def test_Arg():
-    def test(arg, strval):
-        eq_(str(arg), strval)
+    @async_test
+    async def test(arg, strval):
+        eq_(str(await arg), strval)
 
     opts = Options()
     yield test, mod.Arg(yesno, '', 0, opts), ''
@@ -699,7 +701,7 @@ def test_File():
             if input.startswith("/"):
                 input = tmp + "/"
             with replattr(os.path, "expanduser", expanduser):
-                arg = mod.Arg(field, input, 0, None)
+                arg = await mod.Arg(field, input, 0, None)
                 eq_(await field.get_completions(arg), output)
 
         yield test, "", ["a.txt", "B file", "b.txt"]
@@ -726,7 +728,7 @@ def test_File():
         # delimiter completion
         @async_test
         async def test(input, output, start=0):
-            arg = mod.Arg(field, input, 0, None)
+            arg = await mod.Arg(field, input, 0, None)
             words = await field.get_completions(arg)
             assert all(isinstance(w, CompleteWord) for w in words), \
                 repr([w for w in words if not isinstance(w, CompleteWord)])
@@ -822,14 +824,15 @@ def test_Regex():
     eq_(str(field), 'regex')
     eq_(repr(field), "Regex('regex')")
 
-    def regex_test(text, start, expect, flags=0):
+    @async_test
+    async def regex_test(text, start, expect, flags=0):
         if isinstance(expect, Exception):
             def check(err):
                 eq_(err, expect)
             with assert_raises(type(expect), msg=check):
-                field.consume(text, start)
+                await field.consume(text, start)
             return
-        value = field.consume(text, start)
+        value = await field.consume(text, start)
         if expect[0] in [None, (None, None)]:
             eq_(value, expect)
             return
@@ -1071,21 +1074,22 @@ def Args(*a, **k):
 
 
 def make_consume_checker(field):
-    def type_checker_test(text, start, expect):
+    @async_test
+    async def type_checker_test(text, start, expect):
         if isinstance(expect, Exception):
             def check(err):
                 eq_(err, expect)
             with assert_raises(type(expect), msg=check):
-                field.consume(text, start)
+                await field.consume(text, start)
         else:
-            eq_(field.consume(text, start), expect)
+            eq_(await field.consume(text, start), expect)
     return type_checker_test
 
 
 def make_placeholder_checker(field):
     @async_test
     async def test_get_placeholder(text, index, result):
-        arg = mod.Arg(field, text, index, None)
+        arg = await mod.Arg(field, text, index, None)
         eq_(await field.get_placeholder(arg), result)
     return test_get_placeholder
 
@@ -1093,7 +1097,7 @@ def make_placeholder_checker(field):
 def make_completions_checker(field):
     @async_test
     async def test_get_completions(input, output, start=None):
-        arg = mod.Arg(field, input, 0, None)
+        arg = await mod.Arg(field, input, 0, None)
         result = await field.get_completions(arg)
         eq_(result, output)
         if start is not None:
@@ -1102,7 +1106,8 @@ def make_completions_checker(field):
 
 
 def make_arg_string_checker(field):
-    def test_get_argstring(value, argstr, index=None):
+    @async_test
+    async def test_get_argstring(value, argstr, index=None):
         if isinstance(argstr, Exception):
             def check(err):
                 eq_(err, argstr)
@@ -1112,7 +1117,7 @@ def make_arg_string_checker(field):
             if index is not False:
                 if index is None:
                     index = len(argstr) + 1
-                eq_(field.consume(argstr, 0), (value, index))
+                eq_(await field.consume(argstr, 0), (value, index))
             else:
-                assert field.consume(argstr, 0) != (value, len(argstr))
+                assert await field.consume(argstr, 0) != (value, len(argstr))
     return test_get_argstring

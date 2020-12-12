@@ -71,18 +71,18 @@ class CommandParser(object):
         argspec = [arg.with_context(*args, **kw) for arg in self.argspec]
         return CommandParser(*argspec)
 
-    def match(self, text, index=0):
+    async def match(self, text, index=0):
         """Check if first argument can consume text at index
 
         :rtype: boolean
         """
         try:
-            self.argspec[0].consume(text, index)
+            await self.argspec[0].consume(text, index)
         except (ParseError, ArgumentError):
             return False
         return True
 
-    def tokenize(self, text, index, args=None):
+    async def tokenize(self, text, index, args=None):
         """Generate a sequence of parsed arguments
 
         :param text: Argument string.
@@ -96,14 +96,14 @@ class CommandParser(object):
         if args is None:
             args = Options()
         for field in self.argspec:
-            arg = Arg(field, text, index, args)
+            arg = await Arg(field, text, index, args)
             if not arg.skipped:
                 yield arg
                 if not arg.errors:
                     index = arg.end
             setattr(args, field.name, arg)
         if index < len(text):
-            yield Arg(None, text, index, args)
+            yield await Arg(None, text, index, args)
 
     async def parse(self, text, index=0):
         """Parse arguments from the given text
@@ -115,7 +115,7 @@ class CommandParser(object):
         """
         args = Options()
         errors = []
-        for arg in self.tokenize(text, index, args):
+        async for arg in self.tokenize(text, index, args):
             if arg.field is None:
                 if errors:
                     break
@@ -139,7 +139,7 @@ class CommandParser(object):
             hint about remaining arguments to be entered.
         """
         values = []
-        for arg in self.tokenize(text, index):
+        async for arg in self.tokenize(text, index):
             if not arg.could_consume_more:
                 continue
             value = await arg.get_placeholder()
@@ -154,7 +154,7 @@ class CommandParser(object):
         :param index: Index in ``text`` to start parsing.
         :returns: A list of possible values to complete the command.
         """
-        for arg in self.tokenize(text, index):
+        async for arg in self.tokenize(text, index):
             if arg.field is None:
                 return []
             if arg.could_consume_more:
@@ -196,6 +196,10 @@ class Arg(object):
     - `errors` : Errors raised while consuming the argument.
     - `args` : `Options` object containing preceding Args.
 
+    Arg objects are asynchronous, meaning they should be `await`ed after
+    instantiation. However, in special circumstances it is not necessary
+    to `await` them. For example, `await` is unnecessary if `field is None`.
+    It is always safe to await a new arg, even if not strictly necessary.
     """
 
     def __init__(self, field, text, index, args):
@@ -213,8 +217,16 @@ class Arg(object):
             value = field.default
             index = start
         else:
+            return  # await required for full initialization
+        self._end_init(field, index, value)
+
+    def __await__(self):
+        return self._async_init(self.field, self.text, self.start).__await__()
+
+    async def _async_init(self, field, text, start):
+        if not hasattr(self, "end"):
             try:
-                value, index = field.consume(text, start)
+                value, index = await field.consume(text, start)
                 if index == len(text) and not text[start:].endswith(" "):
                     # this argument could consume more characters
                     index += 1
@@ -227,6 +239,10 @@ class Arg(object):
                 self.errors.extend(err.errors)
                 value = field.default
                 index = err.errors[-1].parse_index
+            self._end_init(field, index, value)
+        return self
+
+    def _end_init(self, field, index, value):
         self.end = index
         if field is not None:
             try:
@@ -396,7 +412,7 @@ class Field(object):
             return type(self)(*self.args, **kw)
         return self
 
-    def consume(self, text, index):
+    async def consume(self, text, index):
         """Consume argument value from text starting at index
 
         This consumes the argument value plus a trailing space
@@ -529,7 +545,7 @@ class Choice(Field):
                     for name, value in sorted(self.kwargs.items()))
         return '{}({})'.format(type(self).__name__, ', '.join(args))
 
-    def consume(self, text, index):
+    async def consume(self, text, index):
         """Consume a single choice name starting at index
 
         The token at index may be a complete choice name or a prefix
@@ -584,7 +600,7 @@ class Choice(Field):
 
 class Int(Field):
 
-    def consume(self, text, index):
+    async def consume(self, text, index):
         """Consume an integer value
 
         :returns: (<int or default value>, <index>)
@@ -616,7 +632,7 @@ class Float(Int):
     """A float argument
     """
 
-    def consume(self, text, index):
+    async def consume(self, text, index):
         """Consume a float value
 
         :returns: (<float or default value>, <index>)
@@ -660,7 +676,7 @@ class String(Field):
     }
     DELIMITERS = '"\''
 
-    def consume(self, text, index):
+    async def consume(self, text, index):
         """Consume a string value
 
         :returns: (<string or default value>, <index>)
@@ -768,12 +784,12 @@ class File(String):
             return path.lstrip("/").lstrip(os.path.sep)
         return path
 
-    def consume(self, text, index):
+    async def consume(self, text, index):
         """Consume a file path
 
         :returns: (<path>, <index>)
         """
-        path, stop = super().consume(text, index)
+        path, stop = await super().consume(text, index)
         if path is None:
             return path, stop
         if path.startswith('~'):
@@ -792,7 +808,7 @@ class File(String):
         if arg.start >= len(arg.text):
             token = ""
         else:
-            token = super().consume(arg.text, arg.start)[0] or ""
+            token = (await super().consume(arg.text, arg.start))[0] or ""
         if token == '~':
             return [CompleteWord('~/', (lambda:''))]
         if token == '...' and self.project_path:
@@ -899,8 +915,8 @@ class DynamicList(String):
             nameof = self.name_attribute
         return ((nameof(item), item) for item in self.get_items(self.editor))
 
-    def consume(self, text, index):
-        token, end = super().consume(text, index)
+    async def consume(self, text, index):
+        token, end = await super().consume(text, index)
         if token is self.default:
             return token, end
         items = list(self.iteritems())
@@ -993,7 +1009,7 @@ class Regex(Field):
             default = RegexPattern(default, flags)
         super(Regex, self).__init__(name, default)
 
-    def consume(self, text, index, _default=None):
+    async def consume(self, text, index, _default=None):
         """Consume regular expression and optional replacement string and flags
 
         :returns: (<value>, <index>) where value is one of the following:
@@ -1200,14 +1216,14 @@ class VarArgs(Field):
         field = self.field.with_context(*args, **kw)
         return VarArgs(self.name, field, **self.kwargs)
 
-    def consume(self, text, index):
+    async def consume(self, text, index):
         values = []
         if index >= len(text):
-            value, index = self.field.consume(text, index)
+            value, index = await self.field.consume(text, index)
             values.append(value)
         else:
             while index < len(text):
-                value, index = self.field.consume(text, index)
+                value, index = await self.field.consume(text, index)
                 values.append(value)
         if len(values) < self.min:
             raise Error("not enough arguments (found {}, expected {})".format(
@@ -1220,7 +1236,7 @@ class VarArgs(Field):
         start = value = None
         while index != start:
             start = index
-            sub = Arg(self.field, text, index, arg.args)
+            sub = await Arg(self.field, text, index, arg.args)
             if sub.could_consume_more:
                 value = await sub.get_placeholder()
                 if value is not None or index > len(text):
@@ -1236,7 +1252,7 @@ class VarArgs(Field):
     async def get_completions(self, arg):
         index = arg.start
         while True:
-            sub = Arg(self.field, arg.text, index, arg.args)
+            sub = await Arg(self.field, arg.text, index, arg.args)
             if sub.could_consume_more:
                 words = await self.field.get_completions(sub)
                 if index > arg.start:
@@ -1280,7 +1296,7 @@ class SubParser(Field):
                 if a.is_enabled(*args, **kw)]
         return SubParser(self.name, *subs)
 
-    def consume(self, text, index):
+    async def consume(self, text, index):
         """Consume arguments based on the name of the first argument
 
         :returns: ((subparser, <consumed argument options>), <index>)
@@ -1304,7 +1320,7 @@ class SubParser(Field):
                     end = index + len(name)
                 raise ParseError(msg, self, index, end)
             sub = self.subargs[names[0]]
-        opts, index = sub.parse(text, end)
+        opts, index = await sub.parse(text, end)
         return (sub, opts), index
 
     async def get_placeholder(self, arg):
@@ -1381,10 +1397,10 @@ class SubArgs(object):
         sub.parser = self.parser.with_context(*args, **kw)
         return sub
 
-    def parse(self, text, index):
+    async def parse(self, text, index):
         args = Options()
         errors = []
-        for arg in self.parser.tokenize(text, index, args):
+        async for arg in self.parser.tokenize(text, index, args):
             if arg.field is None:
                 index = arg.start
                 break
@@ -1422,8 +1438,8 @@ class Conditional(Field):
         field = self.field.with_context(editor)
         return type(self)(self.is_enabled, field, editor, default=self.default)
 
-    def consume(self, text, index):
-        return self.field.consume(text, index)
+    async def consume(self, text, index):
+        return await self.field.consume(text, index)
 
     def value_of(self, consumed, arg):
         if not self.is_enabled(arg):
