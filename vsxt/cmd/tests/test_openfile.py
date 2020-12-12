@@ -1,21 +1,40 @@
 from contextlib import contextmanager
 from dataclasses import dataclass
-from os.path import exists, join
+from os.path import dirname, exists, join
 from pathlib import Path
 
 from testil import eq, tempdir
 
 from .. import openfile as mod
+from ...server import parse_command
 from ...tests.util import async_test
+
+
+def test_parse_command():
+    def test(input_value, expected_args="", found=True):
+        command, args = parse_command(input_value)
+        if found:
+            assert command is not None, f"command not found: {input_value}"
+        else:
+            assert command is None, f"unexpected command: {command}"
+        eq(args, expected_args)
+
+    yield test, "op", "op", False
+    yield test, "ope n", "ope", False
+    yield test, "open"
+    yield test, "open file", "file"
+    yield test, "open a b", "a b"
 
 
 def test_open_file():
     with fake_editor() as editor:
         @async_test
         async def test(path, expect):
-            result = await mod.open_file(editor, path)
+            parser = mod.open_file.parser.with_context(editor)
+            args = parser.parse(path)
+            result = await mod.open_file(editor, args)
             eq(result["type"], "success", result)
-            eq(result["value"], expect.format(base=editor.current_path))
+            eq(result["value"], expect.format(base=editor.dirname()))
 
         yield test, "file.txt", "{base}/file.txt"
         yield test, "dir/file.txt", "{base}/dir/file.txt"
@@ -49,17 +68,13 @@ def fake_editor(folders=()):
         for i, folder in enumerate(folders):
             (base / folder).mkdir()
             (base / folder / f"file{i}.txt").touch()
-        yield FakeEditor(str(base))
+        yield FakeEditor(str(base / "file.txt"), str(base))
 
 
 @dataclass
 class FakeEditor:
-    current_path: str = None
-    work_path: str = None
+    filepath: str = None
+    project_path: str = None
 
-    @property
-    async def current_dir(self):
-        return self.current_path
-
-    async def workspace_dir(self):
-        return self.work_path
+    def dirname(self):
+        return dirname(self.filepath) if self.filepath else None

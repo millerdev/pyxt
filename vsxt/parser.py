@@ -758,9 +758,9 @@ class File(String):
 
     @property
     def project_path(self):
-        if self.editor is None or not self.editor.project.path:
+        if self.editor is None:
             return None
-        return self.editor.project.path
+        return self.editor.project_path
 
     @staticmethod
     def relative(path):

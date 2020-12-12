@@ -595,20 +595,9 @@ def test_File():
     eq_(repr(field), "File('path')")
 
     @dataclass
-    class FakeProject:
-        path: str
-
-        def dirname(self):
-            return self.path
-
-        @property
-        def project(self):
-            return self
-
-    @dataclass
     class FakeEditor:
         file_path: str
-        project: FakeProject
+        project_path: str = None
 
         def dirname(self):
             return dirname(self.file_path)
@@ -637,17 +626,17 @@ def test_File():
 
         editor = FakeEditor(
             file_path=join(tmp, "dir/file.txt"),
-            project=FakeProject(path=join(tmp, "dir")),
+            project_path=join(tmp, "dir"),
         )
         field = field.with_context(editor)
 
         test = make_completions_checker(field)
         yield test, ".../", ["a.txt", "B file", "b.txt"], 4
-        with replattr(editor.project, "path", editor.project.path + "/"):
+        with replattr(editor, "project_path", editor.project_path + "/"):
             yield test, ".../", ["a.txt", "B file", "b.txt"], 4
             yield test, "...//", ["a.txt", "B file", "b.txt"], 5
         with replattr(
-            (editor.project, "path", None),
+            (editor, "project_path", None),
             (editor, "file_path", join(tmp, "space dir/file")),
             sigcheck=False
         ):
@@ -768,16 +757,6 @@ def test_File():
             with replattr(os.path, "expanduser", expanduser):
                 check(input, output, *args)
         yield test, "", [], 0
-
-        project = editor.project
-        check = make_completions_checker(field.with_context(project))
-        yield test, "", ["a.txt", "B file", "b.txt"], 0
-        yield test, "./", ["a.txt", "B file", "b.txt"], 2
-
-        with replattr(project, "path", project.path + "/"):
-            check = make_completions_checker(field.with_context(project))
-            yield test, "", ["a.txt", "B file", "b.txt"], 0
-            yield test, "./", ["a.txt", "B file", "b.txt"], 2
 
 
 def test_DynamicList():
