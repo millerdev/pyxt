@@ -131,7 +131,7 @@ class CommandParser(object):
             raise ArgumentError(msg, args, errors)
         return Options(**{name: arg.value for name, arg in args})
 
-    def get_placeholder(self, text, index=0):
+    async def get_placeholder(self, text, index=0):
         """Get placeholder string to follow the given command text
 
         :param text: Argument string.
@@ -142,12 +142,12 @@ class CommandParser(object):
         for arg in self.tokenize(text, index):
             if not arg.could_consume_more:
                 continue
-            value = arg.get_placeholder()
+            value = await arg.get_placeholder()
             if value is not None:
                 values.append(value)
         return " ".join(values)
 
-    def get_completions(self, text, index=0):
+    async def get_completions(self, text, index=0):
         """Get completions for the given command text
 
         :param text: Argument string.
@@ -159,7 +159,7 @@ class CommandParser(object):
                 return []
             if arg.could_consume_more:
                 # TODO what if arg has errors? is raw reliable?
-                return arg.get_completions()
+                return await arg.get_completions()
         return []
 
     def get_help(self, text):
@@ -312,11 +312,11 @@ class Arg(object):
             token = text[index:end]
         return token, end + 1
 
-    def get_placeholder(self):
-        return self.field.get_placeholder(self)
+    async def get_placeholder(self):
+        return await self.field.get_placeholder(self)
 
-    def get_completions(self):
-        words = self.field.get_completions(self)
+    async def get_completions(self):
+        words = await self.field.get_completions(self)
         index = self.start
         for i, word in enumerate(words):
             if getattr(word, 'start', None) is not None:
@@ -425,7 +425,7 @@ class Field(object):
         """
         return consumed
 
-    def get_placeholder(self, arg):
+    async def get_placeholder(self, arg):
         """Get placeholder string for this argument
 
         :param arg: An ``Arg`` object.
@@ -433,7 +433,7 @@ class Field(object):
         """
         return "" if arg else str(self)
 
-    def get_completions(self, arg):
+    async def get_completions(self, arg):
         """Get a list of possible completions for text
 
         :param arg: An ``Arg`` object.
@@ -555,10 +555,10 @@ class Choice(Field):
             msg = '{!r} does not match any of: {}'.format(token, names)
         raise ParseError(msg, self, index, end)
 
-    def get_placeholder(self, arg):
+    async def get_placeholder(self, arg):
         if not arg:
             return str(self)
-        names = arg.get_completions()
+        names = await arg.get_completions()
         if not names:
             placeholder = ""
         elif len(names) == 1:
@@ -567,7 +567,7 @@ class Choice(Field):
             placeholder = "..."
         return placeholder
 
-    def get_completions(self, arg):
+    async def get_completions(self, arg):
         """List choice names that complete token"""
         token = str(arg)
         names = [n for n in self.names if n.startswith(token)]
@@ -597,7 +597,7 @@ class Int(Field):
         except (ValueError, TypeError) as err:
             raise ParseError(str(err), self, index, index + len(token))
 
-    def get_placeholder(self, arg):
+    async def get_placeholder(self, arg):
         if not arg:
             if isinstance(self.default, int):
                 return str(self.default)
@@ -629,7 +629,7 @@ class Float(Int):
         except (ValueError, TypeError) as err:
             raise ParseError(str(err), self, index, index + len(token))
 
-    def get_placeholder(self, arg):
+    async def get_placeholder(self, arg):
         if not arg:
             if isinstance(self.default, float):
                 return str(self.default)
@@ -716,13 +716,13 @@ class String(Field):
             return Regex.delimit(value, delimiters="\"'")[0]
         return value
 
-    def get_placeholder(self, arg):
+    async def get_placeholder(self, arg):
         value = self.default
         if not arg and value:
             if " " in value or value.startswith(("'", '"')):
                 return Regex.delimit(value, delimiters="\"'")[0]
             return value
-        return super().get_placeholder(arg)
+        return await super().get_placeholder(arg)
 
 
 class File(String):
@@ -787,7 +787,7 @@ class File(String):
             return path, stop
         return os.path.join(self.path, path), stop
 
-    def get_completions(self, arg):
+    async def get_completions(self, arg):
         from os.path import exists, expanduser, isabs, isdir, join, realpath, sep, split
         if arg.start >= len(arg.text):
             token = ""
@@ -854,10 +854,10 @@ class File(String):
             names.append(delim(name + sep, ""))
         return CompletionsList(names, title=user_path(root))
 
-    def get_placeholder(self, arg):
+    async def get_placeholder(self, arg):
         if not arg and isinstance(self.default, str):
             return user_path(self.default)
-        return super().get_placeholder(arg)
+        return await super().get_placeholder(arg)
 
     def arg_string(self, value):
         if value and value.endswith((os.path.sep, "/")):
@@ -916,17 +916,17 @@ class DynamicList(String):
         msg = '{!r} does not match any of: {}'.format(token, names)
         raise ParseError(msg, self, index, end)
 
-    def get_completions(self, arg, escape=lambda n: n.replace(" ", "\\ ")):
+    async def get_completions(self, arg, escape=lambda n: n.replace(" ", "\\ ")):
         token = str(arg).lower()
         names = (name for name, item in self.iteritems())
         return [escape(n) for n in names if n.lower().startswith(token)]
 
-    def get_placeholder(self, arg):
+    async def get_placeholder(self, arg):
         if not arg:
             default = str(self.default) if self.default is not None else ""
             return default if default else str(self)
         token = str(arg)
-        comps = self.get_completions(token, lambda n: n)
+        comps = await self.get_completions(token, lambda n: n)
         if comps:
             return comps[0][len(token):]
         return ""
@@ -1064,7 +1064,7 @@ class Regex(Field):
             index += 1
         return value, index + (0 if index > len(text) else 1)
 
-    def get_placeholder(self, arg):
+    async def get_placeholder(self, arg):
         if not arg:
             return str(self)
         text = arg.text
@@ -1214,7 +1214,7 @@ class VarArgs(Field):
                         len(values), self.min))
         return values, index
 
-    def get_placeholder(self, arg):
+    async def get_placeholder(self, arg):
         text = arg.text
         index = arg.start
         start = value = None
@@ -1222,7 +1222,7 @@ class VarArgs(Field):
             start = index
             sub = Arg(self.field, text, index, arg.args)
             if sub.could_consume_more:
-                value = sub.get_placeholder()
+                value = await sub.get_placeholder()
                 if value is not None or index > len(text):
                     break
             if sub.errors:
@@ -1233,12 +1233,12 @@ class VarArgs(Field):
         placeholder = "..." if self.placeholder is None else self.placeholder
         return "{} {}".format(value, placeholder)
 
-    def get_completions(self, arg):
+    async def get_completions(self, arg):
         index = arg.start
         while True:
             sub = Arg(self.field, arg.text, index, arg.args)
             if sub.could_consume_more:
-                words = self.field.get_completions(sub)
+                words = await self.field.get_completions(sub)
                 if index > arg.start:
                     diff = index - arg.start
                     for i, word in enumerate(words):
@@ -1307,7 +1307,7 @@ class SubParser(Field):
         opts, index = sub.parse(text, end)
         return (sub, opts), index
 
-    def get_placeholder(self, arg):
+    async def get_placeholder(self, arg):
         if not arg:
             return "{} ...".format(self)
         text = arg.text
@@ -1331,10 +1331,10 @@ class SubParser(Field):
         else:
             placeholder = ""
         values = [] if space_after_name else [placeholder]
-        values.append(sub.parser.get_placeholder(text, end))
+        values.append(await sub.parser.get_placeholder(text, end))
         return " ".join(values)
 
-    def get_completions(self, arg):
+    async def get_completions(self, arg):
         text = arg.text
         name, end = arg.consume_token()
         if name is None:
@@ -1349,7 +1349,7 @@ class SubParser(Field):
             if len(names) != 1:
                 return []
             sub = self.subargs[names[0]]
-        words = sub.parser.get_completions(text, end)
+        words = await sub.parser.get_completions(text, end)
         for word in words:
             word.start -= arg.start
         return words
@@ -1430,11 +1430,11 @@ class Conditional(Field):
             raise SkipField(self.default)
         return self.field.value_of(consumed, arg)
 
-    def get_placeholder(self, arg):
-        return self.field.get_placeholder(arg)
+    async def get_placeholder(self, arg):
+        return await self.field.get_placeholder(arg)
 
-    def get_completions(self, arg):
-        return self.field.get_completions(arg)
+    async def get_completions(self, arg):
+        return await self.field.get_completions(arg)
 
     def arg_string(self, value):
         return self.field.arg_string(value)

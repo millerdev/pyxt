@@ -17,7 +17,7 @@ log = logging.getLogger(__name__)
 
 
 class ColonString(String):
-    def get_completions(self, arg):
+    async def get_completions(self, arg):
         if arg:
             start = str(arg).rfind(":")
             if start < 0:
@@ -89,8 +89,9 @@ def test_CommandParser():
     yield test, "hi", Options(level=4)
     yield test, "high '' yes", ArgumentError('unexpected argument(s): yes', ..., [], 8)
 
-    def test_placeholder(argstr, expected, parser=radio_parser):
-        eq_(parser.get_placeholder(argstr), expected)
+    @async_test
+    async def test_placeholder(argstr, expected, parser=radio_parser):
+        eq_(await parser.get_placeholder(argstr), expected)
     test = test_placeholder
     yield test, "", "equalizer ... off 50 name"
     yield test, "  ", "50 name"
@@ -102,8 +103,9 @@ def test_CommandParser():
     yield test, "hi", "gh 50 name"
     yield test, "high ", "50 name"
 
-    def check_completions(argstr, expected, start=None, parser=radio_parser):
-        words = parser.get_completions(argstr)
+    @async_test
+    async def check_completions(argstr, expected, start=None, parser=radio_parser):
+        words = await parser.get_completions(argstr)
         eq_(words, expected)
         if start is not None:
             eq_([w.start for w in words], [start] * len(words), words)
@@ -189,8 +191,9 @@ def test_CommandParser_with_SubParser():
     arg = SubParser("var", sub)
     parser = CommandParser(arg, yesno)
 
-    def test(text, result):
-        eq_(parser.get_placeholder(text), result)
+    @async_test
+    async def test(text, result):
+        eq_(await parser.get_placeholder(text), result)
     yield test, "", "var ... yes"
     yield test, " ", "yes"
     yield test, "  ", ""
@@ -199,8 +202,9 @@ def test_CommandParser_with_SubParser():
     yield test, "num ", "n yes"
     yield test, "num  ", "yes"
 
-    def test(text, expect, start=None):
-        result = parser.get_completions(text)
+    @async_test
+    async def test(text, expect, start=None):
+        result = await parser.get_completions(text)
         eq_(result, expect)
         if start is not None:
             eq_([w.start for w in result], [start] * len(expect), result)
@@ -257,8 +261,9 @@ def test_CommandParser_with_Conditional():
         Conditional(not_off, yesno),
     )
 
-    def test(text, result):
-        eq_(parser.get_placeholder(text), result)
+    @async_test
+    async def test(text, result):
+        eq_(await parser.get_placeholder(text), result)
     yield test, "", "off"
     yield test, " ", ""
     yield test, "  ", ""
@@ -269,8 +274,9 @@ def test_CommandParser_with_Conditional():
     yield test, "num ", ""
     yield test, "num  ", ""
 
-    def test(text, result):
-        eq_(parser.get_completions(text), result)
+    @async_test
+    async def test(text, result):
+        eq_(await parser.get_completions(text), result)
     yield test, "", ["off", "high", "medium", "low"]
     yield test, " ", []
     yield test, "  ", []
@@ -688,12 +694,13 @@ def test_File():
                 return tmp + path[1:]
             return path
 
-        def test(input, output):
+        @async_test
+        async def test(input, output):
             if input.startswith("/"):
                 input = tmp + "/"
             with replattr(os.path, "expanduser", expanduser):
                 arg = mod.Arg(field, input, 0, None)
-                eq_(field.get_completions(arg), output)
+                eq_(await field.get_completions(arg), output)
 
         yield test, "", ["a.txt", "B file", "b.txt"]
         yield test, "a", ["a.txt"]
@@ -717,9 +724,10 @@ def test_File():
         yield test, "~/", ["dir", "file.doc", "file.txt", "space dir"]
 
         # delimiter completion
-        def test(input, output, start=0):
+        @async_test
+        async def test(input, output, start=0):
             arg = mod.Arg(field, input, 0, None)
-            words = field.get_completions(arg)
+            words = await field.get_completions(arg)
             assert all(isinstance(w, CompleteWord) for w in words), \
                 repr([w for w in words if not isinstance(w, CompleteWord)])
             eq_([w.complete() for w in words], output)
@@ -1075,16 +1083,18 @@ def make_consume_checker(field):
 
 
 def make_placeholder_checker(field):
-    def test_get_placeholder(text, index, result):
+    @async_test
+    async def test_get_placeholder(text, index, result):
         arg = mod.Arg(field, text, index, None)
-        eq_(field.get_placeholder(arg), result)
+        eq_(await field.get_placeholder(arg), result)
     return test_get_placeholder
 
 
 def make_completions_checker(field):
-    def test_get_completions(input, output, start=None):
+    @async_test
+    async def test_get_completions(input, output, start=None):
         arg = mod.Arg(field, input, 0, None)
-        result = field.get_completions(arg)
+        result = await field.get_completions(arg)
         eq_(result, output)
         if start is not None:
             eq_([w.start for w in result], [start] * len(result), result)
