@@ -1,16 +1,16 @@
 from nose.tools import nottest
-from testil import assert_raises, eq
+from testil import eq
 
 from ..tests.util import async_test
-from ..editor import VSProxy
+from ..jsproxy import JSProxy
 
 
 @async_test
 async def test_proxy_attrs():
     proxy = test_proxy()
-    eq(str(proxy), "vscode")
-    eq(str(proxy.attr), "vscode.attr")
-    eq(str(proxy.foo.bar), "vscode.foo.bar")
+    eq(str(proxy), "JSProxy")
+    eq(str(proxy.attr), "JSProxy.attr")
+    eq(str(proxy.foo.bar), "JSProxy.foo.bar")
     eq(await proxy.attr, {"name": "attr"})
     eq(await proxy.foo.bar, {"name": "foo", "next": {"name": "bar"}})
 
@@ -18,7 +18,7 @@ async def test_proxy_attrs():
 @nottest
 def test_proxy():
     server = FakeServer()
-    return VSProxy(server)
+    return JSProxy(server)
 
 
 class FakeServer:
