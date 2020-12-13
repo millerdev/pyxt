@@ -22,21 +22,37 @@ def test_do_command():
     yield test, "cmd a", result(value="a")
 
 
-def test_parse_command():
-    def test(input_value, expected_args="", found=True):
+def test_get_completions():
+    @async_test
+    async def test(input_value, expected_result):
+        server = object()
         with test_command():
-            command, args = mod.parse_command(input_value)
+            res = await mod.get_completions(server, [input_value])
+            eq(res, expected_result)
+
+    yield test, "cm", result(["cmd"], offset=0)
+    yield test, "cmd", result(["a", "b"], offset=4)
+    yield test, "cmd ", result(["a", "b"], offset=4)
+    yield test, "cmd a", result(["a"], offset=4)
+
+
+def test_parse_command():
+    def test(input_value, expected_args, expected_offset, found=True):
+        with test_command():
+            command, args, offset = mod.parse_command(input_value)
             if found:
                 assert command is not None, f"command not found: {input_value}"
             else:
                 assert command is None, f"unexpected command: {command}"
             eq(args, expected_args)
+            eq(offset, expected_offset)
 
-    yield test, "cm", "cm", False
-    yield test, "c md", "c", False
-    yield test, "cmd"
-    yield test, "cmd file", "file"
-    yield test, "cmd a b", "a b"
+    yield test, "cm", "cm", 0, False
+    yield test, "c md", "c", 0, False
+    yield test, "cmd", "", 4
+    yield test, "cmd ", "", 4
+    yield test, "cmd file", "file", 4
+    yield test, "cmd a b", "a b", 4
 
 
 @nottest

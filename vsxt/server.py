@@ -1,5 +1,4 @@
 import logging
-import inspect
 
 from . import command as cmd
 from .editor import Editor
@@ -23,7 +22,7 @@ def xt_command(func):
 async def do_command(server: XTServer, params):
     input_value, = params
     if input_value:
-        command, input_value = parse_command(input_value)
+        command, input_value, offset = parse_command(input_value)
         if not command:
             return error(f"Unknown command: {input_value!r}")
         editor = Editor(server)
@@ -36,14 +35,16 @@ async def do_command(server: XTServer, params):
 async def get_completions(server: XTServer, params):
     input_value, = params
     if input_value:
-        command, input_value = parse_command(input_value)
+        command, input_value, offset = parse_command(input_value)
     else:
+        offset = None
         command = None
     if not command:
-        return {"items": sorted(cmd.REGISTRY), "offset": 0}
+        return result(sorted(cmd.REGISTRY), offset=0)
     editor = Editor(server)
-    result = command.parser.get_completions(editor, input_value)
-    return (await result) if inspect.isawaitable(result) else result
+    parser = command.parser.with_context(editor)
+    items = await parser.get_completions(input_value)
+    return result(items, offset=get_offset(items, offset))
 
 
 def parse_command(input_value):
@@ -56,4 +57,10 @@ def parse_command(input_value):
     else:
         input_value = ""
     COMMANDS = cmd.REGISTRY
-    return COMMANDS.get(name), (input_value if name in COMMANDS else name)
+    if name in COMMANDS:
+        return COMMANDS[name], input_value, len(name) + 1
+    return None, name, 0
+
+
+def get_offset(items, offset):
+    return offset + (items[0].start if items else 0)

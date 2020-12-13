@@ -2,6 +2,17 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Python Tests",
+            "type": "python",
+            "request": "launch",
+            "module": "nose",
+            "args": [],
+            "justMyCode": false,
+            "python": "${command:python.interpreterPath}",
+            "cwd": "${workspaceFolder}",
+            "env": {}
+        },
+        {
             "name": "Extension Tests",
             "type": "extensionHost",
             "request": "launch",
