@@ -21,14 +21,20 @@ def xt_command(func):
 @xt_command
 async def do_command(server: XTServer, params):
     input_value, = params
-    if input_value:
-        command, input_value, offset = parse_command(input_value)
-        if not command:
-            return error(f"Unknown command: {input_value!r}")
-        editor = Editor(server)
-        args = await command.parser.parse(input_value)
+    if not input_value:
+        return result(sorted(cmd.REGISTRY), offset=0)
+    command, input_value, offset = parse_command(input_value)
+    if not command:
+        return error(f"Unknown command: {input_value!r}")
+    editor = Editor(server)
+    parser = command.parser.with_context(editor)
+    args = await parser.parse(input_value)
+    try:
         return await command(editor, args)
-    return result([])
+    except cmd.Incomplete:
+        pass
+    items = await parser.get_completions(input_value)
+    return result(items, offset=get_offset(items, offset))
 
 
 @xt_command

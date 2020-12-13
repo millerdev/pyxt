@@ -18,7 +18,9 @@ def test_do_command():
             res = await mod.do_command(server, [input_value])
             eq(res, expected_result)
 
+    yield test, "", result(["cmd"], offset=0)
     yield test, "cm", error("Unknown command: 'cm'")
+    yield test, "cmd ", result(value="a")
     yield test, "cmd a", result(value="a")
 
 

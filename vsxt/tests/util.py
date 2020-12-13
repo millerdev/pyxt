@@ -4,6 +4,9 @@ from functools import wraps
 from os.path import dirname
 
 from nose.tools import nottest
+from testil import replattr
+
+from .. import server
 
 
 @nottest
@@ -16,6 +19,14 @@ def async_test(func):
         finally:
             loop.close()
     return test
+
+
+async def do_command(input_value, editor=None):
+    if editor is None:
+        editor = FakeEditor()
+    srv = object()
+    with replattr(server, "Editor", lambda srv: editor):
+        return await server.do_command(srv, [input_value])
 
 
 @dataclass

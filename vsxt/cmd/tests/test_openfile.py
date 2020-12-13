@@ -2,31 +2,28 @@ from contextlib import contextmanager
 from os.path import exists, join
 from pathlib import Path
 
-from testil import assert_raises, eq, tempdir
+from testil import eq, tempdir
 
 from .. import openfile as mod
-from ...command import Incomplete
-from ...tests.util import FakeEditor, async_test
+from ...results import result
+from ...tests.util import FakeEditor, async_test, do_command
 
 
 def test_open_file():
     with fake_editor() as editor:
         @async_test
-        async def test(path, expect):
-            parser = mod.open_file.parser.with_context(editor)
-            args = await parser.parse(path)
-            if expect is Incomplete:
-                with assert_raises(Incomplete):
-                    await mod.open_file(editor, args)
-            else:
-                result = await mod.open_file(editor, args)
+        async def test(cmdstr, expect):
+            result = await do_command(cmdstr, editor)
+            if isinstance(expect, str):
                 eq(result["type"], "success", result)
                 eq(result["value"], expect.format(base=await editor.dirname))
+            else:
+                eq(result, expect)
 
-        yield test, "file.txt", "{base}/file.txt"
-        yield test, "dir/file.txt", "{base}/dir/file.txt"
-        yield test, "../file.txt", "{base}/../file.txt"
-        yield test, "", Incomplete
+        yield test, "open file.txt", "{base}/file.txt"
+        yield test, "open dir/file.txt", "{base}/dir/file.txt"
+        yield test, "open ../file.txt", "{base}/../file.txt"
+        yield test, "open ", result(["dir", "file.txt"], offset=5)
 
 
 def test_parepare_to_open():
