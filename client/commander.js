@@ -63,7 +63,7 @@ async function getCommandResult(input, client) {
     try {
         return await new Promise(resolve => {
             disposables.push(input.onDidChangeValue(errable(value => {
-                getCompletions(input, client, value)
+                updateCompletions(input, client, value)
             })))
             disposables.push(input.onDidAccept(errable(() => {
                 resolve(doCommand(input, client))
@@ -77,7 +77,7 @@ async function getCommandResult(input, client) {
     }
 }
 
-async function getCompletions(input, client, value) {
+function updateCompletions(input, client, value) {
     const completions = input._command_completions
     if (completions && value.length >= completions.offset) {
         const offset = completions.offset
@@ -85,14 +85,22 @@ async function getCompletions(input, client, value) {
         const matching = completions.items.filter(x => _.startsWith(x.label, match))
         if (matching.length) {
             input.items = matching
-            return
+            if (_.some(matching, x => x.label.length > value.length)) {
+                return
+            }
         }
     }
+    debouncedGetCompletions(input, client, value);
+}
+
+async function getCompletions(input, client, value) {
     input.busy = true
     const result = await exec(client, "get_completions", [value])
     setCompletions(input, result)
     input.busy = false
 }
+
+const debouncedGetCompletions = _.debounce(getCompletions, 200)
 
 function setCompletions(input, completions) {
     const items = completions.items.map(label => ({label, alwaysShow: true}))

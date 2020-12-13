@@ -1,3 +1,4 @@
+const _ = require('lodash')
 const vscode = require('vscode')
 const errable = require("./errors").errable
 
@@ -12,7 +13,20 @@ function resolve(params) {
 }
 
 function get(obj, params) {
-    const value = obj[params.name]
+    let value = obj[params.name]
+    if (params.args) {
+        if (!value) {
+            console.error("not callable", params, value)
+            return undefined
+        }
+        const args = _.map(params.args, arg =>
+            _.isObject(arg) && arg.__resolve__ ? resolve(arg) : arg
+        )
+        value = value.apply(obj, args)
+    }
+    if (value === undefined) {
+        return value
+    }
     const next = params.next
     return !next ? value : get(value, next)
 }

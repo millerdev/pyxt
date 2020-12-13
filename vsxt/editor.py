@@ -14,8 +14,13 @@ class Editor:
 
     @cached_property
     async def project_path(self):
-        folders = await self.proxy.workspace.workspaceFolders
-        return folders[0] if folders else expanduser("~")
+        file_uri = self.proxy.window.activeTextEditor.document.uri
+        folder = self.proxy.workspace.getWorkspaceFolder(file_uri)
+        path = await folder.uri.fsPath
+        if path:
+            return path
+        path = await self.proxy.workspace.workspaceFolders[0].uri.fsPath
+        return path if path else expanduser("~")
 
     @cached_property
     async def dirname(self):
