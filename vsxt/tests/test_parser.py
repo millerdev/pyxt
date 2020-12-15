@@ -648,7 +648,7 @@ def test_File():
             sigcheck=False
         ):
             yield test, "", ["file"], 0
-            yield test, "../", ["dir", "file.doc", "file.txt", "space dir"], 3
+            yield test, "../", ["dir/", "file.doc", "file.txt", "space dir/"], 3
             # yield test, "..//", ["dir", "file.doc", "file.txt", "space dir"], 4
             yield test, "../f", ["file.doc", "file.txt"], 3
             yield test, "../dir/", ["a.txt", "B file", "b.txt"], 7
@@ -700,20 +700,20 @@ def test_File():
         yield test, "b", ["B file", "b.txt"]
         yield test, "B", ["B file"]
         yield test, "..", ["../"]
-        yield test, "../", ["dir", "file.doc", "file.txt", "space dir"]
+        yield test, "../", ["dir/", "file.doc", "file.txt", "space dir/"]
         yield test, "../.", [".hidden"]
         yield test, "...", [".../"]
         yield test, ".../", ["a.txt", "B file", "b.txt"]
         yield test, "../dir", ["dir/"]
         yield test, "../dir/", ["a.txt", "B file", "b.txt"]
-        yield test, "../sp", ["space dir"]
-        yield test, "../space\\ d", ["space dir"]
+        yield test, "../sp", ["space dir/"]
+        yield test, "../space\\ d", ["space dir/"]
         yield test, "../space\\ dir", ["space dir/"]
         yield test, "../space\\ dir/", ["file"]
         yield test, "val", []
-        yield test, "/", ["dir", "file.doc", "file.txt", "space dir"]
+        yield test, "/", ["dir/", "file.doc", "file.txt", "space dir/"]
         yield test, "~", ["~/"]
-        yield test, "~/", ["dir", "file.doc", "file.txt", "space dir"]
+        yield test, "~/", ["dir/", "file.doc", "file.txt", "space dir/"]
 
         # delimiter completion
         @async_test
@@ -755,7 +755,7 @@ def test_File():
         yield test, "", [], 0
         yield test, "a", [], 0
         yield test, "..", ["../"], 0
-        yield test, "../", ["dir", "space dir"], 3
+        yield test, "../", ["dir/", "space dir/"], 3
 
         field = File('dir', default="~/dir")
         check = make_completions_checker(field)

@@ -745,7 +745,7 @@ class File(String):
     """File path field
 
     :param name: Argument name.
-    :param directory: If true, auto-complete directories only. Default false.
+    :param directory: If true, browse directories only. Default false.
     """
 
     def __init__(self, name, directory=False, default=None, _editor=None):
@@ -843,14 +843,15 @@ class File(String):
                 token_dir = token
             start = sum(2 if c == ' ' else 1 for c in token_dir)
 
-        def delim(word, dir_delim=sep):
+        def delim(word):
             def escape(word):
                 return word.replace(' ', '\\ ')
 
             def get_delimiter():
-                return dir_delim if isdir(join(root, word)) else " "
+                return "" if dirsep else " "
 
-            return CompleteWord(word, get_delimiter, start, escape)
+            dirsep = sep if self.directory or isdir(join(root, word)) else ""
+            return CompleteWord(word + dirsep, get_delimiter, start, escape)
 
         if not name:
             def match(n):
@@ -873,7 +874,7 @@ class File(String):
         if isdir(path) and (name == ".." or name in names):
             if name in names:
                 names.remove(name)
-            names.append(delim(name + sep, ""))
+            names.append(delim(name))
         return CompletionsList(names, title=user_path(root))
 
     async def get_placeholder(self, arg):
