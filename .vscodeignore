@@ -1,0 +1,9 @@
+.*
+.vscode
+.vscode-dev
+client/**/test
+nosetests.xml
+notes.md
+requirements.in
+test-requirements.txt
+vsxt/**/tests

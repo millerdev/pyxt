@@ -2,7 +2,7 @@
     "python.linting.flake8Enabled": true,
     "python.linting.enabled": true,
     "python.testing.nosetestArgs": [
-        "vsxt"
+        "."
     ],
     "python.testing.pytestEnabled": false,
     "python.testing.unittestEnabled": false,
