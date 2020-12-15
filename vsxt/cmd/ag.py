@@ -1,0 +1,201 @@
+import html
+import logging
+import os
+import re
+import shlex
+from urllib.parse import quote
+
+from ..command import command, Incomplete
+from ..parser import CommandParser, File, Regex, RegexPattern, String, VarArgs
+from ..markdown import html_string, markdown
+
+log = logging.getLogger(__name__)
+AG_LINE = re.compile(r"""
+    (?P<num>\d*)                    # line number
+    (?P<ranges>;(?:\d+\ \d+,?)*)?   # matched ranges
+    (?P<delim>:)                    # delimiter
+    (?P<text>.*)                    # line content
+""", re.VERBOSE)
+DEFAULT_OPTIONS = [
+    "--ackmate",
+    "--nopager",
+    "--nocolor",
+]
+AG_NOT_INSTALLED = """
+[ag](https://github.com/ggreer/the_silver_searcher#the-silver-searcher)
+does not appear to be installed
+
+It may be necessary to set `command.ag.path` in [Preferences](xt://preferences).
+
+Current setting: `{}`
+"""
+
+
+async def get_selection_regex(editor=None):
+    text = (await editor.selection) if editor else ""
+    return RegexPattern(re.escape(text), default_flags=0) if text else None
+
+
+async def project_dirname(editor=None):
+    if editor is None:
+        return None
+    project_path = await editor.project_path
+    return (await editor.dirname) if project_path == "~" else project_path
+
+
+@command(
+    "ag ack",
+    CommandParser(
+        Regex("pattern", default=get_selection_regex),
+        File("path", default=project_dirname),
+        VarArgs("options", String("options")),
+        # TODO SubParser with dynamic dispatch based on pattern matching
+        # (if it starts with a "-" it's an option, otherwise a file path)
+    ),
+    is_enabled=has_editor,
+    #config={
+    #    "path": config.String("ag"),
+    #    "options": config.String(""),
+    #},
+)
+def ag(editor, args):
+    """Search for files matching pattern"""
+    if _should_exit_early(editor, args, "ag"):
+        return
+    pattern = args.pattern
+    if "-i" in args.options or "--ignore-case" in args.options:
+        pattern = RegexPattern(pattern, pattern.flags | re.IGNORECASE)
+    elif pattern.flags & re.IGNORECASE:
+        args.options.append("--ignore-case")
+    ag_path = editor.app.config.for_command("ag")["path"]
+    options = editor.app.config.for_command("ag")["options"]
+    options = DEFAULT_OPTIONS + shlex.split(options)
+    cwd = args.path or editor.dirname()
+    if cwd is None:
+        raise Incomplete("please specify a search path")
+    view = editor.get_output_view()
+    line_processor = make_line_processor(view, pattern, ag_path, cwd)
+    command = [ag_path, pattern] + [o for o in args.options if o] + options
+    view.process = threaded_exec_shell(command, cwd=cwd, **line_processor)
+
+
+@command(
+    name="def",
+    arg_parser=CommandParser(
+        Regex("pattern", default=get_selection_regex),
+        File("path", default=project_dirname),
+        VarArgs("options", String("options")),
+        # TODO SubParser with dynamic dispatch based on pattern matching
+        # (if it starts with a "-" it's an option, otherwise a file path)
+    ),
+    is_enabled=has_editor,
+)
+def find_definition(editor, args):
+    """Find definition
+
+    Search in files for definitions matching the specified pattern
+    based on current file's definition syntax rules.
+    See `editxt.syntax.SyntaxDefinition.definition_rules`
+    """
+    if _should_exit_early(editor, args, "def"):
+        return
+    def_pattern = args.pattern
+    rules = editor.syntaxdef.definition_rules
+    delims = getattr(rules, "delimiters", None)
+    if delims is None:
+        raise CommandError(
+            "{} language definition has no definition delimiters"
+            .format(editor.syntaxdef.name)
+        )
+    args.pattern = RegexPattern(
+        "|".join(start + def_pattern + end for start, end in delims),
+        def_pattern.flags,
+    )
+    args.options.extend(getattr(rules, "ag_filetype_options", []))
+    ag(editor, args)
+
+
+def _should_exit_early(editor, args, command_name):
+    if args is None:
+        from editxt.commands import show_command_bar
+        show_command_bar(editor, command_name + " ")
+        return True
+    elif args.pattern is None:
+        raise CommandError("please specify a pattern to match")
+    return False
+
+
+def make_line_processor(view, pattern, ag_path, cwd):
+
+    def ag_lines(lines):
+        filepath = None
+        absfilepath = None
+        br = "<br />"
+        for line in lines:
+            line = line.rstrip("\n")
+            line = line.rstrip("\0") # bug in ag adds null char to some lines?
+            if line.startswith(":"):
+                filepath = line[1:]
+                absfilepath = os.path.join(cwd, filepath)
+                yield open_link(filepath, absfilepath) + br
+            else:
+                match = AG_LINE.match(line)
+                if match:
+                    yield link_matches(absfilepath, **match.groupdict('')) + br
+                else:
+                    yield html.escape(line) + br
+
+    def got_output(text, returncode):
+        if text is not None:
+            view.append_message(html_string(text, pre=True))
+        if returncode:
+            if is_ag_installed(ag_path):
+                if returncode == 1:
+                    message = "no match for pattern: {}".format(pattern)
+                else:
+                    message = "exit code: {}".format(returncode)
+            else:
+                message = markdown(AG_NOT_INSTALLED.format(ag_path))
+            view.append_message(message, msg_type=const.ERROR)
+        if returncode is not None:
+            view.process_completed()
+
+    return {"iter_output": ag_lines, "got_output": got_output}
+
+
+def open_link(text, path, goto=None):
+    """Create HTML "open" link
+
+    :param text: The link text.
+    :param path: The path of the file to open.
+    :param goto: Optional goto parameter: line number or
+    `"{line_num}.{select_start}.{select_len}"`
+    """
+    url = "xt://open/" + quote(path)
+    if goto is not None:
+        url += "?goto={}".format(goto)
+    return "<a href='{}'>{}</a>".format(url, html.escape(text))
+
+
+def link_matches(filepath, num, ranges, delim, text):
+    def iter_parts(ranges):
+        end = 0
+        if ranges:
+            for rng in ranges.split(","):
+                start, length = [int(n) for n in rng.split()]
+                if start > end:
+                    yield html.escape(text[end:start])
+                end = start + length
+                goto = "{}.{}.{}".format(num, start, length)
+                yield open_link(text[start:end], filepath, goto)
+        yield html.escape(text[end:])
+    prefix = open_link(num, filepath, num) + delim
+    line_text = "".join(iter_parts(ranges.lstrip(";")))
+    return open_link(num, filepath, num) + delim + line_text
+
+
+def is_ag_installed(ag_path="ag", recheck=False, result={}):
+    if result.get(ag_path) is not None and not recheck:
+        return result.get(ag_path)
+    result[ag_path] = exec_shell([ag_path, "--version"]).returncode == 0
+    return result[ag_path]
