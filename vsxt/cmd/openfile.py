@@ -3,18 +3,16 @@ from os.path import dirname, exists, isabs, isdir
 from pathlib import Path
 
 from ..command import command, Incomplete
-from ..parser import CommandParser, File, VarArgs
+from ..parser import CommandParser, File
 from ..results import result
 
 
-@command("open", CommandParser(VarArgs("paths", File("path"))))
+@command("open", CommandParser(File("path")))
 async def open_file(editor, args):
-    paths = [p for p in args.paths[:1] if p]
-    if not paths or isdir(paths[-1]):
+    if not args.path or isdir(args.path):
         raise Incomplete
-    for path in paths:
-        prepare_to_open(path)
-    return result(value=paths[0])
+    prepare_to_open(args.path)
+    return result(value=args.path)
 
 
 def prepare_to_open(path):
