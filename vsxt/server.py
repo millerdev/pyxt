@@ -20,9 +20,9 @@ def xt_command(func):
 
 @xt_command
 async def do_command(server: XTServer, params):
-    input_value, = params
+    input_value, = value, = params
     if not input_value:
-        return result(sorted(cmd.REGISTRY), offset=0)
+        return result(sorted(cmd.REGISTRY), "", offset=0)
     command, input_value, offset = parse_command(input_value)
     if not command:
         return error(f"Unknown command: {input_value!r}")
@@ -31,10 +31,10 @@ async def do_command(server: XTServer, params):
     args = await parser.parse(input_value)
     try:
         return await command(editor, args)
-    except cmd.Incomplete:
-        pass
-    items = await parser.get_completions(input_value)
-    return result(items, offset=get_offset(items, offset))
+    except cmd.Incomplete as err:
+        value += err.addchars
+        input_value += err.addchars
+    return await _get_completions(value, parser, input_value, offset)
 
 
 @xt_command
@@ -46,11 +46,10 @@ async def get_completions(server: XTServer, params):
         offset = None
         command = None
     if not command:
-        return result(sorted(cmd.REGISTRY), offset=0)
+        return result(sorted(cmd.REGISTRY), input_value, offset=0)
     editor = Editor(server)
     parser = command.parser.with_context(editor)
-    items = await parser.get_completions(input_value)
-    return result(items, offset=get_offset(items, offset))
+    return await _get_completions(params[0], parser, input_value, offset)
 
 
 def parse_command(input_value):
@@ -66,6 +65,12 @@ def parse_command(input_value):
     if name in COMMANDS:
         return COMMANDS[name], input_value, len(name) + 1
     return None, name, 0
+
+
+async def _get_completions(value, parser, input_value, offset):
+    items = await parser.get_completions(input_value)
+    offset = get_offset(items, offset)
+    return result(items, value.ljust(offset), offset=offset)
 
 
 def get_offset(items, offset):

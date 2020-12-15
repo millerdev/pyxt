@@ -10,7 +10,7 @@ from ..results import result
 @command("open", CommandParser(VarArgs("paths", File("path"))))
 async def open_file(editor, args):
     paths = [p for p in args.paths[:1] if p]
-    if not paths:
+    if not paths or isdir(paths[-1]):
         raise Incomplete
     for path in paths:
         prepare_to_open(path)

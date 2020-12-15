@@ -63,4 +63,6 @@ def command(
 
 
 class Incomplete(Exception):
-    pass
+    def __init__(self, *args, addchars=""):
+        super().__init__(*args)
+        self.addchars = addchars

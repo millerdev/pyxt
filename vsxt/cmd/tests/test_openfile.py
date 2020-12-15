@@ -23,7 +23,9 @@ def test_open_file():
         yield test, "open file.txt", "{base}/file.txt"
         yield test, "open dir/file.txt", "{base}/dir/file.txt"
         yield test, "open ../file.txt", "{base}/../file.txt"
-        yield test, "open ", result(["dir", "file.txt"], offset=5)
+        yield test, "open ", result(["dir", "file.txt"], value="open ", offset=5)
+        yield test, "open dir", result(["dir/"], value="open dir", offset=5)
+        yield test, "open dir/", result(["file.txt"], value="open dir/", offset=9)
 
 
 def test_parepare_to_open():

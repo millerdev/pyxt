@@ -18,7 +18,7 @@ def test_do_command():
             res = await mod.do_command(server, [input_value])
             eq(res, expected_result)
 
-    yield test, "", result(["cmd"], offset=0)
+    yield test, "", result(["cmd"], "", offset=0)
     yield test, "cm", error("Unknown command: 'cm'")
     yield test, "cmd ", result(value="a")
     yield test, "cmd a", result(value="a")
@@ -32,10 +32,10 @@ def test_get_completions():
             res = await mod.get_completions(server, [input_value])
             eq(res, expected_result)
 
-    yield test, "cm", result(["cmd"], offset=0)
-    yield test, "cmd", result(["a", "b"], offset=4)
-    yield test, "cmd ", result(["a", "b"], offset=4)
-    yield test, "cmd a", result(["a"], offset=4)
+    yield test, "cm", result(["cmd"], "cm", offset=0)
+    yield test, "cmd", result(["a", "b"], "cmd ", offset=4)
+    yield test, "cmd ", result(["a", "b"], "cmd ", offset=4)
+    yield test, "cmd a", result(["a"], "cmd a", offset=4)
 
 
 def test_parse_command():
