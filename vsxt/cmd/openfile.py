@@ -11,14 +11,14 @@ from ..results import result
 async def open_file(editor, args):
     if not args.path or isdir(args.path):
         raise Incomplete
-    prepare_to_open(args.path)
+    if not exists(args.path):
+        create_new_file(args.path)
     return result(value=args.path)
 
 
-def prepare_to_open(path):
-    if not exists(path):
-        if not isabs(path):
-            raise ValueError(f"relative path: {path}")
-        if not isdir(dirname(path)):
-            os.makedirs(dirname(path))
-        Path(path).touch()
+def create_new_file(path):
+    if not isabs(path):
+        raise ValueError(f"relative path: {path}")
+    if not isdir(dirname(path)):
+        os.makedirs(dirname(path))
+    Path(path).touch()

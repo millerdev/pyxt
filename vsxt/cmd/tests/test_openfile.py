@@ -28,7 +28,7 @@ def test_open_file():
         yield test, "open dir/", result(["file.txt"], value="open dir/", offset=9)
 
 
-def test_parepare_to_open():
+def test_create_new_file():
     def test(relpath):
         with tempdir() as base:
             filepath = Path(base) / "file.txt"
@@ -36,7 +36,7 @@ def test_parepare_to_open():
             assert filepath.exists(), filepath
 
             path = join(base, relpath)
-            mod.prepare_to_open(path)
+            mod.create_new_file(path)
             assert exists(path)
 
     yield test, "file.txt"
