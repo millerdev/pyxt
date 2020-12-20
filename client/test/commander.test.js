@@ -68,6 +68,21 @@ suite('Commander', () => {
         assert.strictEqual(await result, "file")
     })
 
+    test("should accept completion with filepath", async () => {
+        client = util.mockClient(
+            ["get_completions", ["open "], {items: [
+                "dir/",
+                {label: "file", filepath: "/file"},
+            ], offset: 5}],
+        )
+        let input
+        const result = commander.commandInput(client, "open ")
+        input = await env.inputItemsChanged()
+        input.selectedItems = input.items.slice(1, 2)
+        env.accept(input)
+        assert.strictEqual(await result, "/file")
+    })
+
     test("should return file path", async () => {
         client = util.mockClient(
             ["get_completions", ["open "], {items: ["dir/", "file"], offset: 5}],
@@ -172,6 +187,22 @@ suite('Commander', () => {
         input = await env.inputItemsChanged()
         await env.changeValue(input, "ox")
         env.assertItems(input, [])
+
+        input.hide()
+        assert(!await result)
+    })
+
+    test("should support detail in item completions", async () => {
+        client = util.mockClient(
+            ["get_completions", ["cmd "], {items: [
+                {label: "text 1", detail: "detail 1"},
+                {label: "text 2", detail: "detail 2"},
+            ], offset: 5}],
+        )
+        let input
+        const result = commander.commandInput(client, "cmd ")
+        input = await env.inputItemsChanged()
+        env.assertItems(input, ["text 1/detail 1", "text 2/detail 2"])
 
         input.hide()
         assert(!await result)

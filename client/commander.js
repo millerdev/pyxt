@@ -103,15 +103,28 @@ async function getCompletions(input, client, value) {
 const debouncedGetCompletions = _.debounce(getCompletions, 200)
 
 function setCompletions(input, completions) {
-    const items = completions.items.map(label => ({label, alwaysShow: true}))
+    const items = completions.items.map(toQuickPickItem)
     input.items = items
     input._command_completions = {...completions, items}
+}
+
+function toQuickPickItem(item) {
+    if (_.isString(item)) {
+        item = {label: item}
+    } else if (!_.isObject(item)) {
+        item = {label: String(item)}
+    }
+    item.alwaysShow = true
+    return item
 }
 
 function doCommand(input, client) {
     const item = input.selectedItems[0]
     let command = input.value || ""
     if (item) {
+        if (item.filepath) {
+            return {type: "success", value: item.filepath}
+        }
         const offset = input._command_completions.offset
         command = command.slice(0, offset) + item.label
     }

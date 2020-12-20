@@ -44,7 +44,7 @@ function setup() {
         }),
 
         assertItems: (input, expected) => {
-            items = input.items.map(item => item.label)
+            items = input.items.map(itemText)
             assert.strictEqual(JSON.stringify(items), JSON.stringify(expected))
         },
 
@@ -56,6 +56,14 @@ function setup() {
 function teardown(env, client) {
     client && client.done()
     env.sandbox.restore()
+}
+
+function itemText(item) {
+    let text = _.isObject(item) ? item.label : JSON.stringify(item)
+    if (item.detail) {
+        text += "/" + item.detail
+    }
+    return text
 }
 
 /**
