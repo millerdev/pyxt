@@ -333,13 +333,29 @@ class Arg(object):
         return await self.field.get_placeholder(self)
 
     async def get_completions(self):
-        words = await self.field.get_completions(self)
-        index = self.start
-        for i, word in enumerate(words):
+        def add_start(word, index):
             if getattr(word, 'start', None) is not None:
                 word.start += index
             else:
-                words[i] = CompleteWord(word, start=index)
+                word = CompleteWord(word, start=index)
+            offsets.add(word.start)
+            return word
+
+        words = await self.field.get_completions(self)
+        index = self.start
+        if isinstance(words, CompletionsList):
+            words.offset = index
+        else:
+            words = CompletionsList(words, offset=index)
+        offsets = set()
+        for i, word in enumerate(words):
+            if isinstance(word, dict):
+                word["label"] = add_start(word["label"], index)
+            else:
+                words[i] = add_start(word, index)
+        if words:
+            assert len(offsets) == 1, words
+            words.offset = offsets.pop()
         return words
 
 
@@ -762,7 +778,7 @@ class File(String):
         default = self.kwargs["default"]
         if callable(default):
             default = await coro(default(editor))
-        return File(
+        return type(self)(
             self.name,
             directory=self.directory,
             default=default,
@@ -1536,11 +1552,12 @@ class CompleteWord(str):
 
 class CompletionsList(list):
 
-    __slots__ = ["title"]
+    __slots__ = ["title", "offset"]
 
-    def __init__(self, *args, title=None):
+    def __init__(self, *args, title=None, offset=None):
         super().__init__(*args)
         self.title = title
+        self.offset = offset
 
 
 class Error(Exception):

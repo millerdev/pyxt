@@ -14,18 +14,25 @@ def test_open_file():
         @async_test
         async def test(cmdstr, expect):
             result = await do_command(cmdstr, editor)
+            base = await editor.dirname
             if isinstance(expect, str):
                 eq(result["type"], "success", result)
-                eq(result["value"], expect.format(base=await editor.dirname))
+                eq(normalize_path(result["value"], base), expect)
             else:
+                normalize_paths(result["items"], base)
                 eq(result, expect)
 
-        yield test, "open file.txt", "{base}/file.txt"
-        yield test, "open dir/file.txt", "{base}/dir/file.txt"
-        yield test, "open ../file.txt", "{base}/../file.txt"
-        yield test, "open ", result(["dir/", "file.txt"], value="open ", offset=5)
+        yield test, "open file.txt", "/file.txt"
+        yield test, "open dir/file.txt", "/dir/file.txt"
+        yield test, "open ../file.txt", "/../file.txt"
+        yield test, "open ", result([
+            "dir/",
+            {"label": "file.txt", "filepath": "/file.txt"},
+        ], value="open ", offset=5)
         yield test, "open dir", result(["dir/"], value="open dir", offset=5)
-        yield test, "open dir/", result(["file.txt"], value="open dir/", offset=9)
+        yield test, "open dir/", result([
+            {"label": "file.txt", "filepath": "/dir/file.txt"},
+        ], value="open dir/", offset=9)
 
 
 def test_create_new_file():
@@ -56,3 +63,14 @@ def fake_editor(folders=()):
             (base / folder).mkdir()
             (base / folder / f"file{i}.txt").touch()
         yield FakeEditor(str(base / "file.txt"), str(base))
+
+
+def normalize_paths(items, base):
+    for item in items:
+        if isinstance(item, dict) and "filepath" in item:
+            item["filepath"] = normalize_path(item["filepath"], base)
+
+
+def normalize_path(path, base):
+    assert path.startswith(base)
+    return path[len(base):]

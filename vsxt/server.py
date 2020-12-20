@@ -70,9 +70,4 @@ def parse_command(input_value):
 
 async def _get_completions(value, parser, input_value, offset):
     items = await parser.get_completions(input_value)
-    offset = get_offset(items, offset)
-    return result(items, value.ljust(offset), offset=offset)
-
-
-def get_offset(items, offset):
-    return offset + (items[0].start if items else 0)
+    return result(items, value.ljust(offset), offset=offset + items.offset)
