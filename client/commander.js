@@ -27,6 +27,7 @@ async function commandInput(client, prefix, completions) {
     const input = vscode.window.createQuickPick()
     try {
         input.placeholder = "XT Command"
+        input.ignoreFocusOut = true
         if (completions) {
             setCompletions(input, completions)
         } else {
