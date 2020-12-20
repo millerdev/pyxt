@@ -140,6 +140,8 @@ async function exec(client, command, args) {
 }
 
 async function openFile(path) {
+    let goto
+    [path, goto] = splitGoto(path)
     const document = await vscode.workspace.openTextDocument(path);
     if (!document) {
         throw new Error("Not found: " + path);
@@ -148,10 +150,29 @@ async function openFile(path) {
     if (!editor) {
         throw new Error("Cannot open " + path);
     }
+    if (goto) {
+        const rng = new vscode.Selection(
+            new vscode.Position(goto.line, goto.start),
+            new vscode.Position(goto.line, goto.start + goto.length)
+        )
+        editor.selection = rng
+        editor.revealRange(rng)
+    }
+}
+
+function splitGoto(path) {
+    const re = /(?<path>.*?)(?::(?<line>\d+)(?::(?<start>\d+)(?::(?<length>\d+))?)?)?$/
+    const match = re.exec(path)
+    return [match.groups.path, match.groups.line ? {
+        line: parseInt(match.groups.line),
+        start: parseInt(match.groups.start || 0),
+        length: parseInt(match.groups.length || 0),
+    } : null]
 }
 
 module.exports = {
     subscribe,
     command,
     commandInput,
+    splitGoto,
 }

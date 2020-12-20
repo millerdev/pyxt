@@ -208,3 +208,30 @@ suite('Commander', () => {
         assert(!await result)
     })
 })
+
+
+suite('Commander splitGoto utility', () => {
+    test("should handle path without goto", () => {
+        const path = "file:///path/to/file.ext"
+        const result = commander.splitGoto(path)
+        assert.deepStrictEqual(result, [path, null])
+    })
+
+    test("should handle path with goto line", () => {
+        const path = "file:///path/to/file.ext"
+        const result = commander.splitGoto(path + ":14")
+        assert.deepStrictEqual(result, [path, {line: 14, start: 0, length: 0}])
+    })
+
+    test("should handle path with goto line and position", () => {
+        const path = "file:///path/to/file.ext"
+        const result = commander.splitGoto(path + ":14:9")
+        assert.deepStrictEqual(result, [path, {line: 14, start: 9, length: 0}])
+    })
+
+    test("should handle path with goto line and selection", () => {
+        const path = "file:///path/to/file.ext"
+        const result = commander.splitGoto(path + ":14:9:3")
+        assert.deepStrictEqual(result, [path, {line: 14, start: 9, length: 3}])
+    })
+})
