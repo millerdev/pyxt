@@ -91,25 +91,30 @@ async def do_command(input_value, editor=None):
         return await server.do_command(srv, [input_value])
 
 
+class async_property:
+    def __init__(self, name):
+        self.name = name
+
+    async def __get__(self, owner, type=None):
+        if owner is None:
+            return self
+        return getattr(owner, self.name)
+
+    def __set__(self, owner, value):
+        return setattr(owner, self.name, value)
+
+
 @dataclass
 class FakeEditor:
     _file_path: str = None
     _project_path: str = None
     _selection: str = ""
 
-    @property
-    async def file_path(self):
-        return self._file_path
-
-    @property
-    async def project_path(self):
-        return self._project_path
+    file_path = async_property("_file_path")
+    project_path = async_property("_project_path")
+    selection = async_property("_selection")
 
     @property
     async def dirname(self):
         filepath = await self.file_path
         return dirname(filepath) if filepath else None
-
-    @property
-    async def selection(self):
-        return self._selection

@@ -78,6 +78,7 @@ async def ag(editor, args):
         await process_lines(command, cwd=cwd, **line_processor)
     except CommandError as err:
         return error(str(err))
+    drop_redundant_details(items)
     return result(items)
 
 
@@ -119,10 +120,19 @@ def create_item(abspath, relpath, num, ranges, delim, text):
         start, length = [int(n) for n in rng.split()]
         rng = f":{start}:{length}"
     return {
-        "label": text.strip(),
-        "detail": relpath + f":{num}",
+        "label": f"{num}: {text.strip()}",
+        "detail": relpath,
         "filepath": abspath + f":{int(num) - 1}{rng}",
     }
+
+
+def drop_redundant_details(items):
+    detail = None
+    for item in reversed(items):
+        if item["detail"] == detail:
+            item.pop("detail")
+        else:
+            detail = item["detail"]
 
 
 async def process_lines(command, *, got_output, kill_on_cancel=True, **kw):
