@@ -30,3 +30,9 @@ class Editor:
             if current_dir and isabs(current_dir):
                 return current_dir
         return await self.project_path
+
+    @cached_property
+    async def selection(self):
+        sel = self.proxy.window.activeTextEditor.selection
+        doc = self.proxy.window.activeTextEditor.document
+        return await doc.getText(sel) or ""

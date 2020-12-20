@@ -6,7 +6,7 @@ from os.path import isabs, join
 
 from testil import assert_raises, eq as eq_, replattr, tempdir, Config
 
-from .util import FakeEditor, async_test
+from .util import FakeEditor, async_test, await_coroutine
 from .. import parser as mod
 from ..parser import (Arg, Choice, Int, String, Regex, RegexPattern,
     File, CommandParser, SubArgs, SubParser, VarArgs, CompleteWord, Conditional,
@@ -635,7 +635,7 @@ def test_File():
 
         project_path = join(tmp, "dir")
         editor = FakeEditor(join(tmp, "dir/file.txt"), project_path)
-        field = field.with_context(editor)
+        field = await_coroutine(field.with_context(editor))
 
         test = make_completions_checker(field)
         yield test, ".../", ["a.txt", "B file", "b.txt"], 4
@@ -740,7 +740,7 @@ def test_File():
         field = File('dir', directory=True)
         eq_(str(field), 'dir')
         eq_(repr(field), "File('dir', directory=True)")
-        field = field.with_context(editor)
+        field = await_coroutine(field.with_context(editor))
 
         test = make_consume_checker(field)
         yield test, '', 0, (None, 0)
@@ -1007,7 +1007,7 @@ def test_SubParser():
         "SubArgs('stx', String('args'), abc='pqr'), "
         "SubArgs('hid', String('not'), is_enabled=is_enabled()))")
 
-    field = field.with_context(Config(text_view=object))
+    field = await_coroutine(field.with_context(Config(text_view=object)))
     sub = field.args[1]
     su2 = field.args[2]
 

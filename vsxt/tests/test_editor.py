@@ -33,6 +33,23 @@ def test_project_path():
     }
 
 
+@async_test
+async def test_selection():
+    sel = "FakeProxy.window.activeTextEditor.selection"
+    seltext = f"FakeProxy.window.activeTextEditor.document.getText({sel},)"
+    with setup_editor() as editor:
+        eq(await editor.selection, seltext)
+
+
+@async_test
+async def test_selection_with_null_result():
+    sel = "FakeProxy.window.activeTextEditor.selection"
+    seltext = f"FakeProxy.window.activeTextEditor.document.getText({sel},)"
+    calls = {seltext: None}
+    with setup_editor(calls) as editor:
+        eq(await editor.selection, "")
+
+
 @contextmanager
 def setup_editor(srv=None):
     with replattr(

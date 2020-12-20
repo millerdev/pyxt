@@ -7,6 +7,7 @@ from .types import XTServer
 
 # register commands by importing them
 from .cmd import (  # noqa: F401
+    ag,
     openfile,
 )
 
@@ -27,7 +28,7 @@ async def do_command(server: XTServer, params):
     if not command:
         return error(f"Unknown command: {input_value!r}")
     editor = Editor(server)
-    parser = command.parser.with_context(editor)
+    parser = await command.parser.with_context(editor)
     args = await parser.parse(input_value)
     try:
         return await command(editor, args)
@@ -48,7 +49,7 @@ async def get_completions(server: XTServer, params):
     if not command:
         return result(sorted(cmd.REGISTRY), input_value, offset=0)
     editor = Editor(server)
-    parser = command.parser.with_context(editor)
+    parser = await command.parser.with_context(editor)
     return await _get_completions(params[0], parser, input_value, offset)
 
 

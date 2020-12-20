@@ -41,6 +41,7 @@ Command parser specification:
         ' /abc/'    : bool = None, regex = 'abc', num = None
         '  1'  : bool = False, regex = None, num = 1
 """
+import asyncio
 import os
 import re
 from inspect import signature, Parameter
@@ -63,12 +64,12 @@ class CommandParser(object):
     def default_options(self):
         return Options(**{field.name: field.default for field in self.argspec})
 
-    def with_context(self, *args, **kw):
+    async def with_context(self, *args, **kw):
         """Get a new command parser with the given context
 
         See ``Field.with_context`` for argument specification.
         """
-        argspec = [arg.with_context(*args, **kw) for arg in self.argspec]
+        argspec = [await arg.with_context(*args, **kw) for arg in self.argspec]
         return CommandParser(*argspec)
 
     async def match(self, text, index=0):
@@ -352,6 +353,10 @@ def identifier(name):
     return ident
 
 
+async def coro(value):
+    return await value if asyncio.iscoroutine(value) else value
+
+
 class Field(object):
     """Base command argument type used to parse argument values
 
@@ -369,8 +374,6 @@ class Field(object):
         if not hasattr(self, 'placeholder'):
             self.placeholder = name
         self.name = identifier(name)
-        if callable(default):
-            default = default()
         self.default = default
 
     def __eq__(self, other):
@@ -397,7 +400,7 @@ class Field(object):
         )
         return '{}({})'.format(type(self).__name__, ', '.join(args))
 
-    def with_context(self, editor, **kwargs):
+    async def with_context(self, editor, **kwargs):
         """Return a Field instance with editor context
 
         The returned field object may be the same instance as the original
@@ -407,7 +410,7 @@ class Field(object):
         """
         if callable(self.kwargs.get("default")):
             kw = dict(self.kwargs)
-            kw["default"] = kw["default"](editor)
+            kw["default"] = await coro(kw["default"](editor))
             kw.update(kwargs)
             return type(self)(*self.args, **kw)
         return self
@@ -755,10 +758,10 @@ class File(String):
         self.editor = _editor
         super().__init__(name, default=default)
 
-    def with_context(self, editor):
+    async def with_context(self, editor):
         default = self.kwargs["default"]
         if callable(default):
-            default = default(editor)
+            default = await coro(default(editor))
         return File(
             self.name,
             directory=self.directory,
@@ -909,8 +912,8 @@ class DynamicList(String):
         self.editor = _editor
         super().__init__(name, default=default)
 
-    def with_context(self, editor):
-        field = super().with_context(editor, _editor=editor)
+    async def with_context(self, editor):
+        field = await super().with_context(editor, _editor=editor)
         if not hasattr(self, "editor") or field.editor is not None:
             return field
         return type(self)(*self.args, _editor=editor, **self.kwargs)
@@ -1220,8 +1223,8 @@ class VarArgs(Field):
             return "{} ...".format(self.field.name)
         return self.placeholder
 
-    def with_context(self, *args, **kw):
-        field = self.field.with_context(*args, **kw)
+    async def with_context(self, *args, **kw):
+        field = await self.field.with_context(*args, **kw)
         return VarArgs(self.name, field, **self.kwargs)
 
     async def consume(self, text, index):
@@ -1298,8 +1301,8 @@ class SubParser(Field):
         super(SubParser, self).__init__(name)
         self.subargs = {p.name: p for p in subargs}
 
-    def with_context(self, *args, **kw):
-        subs = [a.with_context(*args, **kw)
+    async def with_context(self, *args, **kw):
+        subs = [await a.with_context(*args, **kw)
                 for a in self.args[1:]
                 if a.is_enabled(*args, **kw)]
         return SubParser(self.name, *subs)
@@ -1397,12 +1400,12 @@ class SubArgs(object):
             return self._is_enabled(editor)
         return editor is not None and editor.text_view is not None
 
-    def with_context(self, *args, **kw):
+    async def with_context(self, *args, **kw):
         sub = super(SubArgs, SubArgs).__new__(SubArgs)
         sub.name = self.name
         sub.data = self.data
         sub._is_enabled = self._is_enabled
-        sub.parser = self.parser.with_context(*args, **kw)
+        sub.parser = await self.parser.with_context(*args, **kw)
         return sub
 
     async def parse(self, text, index):
@@ -1442,8 +1445,8 @@ class Conditional(Field):
         self.field = field
         self.editor = editor
 
-    def with_context(self, editor):
-        field = self.field.with_context(editor)
+    async def with_context(self, editor):
+        field = await self.field.with_context(editor)
         return type(self)(self.is_enabled, field, editor, default=self.default)
 
     async def consume(self, text, index):
