@@ -4,10 +4,10 @@ from contextlib import contextmanager
 from os.path import isabs, join
 
 from nose.plugins.skip import SkipTest
-from testil import tempdir
+from testil import eq, tempdir
 
 from .. import ag as mod
-from ...tests.util import async_test, do_command, FakeEditor, gentest
+from ...tests.util import async_test, do_command, get_completions, FakeEditor, gentest
 
 
 def test_ag():
@@ -73,6 +73,20 @@ def test_ag():
         "/dir/a.txt:0:12:3          a.txt           1: name: dir/a.txt",
         "/dir/b.txt:0:12:3          b.txt           1: name: dir/b.txt",
     ], project_path=None)
+
+
+def test_ag_completions():
+    @gentest
+    @async_test
+    async def test(cmd, description):
+        editor = FakeEditor("/dir/sub/file", "/dir")
+        editor.selection = "b "
+        result = await get_completions(cmd, editor)
+        eq(result["items"], [{"label": "", "description": description}])
+        eq(result["offset"], len(cmd), cmd)
+
+    yield test("ag ", "ag /b\\ / /dir options ...")
+    yield test("ag x dir/", "ag x dir/ options ...")
 
 
 def assert_same_items(lines1, lines2):

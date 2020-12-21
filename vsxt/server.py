@@ -70,4 +70,10 @@ def parse_command(input_value):
 
 async def _get_completions(value, parser, input_value, offset):
     items = await parser.get_completions(input_value)
+    if not items:
+        placeholder = await parser.get_placeholder(input_value)
+        if placeholder:
+            command = value.ljust(offset) + placeholder
+            items.append({"label": "", "description": command})
+            items.offset = len(input_value)
     return result(items, value.ljust(offset), offset=offset + items.offset)

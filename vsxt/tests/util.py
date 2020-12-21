@@ -91,6 +91,14 @@ async def do_command(input_value, editor=None):
         return await server.do_command(srv, [input_value])
 
 
+async def get_completions(input_value, editor=None):
+    if editor is None:
+        editor = FakeEditor()
+    srv = object()
+    with replattr(server, "Editor", lambda srv: editor):
+        return await server.get_completions(srv, [input_value])
+
+
 class async_property:
     def __init__(self, name):
         self.name = name
