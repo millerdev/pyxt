@@ -59,9 +59,11 @@ def test_ag():
             "/dir/../dir/B file:0:6:5   dir/B file      1: name: dir/B file",
             "/dir/../dir/b.txt:0:6:5    dir/b.txt       1: name: dir/b.txt",
         ])
+
         yield test("ag  ..", [
             "/dir/../dir/B file:0:6:6   dir/B file      1: name: dir/B file",
         ], selection="dir/B ", opts={"value": "dir/B ", "filter_results": True})
+
         yield test("ag txt", [
             "/dir/a.txt:0:12:3          dir/a.txt       1: name: dir/a.txt",
             "/dir/b.txt:0:12:3          dir/b.txt       1: name: dir/b.txt",
@@ -85,9 +87,16 @@ def test_ag():
             "/dir/a.txt:0:12:3          a.txt           1: name: dir/a.txt",
             "/dir/b.txt:0:12:3          b.txt           1: name: dir/b.txt",
         ], project_path=None)
+
         yield test("ag xyz", [
             "                                            no match"
         ], opts={"value": "ag xyz"})
+        yield test("ag ", [
+            "                                            pattern is required"
+        ], opts={"value": "ag "})
+        yield test("ag xxxx", [
+            "                                            path is required"
+        ], file_path=None, project_path=None, opts={"value": "ag xxxx"})
 
 
 def test_ag_completions():

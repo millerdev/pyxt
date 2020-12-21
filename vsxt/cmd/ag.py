@@ -5,7 +5,7 @@ import re
 import shlex
 import subprocess
 
-from ..command import command, Incomplete, get_context
+from ..command import command, get_context
 from ..parser import CommandParser, File, Regex, RegexPattern, String, VarArgs
 from ..results import error, result
 
@@ -57,7 +57,7 @@ async def project_dirname(editor=None):
 async def ag(editor, args):
     """Search for files matching pattern"""
     if args.pattern is None:
-        raise Incomplete
+        return input_required("pattern is required", args)
     pattern = args.pattern
     if "-i" in args.options or "--ignore-case" in args.options:
         pattern = RegexPattern(pattern, pattern.flags | re.IGNORECASE)
@@ -67,7 +67,7 @@ async def ag(editor, args):
     options = DEFAULT_OPTIONS
     cwd = args.path or await editor.dirname
     if cwd is None:
-        raise Incomplete("search path is required")
+        return input_required("path is required", args)
     items = []
     line_processor = make_line_processor(items, pattern, ag_path, cwd)
     command = [ag_path, shlex.quote(pattern)] \
@@ -79,9 +79,13 @@ async def ag(editor, args):
     if items:
         drop_redundant_details(items)
     else:
-        cmdstr = get_context(args).input_value
-        return result([{"label": "", "description": "no match"}], cmdstr)
+        return input_required("no match", args)
     return result(items, pattern.replace("\\ ", " "), filter_results=True)
+
+
+def input_required(message, args):
+    cmdstr = get_context(args).input_value
+    return result([{"label": "", "description": message}], cmdstr)
 
 
 def make_line_processor(items, pattern, ag_path, cwd):
