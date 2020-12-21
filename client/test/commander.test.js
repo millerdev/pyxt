@@ -129,6 +129,24 @@ suite('Commander', () => {
         assert(!await result)
     })
 
+    test("should get more completions on complete match", async () => {
+        client = util.mockClient(
+            ["get_completions", ["open "], {items: ["dir/", "file1"], offset: 5}],
+            ["get_completions", ["open dir/"], {items: ["file2"], offset: 9}],
+        )
+        let input
+        const result = commander.commandInput(client, "open ")
+        input = await env.inputItemsChanged()
+        env.assertItems(input, ["dir/", "file1"])
+
+        await env.changeValue(input, "open dir/")
+        input = await env.inputItemsChanged()
+        env.assertItems(input, ["file2"])
+
+        input.hide()
+        assert(!await result)
+    })
+
     test("should get completions for first argument", async () => {
         client = util.mockClient(
             ["get_completions", [""], {items: ["open"], offset: 0}],
