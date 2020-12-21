@@ -1,7 +1,8 @@
 const assert = require('assert')
 const {afterEach, beforeEach, suite, test} = require('mocha')
+const proxyquire = require('proxyquire')
 const util = require("./util")
-const commander = require("../commander")
+const commander = proxyquire("../commander", {lodash: util.nodash})
 
 suite('Commander', () => {
     let env, client

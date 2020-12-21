@@ -76,7 +76,7 @@ function mockClient(...responses) {
     responses = responses.reverse()
     return {
         onReady: async () => undefined,
-        sendRequest: (method, params) => {
+        sendRequest: async (method, params) => {
             const command = params.command
             const args = params.arguments
             if (!responses.length) {
@@ -111,8 +111,13 @@ function getPropertyDescriptor(object, property) {
     return descriptor;
 }
 
+const nodash = {
+    debounce: func => func,  // debounce that does not wait
+}
+
 module.exports = {
     mockClient,
+    nodash,
     setup,
     teardown,
 }

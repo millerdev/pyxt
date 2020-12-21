@@ -86,7 +86,7 @@ function updateCompletions(input, client, value) {
         const matching = completions.items.filter(x => _.startsWith(x.label, match))
         if (matching.length) {
             input.items = matching
-            if (_.some(matching, x => x.label.length > value.length)) {
+            if (_.some(matching, x => x.label.length > match.length)) {
                 return
             }
         }
