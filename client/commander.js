@@ -43,6 +43,9 @@ async function commandInput(client, prefix, completions) {
             return
         }
         if (result.type === "items") {
+            if (result.filter_results) {
+                return filterResults(result, input.value)
+            }
             return commandInput(client, result.value, result)
         }
         if (result.type === "success") {
@@ -69,10 +72,31 @@ async function getCommandResult(input, client) {
             disposables.push(input.onDidAccept(errable(() => {
                 resolve(doCommand(input, client))
             })))
-            disposables.push(input.onDidHide(errable(() => {
-                resolve()
-            })))
+            disposables.push(input.onDidHide(errable(() => resolve())))
         })
+    } finally {
+        disposables.forEach(d => d.dispose())
+    }
+}
+
+async function filterResults(result, command) {
+    const input = vscode.window.createQuickPick()
+    const disposables = [input]
+    try {
+        input.placeholder = command
+        input.ignoreFocusOut = true
+        input.matchOnDescription = true
+        input.matchOnDetail = true
+        setCompletions(input, result)
+        input.show()
+        const item = await new Promise(resolve => {
+            disposables.push(input.onDidAccept(errable(() => {
+                resolve(input.selectedItems[0])
+            })))
+            disposables.push(input.onDidHide(errable(() => resolve())))
+        })
+        input.hide()
+        return item && item.filepath
     } finally {
         disposables.forEach(d => d.dispose())
     }

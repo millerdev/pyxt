@@ -81,7 +81,7 @@ async def ag(editor, args):
     else:
         cmdstr = get_context(args).input_value
         return result([{"label": "", "description": "no match"}], cmdstr)
-    return result(items)
+    return result(items, pattern.replace("\\ ", " "), filter_results=True)
 
 
 def make_line_processor(items, pattern, ag_path, cwd):

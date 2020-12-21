@@ -1,6 +1,8 @@
 import os
+import re
 from collections import Counter
 from contextlib import contextmanager
+from dataclasses import dataclass
 from os.path import isabs, join
 
 from nose.plugins.skip import SkipTest
@@ -17,7 +19,7 @@ def test_ag():
     with setup_files() as tmp:
         @gentest
         @async_test
-        async def test(command, items, value=None, **editor_props):
+        async def test(command, items, opts=None, **editor_props):
             editor = FakeEditor(join(tmp, "dir/file"), tmp)
             for name, val in editor_props.items():
                 setattr(editor, name, val)
@@ -29,7 +31,14 @@ def test_ag():
                 for x in result["items"]
             ]
             assert_same_items(actual_items, items)
-            eq(result["value"], value)
+            discard = {"items", "type"}
+            actual_opts = {k: v for k, v in result.items() if k not in discard}
+            if opts is None:
+                opts = {
+                    "value": Pattern(command),
+                    "filter_results": True,
+                }
+            eq(actual_opts, opts)
 
         yield test("ag ([bB]|size:\\ 10)", [
             "/dir/B file:0:10:1                         1: name: dir/B file",
@@ -52,7 +61,7 @@ def test_ag():
         ])
         yield test("ag  ..", [
             "/dir/../dir/B file:0:6:6   dir/B file      1: name: dir/B file",
-        ], selection="dir/B ")
+        ], selection="dir/B ", opts={"value": "dir/B ", "filter_results": True})
         yield test("ag txt", [
             "/dir/a.txt:0:12:3          dir/a.txt       1: name: dir/a.txt",
             "/dir/b.txt:0:12:3          dir/b.txt       1: name: dir/b.txt",
@@ -78,7 +87,7 @@ def test_ag():
         ], project_path=None)
         yield test("ag xyz", [
             "                                            no match"
-        ], "ag xyz")
+        ], opts={"value": "ag xyz"})
 
 
 def test_ag_completions():
@@ -136,3 +145,12 @@ def setup_files():
     with tempdir() as tmp:
         do_setup(tmp)
         yield tmp
+
+
+@dataclass
+class Pattern:
+    cmdstr: str
+
+    def __eq__(self, other):
+        pattern = re.compile("ag " + re.escape(other) + "( .*)?$")
+        return pattern.match(self.cmdstr.replace("\\ ", " "))

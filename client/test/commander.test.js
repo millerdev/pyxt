@@ -226,6 +226,47 @@ suite('Commander', () => {
         input.hide()
         assert(!await result)
     })
+
+    test("should filter results and return filepath", async () => {
+        const items = [
+            {label: "1: file 1", detail: "file1", filepath: "/dir/file1"},
+            {label: "1: file 2", detail: "file2", filepath: "/dir/file2"},
+        ]
+        const results = {type: "items", items, offset: 7, filter_results: true}
+        client = util.mockClient(
+            ["get_completions", ["ag file"], {items: [], offset: 3}],
+            ["do_command", ["ag file"], results],
+        )
+        let input
+        const result = commander.commandInput(client, "ag file")
+        input = await env.inputItemsChanged()
+        env.accept(input)
+        input = await env.inputItemsChanged()
+        assert.strictEqual(input.value, "")
+        assert.deepStrictEqual(input.items, items)
+        input.selectedItems = input.items.slice(1, 2)
+        env.accept(input)
+        assert.strictEqual(await result, "/dir/file2")
+    })
+
+    test("should not return filepath on cancel filtered results", async () => {
+        const items = [
+            {label: "1: file 1", detail: "file1", filepath: "/dir/file1"},
+        ]
+        const results = {type: "items", items, offset: 7, filter_results: true}
+        client = util.mockClient(
+            ["get_completions", ["ag file"], {items: [], offset: 3}],
+            ["do_command", ["ag file"], results],
+        )
+        let input
+        const result = commander.commandInput(client, "ag file")
+        input = await env.inputItemsChanged()
+        env.accept(input)
+        input = await env.inputItemsChanged()
+
+        input.hide()
+        assert(!await result)
+    })
 })
 
 
