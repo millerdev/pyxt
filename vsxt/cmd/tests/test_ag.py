@@ -17,17 +17,19 @@ def test_ag():
     with setup_files() as tmp:
         @gentest
         @async_test
-        async def test(command, items, **editor_props):
+        async def test(command, items, value=None, **editor_props):
             editor = FakeEditor(join(tmp, "dir/file"), tmp)
-            for name, value in editor_props.items():
-                setattr(editor, name, value)
+            for name, val in editor_props.items():
+                setattr(editor, name, val)
             result = await do_command(command, editor)
             actual_items = [
-                f"{x['filepath'][len(tmp):]:<26} "
+                f"{x.get('filepath', '')[len(tmp):]:<26} "
                 f"{x.get('detail', ''):<15} {x['label']}"
+                f"{(' ' + x['description']) if 'description' in x else ''}"
                 for x in result["items"]
             ]
             assert_same_items(actual_items, items)
+            eq(result["value"], value)
 
         yield test("ag ([bB]|size:\\ 10)", [
             "/dir/B file:0:10:1                         1: name: dir/B file",
@@ -74,6 +76,9 @@ def test_ag():
             "/dir/a.txt:0:12:3          a.txt           1: name: dir/a.txt",
             "/dir/b.txt:0:12:3          b.txt           1: name: dir/b.txt",
         ], project_path=None)
+        yield test("ag xyz", [
+            "                                            no match"
+        ], "ag xyz")
 
 
 def test_ag_completions():

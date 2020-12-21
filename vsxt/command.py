@@ -1,4 +1,4 @@
-from .parser import CommandParser
+from .parser import CommandParser, Options
 
 REGISTRY = {}
 
@@ -60,6 +60,14 @@ def command(
     if isinstance(name, str):
         name = name.split()
     return command_decorator
+
+
+def set_context(args, **context):
+    args.__context = Options(**context)
+
+
+def get_context(args):
+    return args.__context
 
 
 class Incomplete(Exception):

@@ -1,13 +1,11 @@
 import asyncio
-import html
 import logging
 import os
 import re
 import shlex
 import subprocess
-from urllib.parse import quote
 
-from ..command import command, Incomplete
+from ..command import command, Incomplete, get_context
 from ..parser import CommandParser, File, Regex, RegexPattern, String, VarArgs
 from ..results import error, result
 
@@ -78,7 +76,11 @@ async def ag(editor, args):
         await process_lines(command, cwd=cwd, **line_processor)
     except CommandError as err:
         return error(str(err))
-    drop_redundant_details(items)
+    if items:
+        drop_redundant_details(items)
+    else:
+        cmdstr = get_context(args).input_value
+        return result([{"label": "", "description": "no match"}], cmdstr)
     return result(items)
 
 

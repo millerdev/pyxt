@@ -30,6 +30,7 @@ async def do_command(server: XTServer, params):
     editor = Editor(server)
     parser = await command.parser.with_context(editor)
     args = await parser.parse(argstr)
+    cmd.set_context(args, input_value=input_value)
     try:
         return await command(editor, args)
     except cmd.Incomplete as err:
