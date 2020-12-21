@@ -87,9 +87,16 @@ async function filterResults(result, command) {
         input.ignoreFocusOut = true
         input.matchOnDescription = true
         input.matchOnDetail = true
-        setCompletions(input, result)
+        setCompletions(input, result, toQuickPickItem)
         input.show()
         const item = await new Promise(resolve => {
+            if (!result.keep_empty_details) {
+                const change = input.onDidChangeValue(errable(value => {
+                    distributeDetails(input)
+                    change.dispose()
+                }))
+                disposables.push(change)
+            }
             disposables.push(input.onDidAccept(errable(() => {
                 resolve(input.selectedItems[0])
             })))
@@ -100,6 +107,26 @@ async function filterResults(result, command) {
     } finally {
         disposables.forEach(d => d.dispose())
     }
+}
+
+/**
+ * Copy "detail" to items without starting with the last item
+ * 
+ * This is useful when items are results from files where only the final
+ * result from each file is tagged with a detail. Upon filtering it is
+ * useful to have that context on every item.
+ */
+function distributeDetails(input) {
+    let detail = undefined
+    Array.from(input.items).reverse().forEach(item => {
+        if (item.detail) {
+            detail = item.detail
+        } else {
+            item.detail = detail
+        }
+    })
+    input.items = input.items
+    console.log(input.items)
 }
 
 function updateCompletions(input, client, value) {
@@ -127,10 +154,16 @@ async function getCompletions(input, client, value) {
 
 const debouncedGetCompletions = _.debounce(getCompletions, 200)
 
-function setCompletions(input, completions) {
-    const items = completions.items.map(toQuickPickItem)
+function setCompletions(input, completions, transformItem) {
+    const items = completions.items.map(transformItem || toAlwaysShown)
     input.items = items
     input._command_completions = {...completions, items}
+}
+
+function toAlwaysShown(item) {
+    item = toQuickPickItem(item)
+    item.alwaysShow = true
+    return item
 }
 
 function toQuickPickItem(item) {
@@ -139,7 +172,6 @@ function toQuickPickItem(item) {
     } else if (!_.isObject(item)) {
         item = {label: String(item)}
     }
-    item.alwaysShow = true
     return item
 }
 
