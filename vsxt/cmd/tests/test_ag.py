@@ -14,10 +14,11 @@ def test_ag():
     if not mod.is_ag_installed():
         raise SkipTest("ag not installed")
 
-    @gentest
-    @async_test
-    async def test(command, items, **editor_props):
-        with tempdir() as tmp, setup_files(tmp) as editor:
+    with setup_files() as tmp:
+        @gentest
+        @async_test
+        async def test(command, items, **editor_props):
+            editor = FakeEditor(join(tmp, "dir/file"), tmp)
             for name, value in editor_props.items():
                 setattr(editor, name, value)
             result = await do_command(command, editor)
@@ -28,51 +29,51 @@ def test_ag():
             ]
             assert_same_items(actual_items, items)
 
-    yield test("ag ([bB]|size:\\ 10)", [
-        "/dir/B file:0:10:1                         1: name: dir/B file",
-        "/dir/B file:1:0:8          dir/B file      2: size: 10",
-        "/dir/b.txt:0:10:1          dir/b.txt       1: name: dir/b.txt",
-    ])
-    yield test("ag dir/[bB] ..", [
-        "/dir/../dir/B file:0:6:5   dir/B file      1: name: dir/B file",
-        "/dir/../dir/b.txt:0:6:5    dir/b.txt       1: name: dir/b.txt",
-    ])
-    yield test("ag dir/[bB] .. --after=1", [
-        "/dir/../dir/B file:0:6:5                   1: name: dir/B file",
-        "/dir/../dir/B file:1       dir/B file      2: size: 10",
-        "/dir/../dir/b.txt:0:6:5                    1: name: dir/b.txt",
-        "/dir/../dir/b.txt:1        dir/b.txt       2: size: 9",
-    ])
-    yield test("ag dir/b .. -i", [
-        "/dir/../dir/B file:0:6:5   dir/B file      1: name: dir/B file",
-        "/dir/../dir/b.txt:0:6:5    dir/b.txt       1: name: dir/b.txt",
-    ])
-    yield test("ag  ..", [
-        "/dir/../dir/B file:0:6:6   dir/B file      1: name: dir/B file",
-    ], selection="dir/B ")
-    yield test("ag txt", [
-        "/dir/a.txt:0:12:3          dir/a.txt       1: name: dir/a.txt",
-        "/dir/b.txt:0:12:3          dir/b.txt       1: name: dir/b.txt",
-        "/e.txt:0:8:3               e.txt           1: name: e.txt",
-    ])
-    yield test("ag txt .", [
-        "/dir/./a.txt:0:12:3        a.txt           1: name: dir/a.txt",
-        "/dir/./b.txt:0:12:3        b.txt           1: name: dir/b.txt",
-    ])
-    yield test("ag txt ..", [
-        "/dir/../dir/a.txt:0:12:3   dir/a.txt       1: name: dir/a.txt",
-        "/dir/../dir/b.txt:0:12:3   dir/b.txt       1: name: dir/b.txt",
-        "/dir/../e.txt:0:8:3        e.txt           1: name: e.txt",
-    ])
-    yield test("ag txt ...", [
-        "/dir/a.txt:0:12:3          dir/a.txt       1: name: dir/a.txt",
-        "/dir/b.txt:0:12:3          dir/b.txt       1: name: dir/b.txt",
-        "/e.txt:0:8:3               e.txt           1: name: e.txt",
-    ])
-    yield test("ag txt", [
-        "/dir/a.txt:0:12:3          a.txt           1: name: dir/a.txt",
-        "/dir/b.txt:0:12:3          b.txt           1: name: dir/b.txt",
-    ], project_path=None)
+        yield test("ag ([bB]|size:\\ 10)", [
+            "/dir/B file:0:10:1                         1: name: dir/B file",
+            "/dir/B file:1:0:8          dir/B file      2: size: 10",
+            "/dir/b.txt:0:10:1          dir/b.txt       1: name: dir/b.txt",
+        ])
+        yield test("ag dir/[bB] ..", [
+            "/dir/../dir/B file:0:6:5   dir/B file      1: name: dir/B file",
+            "/dir/../dir/b.txt:0:6:5    dir/b.txt       1: name: dir/b.txt",
+        ])
+        yield test("ag dir/[bB] .. --after=1", [
+            "/dir/../dir/B file:0:6:5                   1: name: dir/B file",
+            "/dir/../dir/B file:1       dir/B file      2: size: 10",
+            "/dir/../dir/b.txt:0:6:5                    1: name: dir/b.txt",
+            "/dir/../dir/b.txt:1        dir/b.txt       2: size: 9",
+        ])
+        yield test("ag dir/b .. -i", [
+            "/dir/../dir/B file:0:6:5   dir/B file      1: name: dir/B file",
+            "/dir/../dir/b.txt:0:6:5    dir/b.txt       1: name: dir/b.txt",
+        ])
+        yield test("ag  ..", [
+            "/dir/../dir/B file:0:6:6   dir/B file      1: name: dir/B file",
+        ], selection="dir/B ")
+        yield test("ag txt", [
+            "/dir/a.txt:0:12:3          dir/a.txt       1: name: dir/a.txt",
+            "/dir/b.txt:0:12:3          dir/b.txt       1: name: dir/b.txt",
+            "/e.txt:0:8:3               e.txt           1: name: e.txt",
+        ])
+        yield test("ag txt .", [
+            "/dir/./a.txt:0:12:3        a.txt           1: name: dir/a.txt",
+            "/dir/./b.txt:0:12:3        b.txt           1: name: dir/b.txt",
+        ])
+        yield test("ag txt ..", [
+            "/dir/../dir/a.txt:0:12:3   dir/a.txt       1: name: dir/a.txt",
+            "/dir/../dir/b.txt:0:12:3   dir/b.txt       1: name: dir/b.txt",
+            "/dir/../e.txt:0:8:3        e.txt           1: name: e.txt",
+        ])
+        yield test("ag txt ...", [
+            "/dir/a.txt:0:12:3          dir/a.txt       1: name: dir/a.txt",
+            "/dir/b.txt:0:12:3          dir/b.txt       1: name: dir/b.txt",
+            "/e.txt:0:8:3               e.txt           1: name: e.txt",
+        ])
+        yield test("ag txt", [
+            "/dir/a.txt:0:12:3          a.txt           1: name: dir/a.txt",
+            "/dir/b.txt:0:12:3          b.txt           1: name: dir/b.txt",
+        ], project_path=None)
 
 
 def test_ag_completions():
@@ -113,7 +114,7 @@ def assert_same_items(lines1, lines2):
 
 
 @contextmanager
-def setup_files(tmp=None):
+def setup_files():
     def do_setup(tmp):
         os.mkdir(join(tmp, "dir"))
         for path in [
@@ -127,10 +128,6 @@ def setup_files(tmp=None):
                 fh.write("name: {}\nsize: {}".format(path, len(path)))
         assert " " not in tmp, tmp
 
-    if tmp is None:
-        with tempdir() as tmp:
-            do_setup(tmp)
-            yield FakeEditor(None, tmp)
-    else:
+    with tempdir() as tmp:
         do_setup(tmp)
-        yield FakeEditor(join(tmp, "dir/file"), tmp)
+        yield tmp
