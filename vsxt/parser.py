@@ -56,20 +56,19 @@ class CommandParser(object):
     :params *argspec: Argument specifiers.
     """
 
-    def __init__(self, *argspec, context=None):
+    def __init__(self, *argspec):
         self.argspec = argspec
-        self.context = context
         # TODO assert no duplicate arg names
 
     def default_options(self):
         return Options(**{field.name: field.default for field in self.argspec})
 
-    async def with_context(self, *args, **kw):
+    async def with_context(self, editor):
         """Get a new command parser with the given context
 
         See ``Field.with_context`` for argument specification.
         """
-        argspec = [await arg.with_context(*args, **kw) for arg in self.argspec]
+        argspec = [await arg.with_context(editor) for arg in self.argspec]
         return CommandParser(*argspec)
 
     async def match(self, text, index=0):
@@ -1317,10 +1316,10 @@ class SubParser(Field):
         super(SubParser, self).__init__(name)
         self.subargs = {p.name: p for p in subargs}
 
-    async def with_context(self, *args, **kw):
-        subs = [await a.with_context(*args, **kw)
+    async def with_context(self, editor):
+        subs = [await a.with_context(editor)
                 for a in self.args[1:]
-                if a.is_enabled(*args, **kw)]
+                if a.is_enabled(editor)]
         return SubParser(self.name, *subs)
 
     async def consume(self, text, index):
@@ -1416,12 +1415,12 @@ class SubArgs(object):
             return self._is_enabled(editor)
         return editor is not None and editor.text_view is not None
 
-    async def with_context(self, *args, **kw):
+    async def with_context(self, editor):
         sub = super(SubArgs, SubArgs).__new__(SubArgs)
         sub.name = self.name
         sub.data = self.data
         sub._is_enabled = self._is_enabled
-        sub.parser = await self.parser.with_context(*args, **kw)
+        sub.parser = await self.parser.with_context(editor)
         return sub
 
     async def parse(self, text, index):
