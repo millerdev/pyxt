@@ -337,24 +337,15 @@ class Arg(object):
                 word.start += index
             else:
                 word = CompleteWord(word, start=index)
-            offsets.add(word.start)
             return word
 
         words = await self.field.get_completions(self)
         index = self.start
-        if isinstance(words, CompletionsList):
-            words.offset = index
-        else:
-            words = CompletionsList(words, offset=index)
-        offsets = set()
         for i, word in enumerate(words):
             if isinstance(word, dict):
                 word["label"] = add_start(word["label"], index)
             else:
                 words[i] = add_start(word, index)
-        if words:
-            assert len(offsets) == 1, words
-            words.offset = offsets.pop()
         return words
 
 
@@ -1553,10 +1544,9 @@ class CompletionsList(list):
 
     __slots__ = ["title", "offset"]
 
-    def __init__(self, *args, title=None, offset=None):
+    def __init__(self, *args, title=None):
         super().__init__(*args)
         self.title = title
-        self.offset = offset
 
 
 class Error(Exception):

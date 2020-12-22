@@ -8,6 +8,7 @@ def command(
     parser=None,
     is_enabled=None,
     lookup_with_parser=False,
+    has_placeholder_item=False,
 ):
     """Text command decorator
 
@@ -26,13 +27,12 @@ def command(
     :param lookup_with_parser: If True, use the `parser.parse` to
         lookup the command. The parser should return None if it receives
         a text string that cannot be parsed.
+    :param has_placeholder_item: If True, add a placeholder item before
+        other completions, which when accepted will execute the command.
+        Other completions will add their value to the command without
+        executing.
     """
     def command_decorator(func):
-        def parse(argstr):
-            if argstr.startswith(func.name + " "):
-                argstr = argstr[len(func.name) + 1:]
-            return func.parser.parse(argstr)
-
         def arg_string(options):
             argstr = func.parser.arg_string(options)
             if argstr:
@@ -41,7 +41,6 @@ def command(
                 return argstr
             return func.name
 
-        func.is_text_command = True
         func.name = name[0] if name else func.__name__
         func.names = name or [func.__name__]
         nonlocal is_enabled
@@ -51,7 +50,7 @@ def command(
         func.is_enabled = is_enabled
         func.parser = parser or CommandParser()
         func.lookup_with_parser = lookup_with_parser
-        func.parse = parse
+        func.has_placeholder_item = has_placeholder_item
         func.arg_string = arg_string
         for name_ in func.names:
             REGISTRY[name_] = func

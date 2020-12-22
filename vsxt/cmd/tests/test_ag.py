@@ -4,6 +4,7 @@ from collections import Counter
 from contextlib import contextmanager
 from dataclasses import dataclass
 from os.path import isabs, join
+from pathlib import Path
 
 from nose.plugins.skip import SkipTest
 from testil import eq, tempdir
@@ -100,17 +101,26 @@ def test_ag():
 
 
 def test_ag_completions():
-    @gentest
-    @async_test
-    async def test(cmd, description):
-        editor = FakeEditor("/dir/sub/file", "/dir")
-        editor.selection = "b "
-        result = await get_completions(cmd, editor)
-        eq(result["items"], [{"label": "", "description": description}])
-        eq(result["offset"], len(cmd), cmd)
+    with tempdir() as tmp:
+        (Path(tmp) / "dir").mkdir()
 
-    yield test("ag ", "ag /b\\ / /dir options ...")
-    yield test("ag x dir/", "ag x dir/ options ...")
+        @gentest
+        @async_test
+        async def test(cmd, description, project_path=None, items=()):
+            editor = FakeEditor(join(tmp, "dir/file"), project_path or tmp)
+            editor.selection = "b "
+            result = await get_completions(cmd, editor)
+            items = [{"label": "", "description": description}] + list(items)
+            eq(result["items"], items)
+            eq(result["offset"], len(cmd), cmd)
+
+        yield test("ag ", "ag /b\\ / /dir options ...", "/dir")
+        yield test("ag x dir/", "ag x dir/ options ...")
+        yield test(
+            "ag x ../",
+            "ag x ../ options ...",
+            items=[{"label": "dir/", "is_completion": True}],
+        )
 
 
 def assert_same_items(lines1, lines2):

@@ -39,22 +39,21 @@ def test_get_completions():
 
 
 def test_parse_command():
-    def test(input_value, expected_args, expected_offset, found=True):
+    def test(input_value, expected_args, found=True):
         with test_command():
-            command, args, offset = mod.parse_command(input_value)
+            command, args = mod.parse_command(input_value)
             if found:
                 assert command is not None, f"command not found: {input_value}"
             else:
                 assert command is None, f"unexpected command: {command}"
             eq(args, expected_args)
-            eq(offset, expected_offset)
 
-    yield test, "cm", "cm", 0, False
-    yield test, "c md", "c", 0, False
-    yield test, "cmd", "", 4
-    yield test, "cmd ", "", 4
-    yield test, "cmd file", "file", 4
-    yield test, "cmd a b", "a b", 4
+    yield test, "cm", "cm", False
+    yield test, "c md", "c", False
+    yield test, "cmd", ""
+    yield test, "cmd ", ""
+    yield test, "cmd file", "file"
+    yield test, "cmd a b", "a b"
 
 
 @nottest

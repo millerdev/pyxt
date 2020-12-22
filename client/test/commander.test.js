@@ -84,6 +84,27 @@ suite('Commander', () => {
         assert.strictEqual(await result, "/file")
     })
 
+    test("should accept completion and get more completions", async () => {
+        client = util.mockClient(
+            ["get_completions", ["ag xyz "], {type: "items", items: [
+                {label: "", description: "ag xyz ~/project"},
+                {label: "dir/", is_completion: true},
+            ], offset: 7}],
+            ["get_completions", ["ag xyz dir/"], {type: "items", items: [
+                {label: "", description: "ag xyz dir/"},
+            ], offset: 11}],
+        )
+        let input
+        const result = commander.commandInput(client, "ag xyz ")
+        input = await env.inputItemsChanged()
+        input.selectedItems = input.items.slice(1, 2)
+        env.accept(input)
+        input = await env.inputItemsChanged()
+
+        input.hide()
+        assert(!await result)
+    })
+
     test("should return file path", async () => {
         client = util.mockClient(
             ["get_completions", ["open "], {items: ["dir/", "file"], offset: 5}],

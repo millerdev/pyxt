@@ -49,6 +49,7 @@ async def project_dirname(editor=None):
         # TODO SubParser with dynamic dispatch based on pattern matching
         # (if it starts with a "-" it's an option, otherwise a file path)
     ),
+    has_placeholder_item=True,
     #config={
     #    "path": config.String("ag"),
     #    "options": config.String(""),

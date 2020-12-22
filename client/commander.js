@@ -184,7 +184,13 @@ function doCommand(input, client) {
         }
         const offset = input._command_completions.offset
         command = command.slice(0, offset) + item.label
+        if (item.is_completion) {
+            input.busy = true
+            input.value = command
+            return exec(client, "get_completions", [command])
+        }
     }
+    input.busy = true
     return exec(client, "do_command", [command])
 }
 
