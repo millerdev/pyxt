@@ -97,4 +97,9 @@ def itemize(item, offset):
 
 
 def command_completions(argstr=""):
-    return result([{"label": x, "offset": 0} for x in cmd.REGISTRY], argstr)
+    items = [{
+        "label": name + " ",
+        "offset": 0,
+        "is_completion": True,
+    } for name in cmd.REGISTRY]
+    return result(items, argstr)
