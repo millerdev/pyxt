@@ -131,13 +131,16 @@ function distributeDetails(input) {
 
 function updateCompletions(input, client, value) {
     const completions = input._command_completions
-    if (completions && value.length >= completions.offset) {
-        const offset = completions.offset
-        const match = value.slice(offset)
-        const matching = completions.items.filter(x => _.startsWith(x.label, match))
+    if (completions && input.value.startsWith(completions.value)) {
+        const matching = completions.items.filter(item => {
+            const term = value.slice(item.offset)
+            return item.label.startsWith(term)
+        })
         if (matching.length) {
             input.items = matching
-            if (_.some(matching, x => x.label.length > match.length)) {
+            if (matching.length > 1 || matching.some(item =>
+                item.label.length > value.slice(item.offset).length
+            )) {
                 return
             }
         }
@@ -157,7 +160,7 @@ const debouncedGetCompletions = _.debounce(getCompletions, 200)
 function setCompletions(input, completions, transformItem) {
     const items = completions.items.map(transformItem || toAlwaysShown)
     input.items = items
-    input._command_completions = {...completions, items}
+    input._command_completions = {value: input.value, ...completions, items}
 }
 
 function toAlwaysShown(item) {
@@ -182,8 +185,7 @@ function doCommand(input, client) {
         if (item.filepath) {
             return {type: "success", value: item.filepath}
         }
-        const offset = input._command_completions.offset
-        command = command.slice(0, offset) + item.label
+        command = command.slice(0, item.offset) + item.label
         if (item.is_completion) {
             input.busy = true
             input.value = command

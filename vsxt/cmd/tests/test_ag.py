@@ -110,17 +110,19 @@ def test_ag_completions():
             editor = FakeEditor(join(tmp, "dir/file"), project_path or tmp)
             editor.selection = "b "
             result = await get_completions(cmd, editor)
-            items = [{"label": "", "description": description}] + list(items)
+            items = list(items)
+            if description is not None:
+                items.insert(0, {"label": cmd, "description": description, "offset": 0})
             eq(result["items"], items)
-            eq(result["offset"], len(cmd), cmd)
+            eq(result["value"], cmd)
 
-        yield test("ag ", "ag /b\\ / /dir options ...", "/dir")
-        yield test("ag x dir/", "ag x dir/ options ...")
-        yield test(
-            "ag x ../",
-            "ag x ../ options ...",
-            items=[{"label": "dir/", "is_completion": True}],
-        )
+        yield test("ag ", "/b\\ / /dir options ...", "/dir")
+        yield test("ag x dir/", "options ...")
+        yield test("ag x dir/ ", "options ...")
+        yield test("ag x dir/  ", None)
+        yield test("ag x ../", "options ...", items=[
+            {"label": "dir/", "is_completion": True, "offset": 8},
+        ])
 
 
 def assert_same_items(lines1, lines2):

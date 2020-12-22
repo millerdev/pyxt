@@ -14,7 +14,7 @@ suite('Commander', () => {
 
     test("should list commands when first launched", async () => {
         client = util.mockClient(
-            ["get_completions", [""], {items: ["open"], offset: 0}],
+            ["get_completions", [""], {items: [{label: "open", offset: 0}]}],
         )
         let input
         const result = commander.commandInput(client)
@@ -27,10 +27,13 @@ suite('Commander', () => {
 
     test("should show completions on accept command", async () => {
         client = util.mockClient(
-            ["get_completions", [""], {items: ["open"], offset: 0}],
+            ["get_completions", [""], {items: [{label: "open", offset: 0}]}],
             [
                 "do_command", ["open"],
-                {type: "items", items: ["dir/", "file"], offset: 5, value: "open "}
+                {type: "items", items: [
+                    {label: "dir/", offset: 5},
+                    {label: "file", offset: 5},
+                ], value: "open "},
             ]
         )
         let input
@@ -48,10 +51,13 @@ suite('Commander', () => {
 
     test("should accept auto-completed command option", async () => {
         client = util.mockClient(
-            ["get_completions", [""], {items: ["open"], offset: 0}],
+            ["get_completions", [""], {items: [{label: "open", offset: 0}]}],
             [
                 "do_command", ["open"],
-                {type: "items", items: ["dir/", "file"], value: "open ", offset: 5}
+                {type: "items", items: [
+                    {label: "dir/", offset: 5},
+                    {label: "file", offset: 5},
+                ], value: "open "},
             ],
             [
                 "do_command", ["open file"],
@@ -72,9 +78,9 @@ suite('Commander', () => {
     test("should accept completion with filepath", async () => {
         client = util.mockClient(
             ["get_completions", ["open "], {items: [
-                "dir/",
-                {label: "file", filepath: "/file"},
-            ], offset: 5}],
+                {label: "dir/", offset: 5},
+                {label: "file", filepath: "/file", offset: 5},
+            ]}],
         )
         let input
         const result = commander.commandInput(client, "open ")
@@ -87,12 +93,12 @@ suite('Commander', () => {
     test("should accept completion and get more completions", async () => {
         client = util.mockClient(
             ["get_completions", ["ag xyz "], {type: "items", items: [
-                {label: "", description: "ag xyz ~/project"},
-                {label: "dir/", is_completion: true},
-            ], offset: 7}],
+                {label: "", description: "ag xyz ~/project", offset: 0},
+                {label: "dir/", is_completion: true, offset: 7},
+            ]}],
             ["get_completions", ["ag xyz dir/"], {type: "items", items: [
-                {label: "", description: "ag xyz dir/"},
-            ], offset: 11}],
+                {label: "ag xyz dir/", description: "options ...", offset: 0},
+            ]}],
         )
         let input
         const result = commander.commandInput(client, "ag xyz ")
@@ -107,7 +113,10 @@ suite('Commander', () => {
 
     test("should return file path", async () => {
         client = util.mockClient(
-            ["get_completions", ["open "], {items: ["dir/", "file"], offset: 5}],
+            ["get_completions", ["open "], {items: [
+                {label: "dir/", offset: 5},
+                {label: "file", offset: 5},
+            ]}],
             ["do_command", ["open file"], {type: "success", value: "file"}]
         )
         let input
@@ -120,7 +129,7 @@ suite('Commander', () => {
 
     test("should error on accept bad command", async () => {
         client = util.mockClient(
-            ["get_completions", ["op "], {items: [], offset: 0}],
+            ["get_completions", ["op "], {items: []}],
             ["do_command", ["op "], {type: "error", message: "Unknown command: 'op '"}]
         )
         let input
@@ -138,7 +147,7 @@ suite('Commander', () => {
 
     test("should not get more completions on match existing item", async () => {
         client = util.mockClient(
-            ["get_completions", [""], {items: ["open"], offset: 0}],
+            ["get_completions", [""], {items: [{label: "open", offset: 0}]}],
         )
         let input
         const result = commander.commandInput(client)
@@ -152,8 +161,11 @@ suite('Commander', () => {
 
     test("should get more completions on complete match", async () => {
         client = util.mockClient(
-            ["get_completions", ["open "], {items: ["dir/", "file1"], offset: 5}],
-            ["get_completions", ["open dir/"], {items: ["file2"], offset: 9}],
+            ["get_completions", ["open "], {items: [
+                {label: "dir/", offset: 5},
+                {label: "file1", offset: 5},
+            ]}],
+            ["get_completions", ["open dir/"], {items: [{label: "file2", offset: 9}]}],
         )
         let input
         const result = commander.commandInput(client, "open ")
@@ -170,8 +182,11 @@ suite('Commander', () => {
 
     test("should get completions for first argument", async () => {
         client = util.mockClient(
-            ["get_completions", [""], {items: ["open"], offset: 0}],
-            ["get_completions", ["open "], {items: ["dir/", "file"], offset: 5}],
+            ["get_completions", [""], {items: [{label: "open", offset: 0}]}],
+            ["get_completions", ["open "], {items: [
+                {label: "dir/", offset: 5},
+                {label: "file", offset: 5},
+            ]}],
         )
         let input
         const result = commander.commandInput(client)
@@ -185,7 +200,10 @@ suite('Commander', () => {
 
     test("should filter completions", async () => {
         client = util.mockClient(
-            ["get_completions", ["open "], {items: ["dir/", "file"], offset: 5}],
+            ["get_completions", ["open "], {items: [
+                {label: "dir/", offset: 5},
+                {label: "file", offset: 5},
+            ]}],
         )
         let input
         const result = commander.commandInput(client, "open ")
@@ -202,8 +220,11 @@ suite('Commander', () => {
 
     test("should refetch completions on backspace", async () => {
         client = util.mockClient(
-            ["get_completions", ["open "], {items: ["dir/", "file"], offset: 5}],
-            ["get_completions", ["open"], {items: ["open"], offset: 0}],
+            ["get_completions", ["open "], {items: [
+                {label: "dir/", offset: 5},
+                {label: "file", offset: 5},
+            ]}],
+            ["get_completions", ["open"], {items: [{label: "open", offset: 0}]}],
         )
         let input
         const result = commander.commandInput(client, "open ")
@@ -219,8 +240,8 @@ suite('Commander', () => {
 
     test("should show no completions on no match", async () => {
         client = util.mockClient(
-            ["get_completions", [""], {items: ["open"], offset: 0}],
-            ["get_completions", ["ox"], {items: [], offset: 0}],
+            ["get_completions", [""], {items: [{label: "open", offset: 0}]}],
+            ["get_completions", ["ox"], {items: []}],
         )
         let input
         const result = commander.commandInput(client)
@@ -235,9 +256,9 @@ suite('Commander', () => {
     test("should support detail in item completions", async () => {
         client = util.mockClient(
             ["get_completions", ["cmd "], {items: [
-                {label: "text 1", detail: "detail 1"},
-                {label: "text 2", detail: "detail 2"},
-            ], offset: 5}],
+                {label: "text 1", detail: "detail 1", offset: 5},
+                {label: "text 2", detail: "detail 2", offset: 5},
+            ]}],
         )
         let input
         const result = commander.commandInput(client, "cmd ")
@@ -250,10 +271,10 @@ suite('Commander', () => {
 
     test("should filter results and return filepath", async () => {
         const items = [
-            {label: "1: file 1", detail: "file1", filepath: "/dir/file1"},
-            {label: "1: file 2", detail: "file2", filepath: "/dir/file2"},
+            {label: "1: file 1", detail: "file1", filepath: "/dir/file1", offset: 7},
+            {label: "1: file 2", detail: "file2", filepath: "/dir/file2", offset: 7},
         ]
-        const results = {type: "items", items, offset: 7, filter_results: true}
+        const results = {type: "items", items, filter_results: true}
         client = util.mockClient(
             ["get_completions", ["ag file"], {items: [], offset: 3}],
             ["do_command", ["ag file"], results],
@@ -272,12 +293,11 @@ suite('Commander', () => {
 
     test("should not return filepath on cancel filtered results", async () => {
         const items = [
-            {label: "1: file 1", detail: "file1", filepath: "/dir/file1"},
+            {label: "1: file 1", detail: "file1", filepath: "/dir/file1", offset: 7},
         ]
-        const results = {type: "items", items, offset: 7, filter_results: true}
         client = util.mockClient(
-            ["get_completions", ["ag file"], {items: [], offset: 3}],
-            ["do_command", ["ag file"], results],
+            ["get_completions", ["ag file"], {items: []}],
+            ["do_command", ["ag file"], {type: "items", items, filter_results: true}],
         )
         let input
         const result = commander.commandInput(client, "ag file")

@@ -23,7 +23,7 @@ def xt_command(func):
 async def do_command(server: XTServer, params):
     input_value, = value, = params
     if not input_value:
-        return result(sorted(cmd.REGISTRY), "", offset=0)
+        return command_completions()
     command, argstr = parse_command(input_value)
     if not command:
         return error(f"Unknown command: {argstr!r}")
@@ -48,7 +48,7 @@ async def get_completions(server: XTServer, params):
         argstr = ""
         command = None
     if not command:
-        return result(sorted(cmd.REGISTRY), argstr, offset=0)
+        return command_completions(argstr)
     editor = Editor(server)
     parser = await command.parser.with_context(editor)
     return await _get_completions(command, parser, input_value, argstr)
@@ -73,25 +73,28 @@ async def _get_completions(command, parser, input_value, argstr):
     items = await parser.get_completions(argstr)
     if not (argstr or input_value.endswith(" ")):
         input_value += " "
-    offset = get_offset(input_value, argstr, items)
+    offset = len(input_value) - len(argstr)
+    items = [itemize(x, offset) for x in items]
     if command.has_placeholder_item:
-        items = [itemize(x, is_completion=True) for x in items]
+        for item in items:
+            item.setdefault("is_completion", True)
         placeholder = await parser.get_placeholder(argstr)
         if placeholder:
-            cmdstr = input_value + placeholder
-            items.insert(0, {"label": "", "description": cmdstr})
-    return result(items, input_value, offset=offset)
+            items.insert(0, {
+                "label": input_value,
+                "description": placeholder.lstrip(" "),
+                "offset": 0,
+            })
+    return result(items, input_value)
 
 
-def get_offset(input_value, argstr, items):
-    if items:
-        item = items[0]
-        start = item["label"].start if isinstance(item, dict) else item.start
-        return len(input_value) - len(argstr) + start
-    return len(input_value)
-
-
-def itemize(item, **extra):
-    item = {"label": item} if isinstance(item, str) else item
-    item.update(extra)
+def itemize(item, offset):
+    if isinstance(item, str):
+        item = {"label": item}
+    if "offset" not in item:
+        item["offset"] = offset + item["label"].start
     return item
+
+
+def command_completions(argstr=""):
+    return result([{"label": x, "offset": 0} for x in cmd.REGISTRY], argstr)
