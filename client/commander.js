@@ -147,7 +147,7 @@ function updateCompletions(input, client, value) {
 
 async function getCompletions(input, client, value) {
     input.busy = true
-    const result = await exec(client, "get_completions", [value])
+    const result = await exec(client, "get_completions", value)
     setCompletions(input, result)
     input.busy = false
 }
@@ -187,14 +187,14 @@ function doCommand(input, client) {
         if (item.is_completion) {
             input.busy = true
             input.value = command
-            return exec(client, "get_completions", [command])
+            return exec(client, "get_completions", command)
         }
     }
     input.busy = true
-    return exec(client, "do_command", [command])
+    return exec(client, "do_command", command)
 }
 
-async function exec(client, command, args) {
+async function exec(client, command, ...args) {
     await client.onReady()
     return client.sendRequest(
         "workspace/executeCommand",
