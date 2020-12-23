@@ -1297,7 +1297,7 @@ class VarArgs(Field):
         return []
 
     async def arg_string(self, value):
-        return " ".join(await self.field.arg_string(v) for v in value)
+        return " ".join([await self.field.arg_string(v) for v in value])
 
 
 class SubParser(Field):

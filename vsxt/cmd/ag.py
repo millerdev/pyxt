@@ -77,7 +77,10 @@ async def ag(editor, args):
         items.append({"label": "", "description": str(err)})
     if items:
         drop_redundant_details(items)
-    return result(items, filter_results=True)
+    if not args.path:
+        args.path = cwd
+    placeholder = await get_context(args).command.arg_string(args)
+    return result(items, filter_results=True, placeholder=placeholder)
 
 
 def input_required(message, args):

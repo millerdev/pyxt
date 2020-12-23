@@ -83,7 +83,7 @@ async function filterResults(result, command) {
     const input = vscode.window.createQuickPick()
     const disposables = [input]
     try {
-        input.placeholder = command
+        input.placeholder = result.placeholder || command
         input.ignoreFocusOut = true
         input.matchOnDescription = true
         input.matchOnDetail = true

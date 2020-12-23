@@ -33,8 +33,8 @@ def command(
         executing.
     """
     def command_decorator(func):
-        def arg_string(options):
-            argstr = func.parser.arg_string(options)
+        async def arg_string(options):
+            argstr = await func.parser.arg_string(options)
             if argstr:
                 if not func.lookup_with_parser:
                     argstr = "{} {}".format(func.name, argstr)

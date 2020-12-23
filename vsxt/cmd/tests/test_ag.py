@@ -41,7 +41,11 @@ def test_ag():
             discard = {"items", "type"}
             actual_opts = {k: v for k, v in result.items() if k not in discard}
             if opts is None:
-                opts = {"filter_results": True, "value": None}
+                opts = {
+                    "filter_results": True,
+                    "placeholder": Regex("^ag "),
+                    "value": None,
+                }
             eq(actual_opts, opts)
 
         yield test("ag ([bB]|size:\\ 10)", [

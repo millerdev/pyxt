@@ -308,6 +308,27 @@ suite('Commander', () => {
         input.hide()
         assert(!await result)
     })
+
+    test("should show custom placeholder for filter results", async () => {
+        client = util.mockClient(
+            ["get_completions", ["ag file"], {items: []}],
+            ["do_command", ["ag file"], {
+                type: "items",
+                items: [{label: "result", offset: 0}],
+                filter_results: true,
+                placeholder: "Custom text"
+            }],
+        )
+        let input
+        const result = commander.commandInput(client, "ag file")
+        input = await env.inputItemsChanged()
+        env.accept(input)
+        input = await env.inputItemsChanged()
+        assert.strictEqual(input.placeholder, "Custom text")
+
+        input.hide()
+        assert(!await result)
+    })
 })
 
 
