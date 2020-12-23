@@ -4,12 +4,17 @@ const errable = require("./errors").errable
 
 function publish(client) {
     client.onReady().then(errable(() => {
-        client.onRequest("vsxt.resolve", errable(resolve))
+        client.onRequest("vsxt.resolve", resolve)
     }))
 }
 
 function resolve(params) {
-    return get(vscode, params)
+    try {
+        return get(vscode, params)
+    } catch (error) {
+        console.error(error)
+        return ["__error__", error.message, error.stack]
+    }
 }
 
 function get(obj, params) {

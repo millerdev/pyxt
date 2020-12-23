@@ -1,4 +1,7 @@
+import logging
 from dataclasses import dataclass
+
+log = logging.getLogger(__name__)
 
 
 @dataclass
@@ -32,11 +35,6 @@ class JSProxy:
             rep = f"{rep}{self._args}"
         return f"{self._parent}{rep}"
 
-    def __await__(self):
-        server, params = self._resolve()
-        obj = server.lsp.send_request_async("vsxt.resolve", [params])
-        return obj.__await__()
-
     def _resolve(self, next_value=None):
         if self._name is not None:
             value = {"name": self._name}
@@ -52,3 +50,18 @@ class JSProxy:
             return self._parent._resolve(value)
         assert next_value
         return self._parent, next_value
+
+
+async def get(proxy):
+    server, params = proxy._resolve()
+    value = await server.lsp.send_request_async("vsxt.resolve", [params])
+    if isinstance(value, list) and len(value) == 3 and value[0] == "__error__":
+        message = value[1] or "unknown error"
+        stack = value[2] or message
+        log.error("Unhandled client error: %s", stack)
+        raise Error(message)
+    return value
+
+
+class Error(Exception):
+    pass
