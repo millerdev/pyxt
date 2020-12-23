@@ -135,17 +135,28 @@ class CommandParser(object):
         """Get placeholder string to follow the given command text
 
         :param text: Argument string.
-        :returns: A string of placeholder text, which can be used as a
-            hint about remaining arguments to be entered.
+        :returns: A two-tuple of strings: `(arg_end, hints)`.
+        `arg_end` auto-completion text for the given command text.
+        `hints` is a string of placeholder text, which can be used
+        as a hint about remaining arguments to be entered.
         """
-        values = []
+        end_arg = ""
+        hints = []
         async for arg in self.tokenize(text, index):
             if not arg.could_consume_more:
                 continue
-            value = await arg.get_placeholder()
-            if value is not None:
-                values.append(value)
-        return " ".join(values)
+            end, hint = await arg.get_placeholder()
+            if end:
+                assert not hints, (text, hints, arg)
+                assert not end_arg, (text, end_arg, arg)
+                end_arg = end
+            if hint is None:
+                break
+            if hint:
+                hints.append(hint)
+            else:
+                assert not hints, (text, arg.field, arg, hints)
+        return end_arg, " ".join(hints)
 
     async def get_completions(self, text, index=0):
         """Get completions for the given command text
@@ -456,7 +467,8 @@ class Field(object):
         :param arg: An ``Arg`` object.
         :returns: A placeholder string.
         """
-        return "" if arg else str(self)
+        hint = "" if arg else str(self)
+        return "", hint
 
     async def get_completions(self, arg):
         """Get a list of possible completions for text
@@ -582,15 +594,11 @@ class Choice(Field):
 
     async def get_placeholder(self, arg):
         if not arg:
-            return str(self)
+            return "", str(self)
         names = await arg.get_completions()
-        if not names:
-            placeholder = ""
-        elif len(names) == 1:
-            placeholder = names[0][len(arg):]
-        else:
-            placeholder = "..."
-        return placeholder
+        if len(names) == 1:
+            return names[0][len(arg):], ""
+        return "", None
 
     async def get_completions(self, arg):
         """List choice names that complete token"""
@@ -625,9 +633,9 @@ class Int(Field):
     async def get_placeholder(self, arg):
         if not arg:
             if isinstance(self.default, int):
-                return str(self.default)
-            return str(self)
-        return ""
+                return "", str(self.default)
+            return "", str(self)
+        return "", ""
 
     async def arg_string(self, value):
         if value == self.default:
@@ -657,9 +665,9 @@ class Float(Int):
     async def get_placeholder(self, arg):
         if not arg:
             if isinstance(self.default, float):
-                return str(self.default)
-            return str(self)
-        return ""
+                return "", str(self.default)
+            return "", str(self)
+        return "", ""
 
     async def arg_string(self, value):
         if value == self.default:
@@ -745,8 +753,8 @@ class String(Field):
         value = self.default
         if not arg and value:
             if " " in value or value.startswith(("'", '"')):
-                return Regex.delimit(value, delimiters="\"'")[0]
-            return value
+                return "", Regex.delimit(value, delimiters="\"'")[0]
+            return "", value
         return await super().get_placeholder(arg)
 
 
@@ -888,7 +896,7 @@ class File(String):
 
     async def get_placeholder(self, arg):
         if not arg and isinstance(self.default, str):
-            return user_path(self.default)
+            return "", user_path(self.default)
         return await super().get_placeholder(arg)
 
     async def arg_string(self, value):
@@ -957,12 +965,13 @@ class DynamicList(String):
     async def get_placeholder(self, arg):
         if not arg:
             default = str(self.default) if self.default is not None else ""
-            return default if default else str(self)
+            hint = default if default else str(self)
+            return "", hint
         token = str(arg)
         comps = await self.get_completions(token, lambda n: n)
         if comps:
-            return comps[0][len(token):]
-        return ""
+            return comps[0][len(token):], ""
+        return "", ""
 
 
 class RegexPattern(str):
@@ -1099,7 +1108,7 @@ class Regex(Field):
 
     async def get_placeholder(self, arg):
         if not arg:
-            return str(self)
+            return "", str(self)
         text = arg.text
         index = arg.start
         if self.replace and text[index] not in self.DELIMITERS:
@@ -1109,9 +1118,10 @@ class Regex(Field):
         ignore, index = self.consume_expression(text, index)
         if self.replace:
             if index > len(text):
-                return delim * 2
+                return delim * 2, ""
             ignore, index = self.consume_expression(text, index - 1)
-        return delim if index > len(text) else ""
+        end = delim if index > len(text) else ""
+        return end, ""
 
     @classmethod
     def delimit(cls, value, allchars=None, delimiters=DELIMITERS):
@@ -1250,21 +1260,22 @@ class VarArgs(Field):
     async def get_placeholder(self, arg):
         text = arg.text
         index = arg.start
-        start = value = None
+        start = hint = None
+        end = ""
         while index != start:
             start = index
             sub = await Arg(self.field, text, index, arg.args)
             if sub.could_consume_more:
-                value = await sub.get_placeholder()
-                if value is not None or index > len(text):
+                end, hint = await sub.get_placeholder()
+                if end or hint or index > len(text):
                     break
             if sub.errors:
-                return None
+                return "", None
             index = sub.end
-        if value is None:
-            return value
+        if hint is None:
+            return "", None
         placeholder = "..." if self.placeholder is None else self.placeholder
-        return "{} {}".format(value, placeholder)
+        return end, (f"{hint} {placeholder}" if hint else placeholder)
 
     async def get_completions(self, arg):
         index = arg.start
@@ -1342,30 +1353,30 @@ class SubParser(Field):
 
     async def get_placeholder(self, arg):
         if not arg:
-            return "{} ...".format(self)
+            return "", "{} ...".format(self)
         text = arg.text
         name, end = arg.consume_token()
         space_after_name = end < len(text) or text[arg.start:end].endswith(" ")
         if name is None:
             if space_after_name:
-                return str(self)
-            return "{} ...".format(self)
+                return "", str(self)
+            return "", "{} ...".format(self)
         sub = self.subargs.get(name)
         if sub is None:
             names = [n for n in self.subargs if n.startswith(name)]
             if not names:
-                return None
+                return "", None
             if len(names) > 1:
                 if space_after_name:
-                    return None
-                return "..."
+                    return "", None
+                return "", "..."
             sub = self.subargs[names[0]]
-            placeholder = names[0][len(name):]
+            arg_end = "" if space_after_name else names[0][len(name):]
         else:
-            placeholder = ""
-        values = [] if space_after_name else [placeholder]
-        values.append(await sub.parser.get_placeholder(text, end))
-        return " ".join(values)
+            arg_end = ""
+        sub_end, hint = await sub.parser.get_placeholder(text, end)
+        assert not sub_end or not arg_end, (self, arg, arg_end, sub_end, hint)
+        return arg_end or sub_end, hint
 
     async def get_completions(self, arg):
         text = arg.text

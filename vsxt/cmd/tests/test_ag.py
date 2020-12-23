@@ -106,17 +106,22 @@ def test_ag_completions():
 
         @gentest
         @async_test
-        async def test(cmd, description, project_path=None, items=()):
+        async def test(cmd, description, label="", project_path=None, items=()):
             editor = FakeEditor(join(tmp, "dir/file"), project_path or tmp)
             editor.selection = "b "
             result = await get_completions(cmd, editor)
             items = list(items)
             if description is not None:
-                items.insert(0, {"label": cmd, "description": description, "offset": 0})
+                items.insert(0, {
+                    "label": label or cmd,
+                    "description": description,
+                    "offset": 0,
+                })
             eq(result["items"], items)
             eq(result["value"], cmd)
 
-        yield test("ag ", "/b\\ / /dir options ...", "/dir")
+        yield test("ag ", "/b\\ / /dir options ...", project_path="/dir")
+        yield test("ag 'x ", "/dir options ...", "ag 'x '", project_path="/dir")
         yield test("ag x dir/", "options ...")
         yield test("ag x dir/ ", "options ...")
         yield test("ag x dir/  ", None)

@@ -92,15 +92,15 @@ def test_CommandParser():
     async def test_placeholder(argstr, expected, parser=radio_parser):
         eq_(await parser.get_placeholder(argstr), expected)
     test = test_placeholder
-    yield test, "", "equalizer ... off 50 name"
-    yield test, "  ", "50 name"
-    yield test, "  5", " name"
-    yield test, "  5 ", "name"
-    yield test, "  high", ""
-    yield test, " hi", "gh 50 name"
-    yield test, " high", " 50 name"
-    yield test, "hi", "gh 50 name"
-    yield test, "high ", "50 name"
+    yield test, "", ("", "equalizer ... off 50 name")
+    yield test, "  ", ("", "50 name")
+    yield test, "  5", ("", "name")
+    yield test, "  5 ", ("", "name")
+    yield test, "  high", ("", "")
+    yield test, " hi", ("gh", "50 name")
+    yield test, " high", ("", "50 name")
+    yield test, "hi", ("gh", "50 name")
+    yield test, "high ", ("", "50 name")
 
     @async_test
     async def check_completions(argstr, expected, start=None, parser=radio_parser):
@@ -126,6 +126,13 @@ def test_CommandParser():
     yield test, "abc", [":abc", ":def"], 3
     yield test, " abc", [":abc", ":def"], 4
     yield test, " abc:def:ghi def:a", [":abc"], 16
+
+    test = partial(test_placeholder, parser=parser)
+    yield test, "", ("", "0 value ...")
+    yield test, "1", ("", "value ...")
+    yield test, "1 ", ("", "value ...")
+    yield test, "1 :ab", ("", "value ...")
+    yield test, "1 :ab :cd", ("", "value ...")
 
     parser = CommandParser(
         level, Int("value"), Choice("highlander", "tundra", "4runner"))
@@ -195,13 +202,14 @@ def test_CommandParser_with_SubParser():
     @async_test
     async def test(text, result):
         eq_(await parser.get_placeholder(text), result)
-    yield test, "", "var ... yes"
-    yield test, " ", "yes"
-    yield test, "  ", ""
-    yield test, "n", "um n yes"
-    yield test, "n ", "n yes"
-    yield test, "num ", "n yes"
-    yield test, "num  ", "yes"
+    yield test, "", ("", "var ... yes")
+    yield test, " ", ("", "yes")
+    yield test, "  ", ("", "")
+    yield test, "n", ("um", "n yes")
+    yield test, "n ", ("", "n yes")
+    yield test, "num ", ("", "n yes")
+    yield test, "num  ", ("", "yes")
+    yield test, "num  y", ("es", "")
 
     @async_test
     async def test(text, expect, start=None):
@@ -265,15 +273,15 @@ def test_CommandParser_with_Conditional():
     @async_test
     async def test(text, result):
         eq_(await parser.get_placeholder(text), result)
-    yield test, "", "off"
-    yield test, " ", ""
-    yield test, "  ", ""
-    yield test, "h", "igh yes"
-    yield test, "h ", "yes"
-    yield test, "lo", "w yes"
-    yield test, "lo ", "yes"
-    yield test, "num ", ""
-    yield test, "num  ", ""
+    yield test, "", ("", "off")
+    yield test, " ", ("", "")
+    yield test, "  ", ("", "")
+    yield test, "h", ("igh", "yes")
+    yield test, "h ", ("", "yes")
+    yield test, "lo", ("w", "yes")
+    yield test, "lo ", ("", "yes")
+    yield test, "num ", ("", "")
+    yield test, "num  ", ("", "")
 
     @async_test
     async def test(text, result):
@@ -403,9 +411,10 @@ def test_Choice():
         ParseError("'args' does not match any of: arg-ument, nope, nah", field, 0, 4)
 
     test = make_placeholder_checker(field)
-    yield test, '', 0, "arg-ument"
+    yield test, '', 0, ("", "arg-ument")
     yield test, 'a', 0, "rg-ument"
-    yield test, 'n', 0, "..."
+    yield test, 'n', 0, None
+    yield test, 'x', 0, None
 
     field = Choice("argument parameter", "find search")
     test = make_consume_checker(field)
@@ -456,12 +465,12 @@ def test_Choice_default_first():
         ParseError("'False' does not match any of: true, false", field, 0, 5)
 
     test = make_placeholder_checker(field)
-    yield test, '', 0, "true"
+    yield test, '', 0, ("", "true")
     yield test, 't', 0, "rue"
     yield test, 'true', 0, ""
     yield test, 'false', 0, ""
     yield test, 'f', 0, "alse"
-    yield test, 'o', 0, "..."
+    yield test, 'o', 0, None
     yield test, 'on', 0, ""
     yield test, 'of', 0, "f"
 
@@ -590,20 +599,20 @@ def test_String():
     yield test, 5, Error("invalid value: str=5")
 
     test = make_placeholder_checker(field)
-    yield test, "", 0, "str"
+    yield test, "", 0, ("", "str")
     yield test, "a", 0, ""
     yield test, "s", 0, ""
 
     test = make_placeholder_checker(String('str', default='def'))
-    yield test, "", 0, "def"
+    yield test, "", 0, ("", "def")
     yield test, "d", 0, ""
 
     test = make_placeholder_checker(String('str', default='d e f'))
-    yield test, "", 0, '"d e f"'
+    yield test, "", 0, ("", '"d e f"')
     yield test, "a", 0, ""
 
     test = make_placeholder_checker(String('str', default=''))
-    yield test, "", 0, 'str'
+    yield test, "", 0, ("", 'str')
 
 
 def test_File():
@@ -799,7 +808,7 @@ def test_DynamicList():
     yield test, "H", ["Hammer", "Hammer\\ Drill"]
 
     test = make_placeholder_checker(field)
-    yield test, "", 0, field.default
+    yield test, "", 0, ("", field.default)
     yield test, "a", 0, ""
     yield test, "h", 0, "ammer"
     yield test, "sc", 0, "ewer"
@@ -850,13 +859,13 @@ def test_Regex():
         ParseError('unknown flag: X', field, 5, 5)
 
     test = make_placeholder_checker(field)
-    yield test, "", 0, "regex"
+    yield test, "", 0, ("", "regex")
     yield test, "/", 0, "/"
     yield test, "//", 0, ""
     # yield test, "// ", 0, None
 
     test = make_placeholder_checker(Regex('regex', default="1 2"))
-    yield test, "", 0, "/1 2/"
+    yield test, "", 0, ("", "/1 2/")
 
     test = make_arg_string_checker(field)
     yield test, RegexPattern("str"), "/str/"
@@ -899,7 +908,7 @@ def test_Regex():
         ParseError('unknown flag: y', field, 9, 9)
 
     test = make_placeholder_checker(field)
-    yield test, "", 0, "regex"
+    yield test, "", 0, ("", "regex")
     yield test, "/", 0, "//"
     yield test, "/x/", 0, "/"
     yield test, "/\\//", 0, "/"
@@ -907,7 +916,7 @@ def test_Regex():
 
     field = Regex('regex', replace=True, default=("", ""))
     test = make_placeholder_checker(field)
-    yield test, "", 0, "regex"
+    yield test, "", 0, ("", "regex")
     yield test, "/", 0, "//"
     yield test, "/x/", 0, "/"
     yield test, "/\\//", 0, "/"
@@ -960,13 +969,13 @@ def test_VarArgs():
     yield test, "arg b", []
 
     test = make_placeholder_checker(field)
-    yield test, "", 0, "arg ..."
-    yield test, "a", 0, "rg ..."
-    yield test, "a ", 0, "arg ..."
-    yield test, "a ", 2, "arg ..."
-    yield test, "arg", 0, " ..."
-    yield test, "arg ", 0, "arg ..."
-    yield test, "arg a", 0, "rg ..."
+    yield test, "", 0, ("", "arg ...")
+    yield test, "a", 0, ("rg", "...")
+    yield test, "a ", 0, ("", "arg ...")
+    yield test, "a ", 2, ("", "arg ...")
+    yield test, "arg", 0, ("", "arg ...")
+    yield test, "arg ", 0, ("", "arg ...")
+    yield test, "arg a", 0, ("rg", "...")
     yield test, "arg x", 0, None
     yield test, "x", 0, None
     yield test, "x ", 0, None
@@ -1023,18 +1032,18 @@ def test_SubParser():
     yield test, "str y", ["yes"], 4
 
     test = make_placeholder_checker(field)
-    yield test, "", 0, "var ..."
-    yield test, "v", 0, "al num"
-    yield test, "v ", 0, "num"
-    yield test, "val", 0, " num"
-    yield test, "val ", 0, "num"
+    yield test, "", 0, ("", "var ...")
+    yield test, "v", 0, ("al", "num")
+    yield test, "v ", 0, ("", "num")
+    yield test, "val", 0, ("", "num")
+    yield test, "val ", 0, ("", "num")
     yield test, "val 1", 0, ""
     yield test, "val x", 0, ""
-    yield test, "s", 0, "..."
+    yield test, "s", 0, ("", "...")
     yield test, "s ", 0, None
-    yield test, "st", 0, "..."
-    yield test, "str", 0, " yes"
-    yield test, "str ", 0, "yes"
+    yield test, "st", 0, ("", "...")
+    yield test, "str", 0, ("", "yes")
+    yield test, "str ", 0, ("", "yes")
     yield test, "str y", 0, "es"
     yield test, "str yes", 0, ""
     yield test, "str n", 0, "o"
@@ -1079,6 +1088,10 @@ def make_consume_checker(field):
 def make_placeholder_checker(field):
     @async_test
     async def test_get_placeholder(text, index, result):
+        if isinstance(result, str):
+            result = result, ""
+        elif result is None:
+            result = ("", None)
         arg = await mod.Arg(field, text, index, None)
         eq_(await field.get_placeholder(arg), result)
     return test_get_placeholder
