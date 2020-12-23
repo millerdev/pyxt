@@ -4,6 +4,7 @@ from testil import eq, replattr
 
 from .. import editor as mod
 from ..tests.util import async_test
+from ..jsproxy import Error
 
 
 @async_test
@@ -17,18 +18,19 @@ def test_project_path():
     @async_test
     async def test(expected_result, calls=None):
         calls = calls or {}
-        calls.setdefault(folder_call, None)
-        calls.setdefault("JSProxy.workspace.workspaceFolders[0].uri.fsPath", None)
+        calls.setdefault(ACTIVE_PATH, object)
+        calls.setdefault(FOLDER_CALL, None)
+        calls.setdefault(FIRST_WORKSPACE, None)
         with setup_editor(calls) as editor:
             eq(await editor.project_path, expected_result)
 
-    active_uri = "JSProxy.window.activeTextEditor.document.uri"
-    folder_call = f"JSProxy.workspace.getWorkspaceFolder({active_uri},).uri.fsPath"
-
     yield test, "/home/user"
-    yield test, "/work", {folder_call: "/work"}
-    yield test, "/work", {
-        "JSProxy.workspace.workspaceFolders[0].uri.fsPath": "/work",
+    yield test, "/work", {FOLDER_CALL: "/work"}
+    yield test, "/space", {FIRST_WORKSPACE: "/space"}
+    yield test, "/project", {
+        ACTIVE_PATH: None,
+        FOLDER_CALL: Error,
+        FIRST_WORKSPACE: "/project",
     }
 
 
@@ -49,6 +51,12 @@ async def test_selection_with_null_result():
         eq(await editor.selection, "")
 
 
+ACTIVE_URI = "JSProxy.window.activeTextEditor.document.uri"
+ACTIVE_PATH = f"{ACTIVE_URI}.fsPath"
+FOLDER_CALL = f"JSProxy.workspace.getWorkspaceFolder({ACTIVE_URI},).uri.fsPath"
+FIRST_WORKSPACE = "JSProxy.workspace.workspaceFolders[0].uri.fsPath"
+
+
 @contextmanager
 def setup_editor(srv=None):
     with replattr(
@@ -61,4 +69,7 @@ def setup_editor(srv=None):
 async def fake_get(proxy):
     path = str(proxy)
     calls, params = proxy._resolve()
-    return calls.get(path, path)
+    value = calls.get(path, path)
+    if value is Error:
+        raise value
+    return value

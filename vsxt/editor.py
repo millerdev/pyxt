@@ -15,10 +15,11 @@ class Editor:
     @cached_property
     async def project_path(self):
         file_uri = self.proxy.window.activeTextEditor.document.uri
-        folder = self.proxy.workspace.getWorkspaceFolder(file_uri)
-        path = await get(folder.uri.fsPath)
-        if path:
-            return path
+        if await get(file_uri.fsPath) is not None:
+            folder = self.proxy.workspace.getWorkspaceFolder(file_uri)
+            path = await get(folder.uri.fsPath)
+            if path:
+                return path
         path = await get(self.proxy.workspace.workspaceFolders[0].uri.fsPath)
         return path if path else expanduser("~")
 
