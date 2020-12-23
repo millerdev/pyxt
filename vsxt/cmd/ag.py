@@ -7,7 +7,7 @@ import subprocess
 
 from ..command import command, get_context
 from ..parser import CommandParser, File, Regex, RegexPattern, String, VarArgs
-from ..results import error, result
+from ..results import result
 
 log = logging.getLogger(__name__)
 AG_LINE = re.compile(r"""
@@ -50,10 +50,6 @@ async def project_dirname(editor=None):
         # (if it starts with a "-" it's an option, otherwise a file path)
     ),
     has_placeholder_item=True,
-    #config={
-    #    "path": config.String("ag"),
-    #    "options": config.String(""),
-    #},
 )
 async def ag(editor, args):
     """Search for files matching pattern"""
@@ -70,18 +66,18 @@ async def ag(editor, args):
     if cwd is None:
         return input_required("path is required", args)
     items = []
-    line_processor = make_line_processor(items, pattern, ag_path, cwd)
+    line_processor = make_line_processor(items, ag_path, cwd)
     command = [ag_path, shlex.quote(pattern)] \
         + [shlex.quote(o) for o in args.options if o] + options
     try:
         await process_lines(command, cwd=cwd, **line_processor)
     except CommandError as err:
-        return error(str(err))
+        if not items:
+            return input_required(str(err), args)
+        items.append({"label": "", "description": str(err)})
     if items:
         drop_redundant_details(items)
-    else:
-        return input_required("no match", args)
-    return result(items, pattern.replace("\\ ", " "), filter_results=True)
+    return result(items, filter_results=True)
 
 
 def input_required(message, args):
@@ -89,7 +85,7 @@ def input_required(message, args):
     return result([{"label": "", "description": message}], cmdstr)
 
 
-def make_line_processor(items, pattern, ag_path, cwd):
+def make_line_processor(items, ag_path, cwd):
 
     async def ag_lines(lines):
         filepath = None
@@ -104,16 +100,18 @@ def make_line_processor(items, pattern, ag_path, cwd):
                 match = AG_LINE.match(line)
                 if match:
                     yield create_item(absfilepath, filepath, **match.groupdict(''))
+                elif line:
+                    yield {"label": "", "description": line}
 
-    def got_output(item, returncode):
+    def got_output(item, returncode, error=""):
         if item is not None:
             items.append(item)
         if returncode:
             if is_ag_installed(ag_path):
                 if returncode == 1:
-                    message = "no match for pattern: {}".format(pattern)
+                    message = "no match"
                 else:
-                    message = "exit code: {}".format(returncode)
+                    message = f"[exit: {returncode}] {error}"
             else:
                 message = AG_NOT_INSTALLED.format(ag_path)
             raise CommandError(message)
@@ -136,6 +134,8 @@ def create_item(abspath, relpath, num, ranges, delim, text):
 def drop_redundant_details(items):
     detail = None
     for item in reversed(items):
+        if "detail" not in item:
+            continue
         if item["detail"] == detail:
             item.pop("detail")
         else:
@@ -168,15 +168,16 @@ async def process_lines(command, *, got_output, kill_on_cancel=True, **kw):
     try:
         proc = await asyncio.create_subprocess_shell(
             cmd, stdout=PIPE, stderr=STDOUT, env=env, **kw)
-    except FileNotFoundError:
+    except Exception as err:
         log.warn("cannot open process: %s", command, exc_info=True)
-        got_output(None, -1)
+        got_output(None, -1, str(err))
         return None
     lines = iter_lines(proc.stdout, encoding="utf-8")
     items = lines if iter_output is None else iter_output(lines)
     async for item in items:
         got_output(item, None)
     await proc.wait()
+    got_output(None, proc.returncode)
 
 
 async def iter_lines(stream, encoding):

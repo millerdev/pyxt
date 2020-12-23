@@ -7,10 +7,16 @@ from os.path import isabs, join
 from pathlib import Path
 
 from nose.plugins.skip import SkipTest
-from testil import eq, tempdir
+from testil import eq, Regex, tempdir
 
 from .. import ag as mod
-from ...tests.util import async_test, do_command, get_completions, FakeEditor, gentest
+from ...tests.util import (
+    async_test,
+    do_command,
+    get_completions,
+    FakeEditor,
+    gentest,
+)
 
 
 def test_ag():
@@ -35,10 +41,7 @@ def test_ag():
             discard = {"items", "type"}
             actual_opts = {k: v for k, v in result.items() if k not in discard}
             if opts is None:
-                opts = {
-                    "value": Pattern(command),
-                    "filter_results": True,
-                }
+                opts = {"filter_results": True, "value": None}
             eq(actual_opts, opts)
 
         yield test("ag ([bB]|size:\\ 10)", [
@@ -63,7 +66,7 @@ def test_ag():
 
         yield test("ag  ..", [
             "/dir/../dir/B file:0:6:6   dir/B file      1: name: dir/B file",
-        ], selection="dir/B ", opts={"value": "dir/B ", "filter_results": True})
+        ], selection="dir/B ")
 
         yield test("ag txt", [
             "/dir/a.txt:0:12:3          dir/a.txt       1: name: dir/a.txt",
@@ -98,6 +101,29 @@ def test_ag():
         yield test("ag xxxx", [
             "                                            path is required"
         ], file_path=None, project_path=None, opts={"value": "ag xxxx"})
+
+
+@async_test
+async def test_ag_error():
+    with tempdir() as tmp:
+        command = "ag x xxxx"
+        editor = FakeEditor(join(tmp, "file"))
+        result = await do_command(command, editor)
+        item, = result["items"]
+        eq(item["description"], Regex("No such file or directory:"))
+        eq(result["value"], command)
+        assert "filter_results" not in result, result
+
+
+@async_test
+async def test_ag_help():
+    with tempdir() as tmp:
+        command = "ag x . --help"
+        editor = FakeEditor(join(tmp, "file"))
+        result = await do_command(command, editor)
+        assert len(result["items"]) > 1, result
+        result.pop("items")
+        eq(result["value"], None)
 
 
 def test_ag_completions():
