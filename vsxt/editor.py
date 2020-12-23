@@ -25,12 +25,12 @@ class Editor:
 
     @cached_property
     async def dirname(self):
-        path = await get(self.file_path)
+        path = await self.file_path
         if path:
             current_dir = dirname(path)
             if current_dir and isabs(current_dir):
                 return current_dir
-        return await get(self.project_path)
+        return await self.project_path
 
     @cached_property
     async def selection(self):

@@ -3,8 +3,8 @@ from contextlib import contextmanager
 from testil import eq, replattr
 
 from .. import editor as mod
-from ..tests.util import async_test
 from ..jsproxy import Error
+from ..tests.util import async_test, gentest
 
 
 @async_test
@@ -32,6 +32,22 @@ def test_project_path():
         FOLDER_CALL: Error,
         FIRST_WORKSPACE: "/project",
     }
+
+
+def test_dirname():
+    @gentest
+    @async_test
+    async def test(expected_path, file_path=None, project_path=None):
+        calls = {
+            ACTIVE_PATH: file_path,
+            FIRST_WORKSPACE: project_path,
+        }
+        with setup_editor(calls) as editor:
+            eq(await editor.dirname, expected_path)
+
+    yield test("/home/user")
+    yield test("/path/to", file_path="/path/to/file")
+    yield test("/project/path", file_path=None, project_path="/project/path")
 
 
 @async_test
