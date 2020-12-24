@@ -117,10 +117,12 @@ class FakeEditor:
     _file_path: str = None
     _project_path: str = None
     _selection: str = ""
+    _ag_path: str = "ag"
 
     file_path = async_property("_file_path")
     project_path = async_property("_project_path")
     selection = async_property("_selection")
+    ag_path = async_property("_ag_path")
 
     @property
     async def dirname(self):

@@ -14,6 +14,7 @@
   ],
   "activationEvents": [
     "onCommand:vsxt.command",
+    "onCommand:vsxt.ag",
     "onCommand:vsxt.openFile"
   ],
   "contributes": {
@@ -21,6 +22,10 @@
       {
         "command": "vsxt.command",
         "title": "XT: Command"
+      },
+      {
+        "command": "vsxt.ag",
+        "title": "XT: Ag (The Silver Searcher)"
       },
       {
         "command": "vsxt.openFile",
@@ -35,6 +40,11 @@
           "type": "string",
           "default": "",
           "description": "Python interpreter path. Recommended: create a virtualenv with Python 3.7+ and set this to the absolute path to its Python executable."
+        },
+        "vsxt.agPath": {
+          "type": "string",
+          "default": "ag",
+          "description": "Ag (The Silver Searcher) executable path."
         }
       }
     }

@@ -37,3 +37,8 @@ class Editor:
         sel = self.proxy.window.activeTextEditor.selection
         doc = self.proxy.window.activeTextEditor.document
         return await get(doc.getText(sel)) or ""
+
+    @cached_property
+    async def ag_path(self):
+        path = self.proxy.workspace.getConfiguration('vsxt').get('agPath')
+        return await get(path) or "ag"

@@ -51,6 +51,15 @@ def test_dirname():
 
 
 @async_test
+async def test_ag_path():
+    with setup_editor() as editor:
+        eq(
+            await editor.ag_path,
+            "JSProxy.workspace.getConfiguration('vsxt',).get('agPath',)",
+        )
+
+
+@async_test
 async def test_selection():
     sel = "JSProxy.window.activeTextEditor.selection"
     seltext = f"JSProxy.window.activeTextEditor.document.getText({sel},)"

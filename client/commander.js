@@ -4,9 +4,11 @@ const errable = require("./errors").errable
 
 function subscribe(context, client) {
     const clientCommand = async () => await command(client)
+    const clientAg = async () => await command(client, "ag ")
     const clientOpen = async () => await command(client, "open ")
     context.subscriptions.push(
         vscode.commands.registerCommand("vsxt.command", clientCommand),
+        vscode.commands.registerCommand("vsxt.ag", clientAg),
         vscode.commands.registerCommand("vsxt.openFile", clientOpen)
     )
 }

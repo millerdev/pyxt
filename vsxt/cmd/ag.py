@@ -60,7 +60,7 @@ async def ag(editor, args):
         pattern = RegexPattern(pattern, pattern.flags | re.IGNORECASE)
     elif pattern.flags & re.IGNORECASE:
         args.options.append("--ignore-case")
-    ag_path = "ag"
+    ag_path = await editor.ag_path
     options = DEFAULT_OPTIONS
     cwd = args.path or await editor.dirname
     if cwd is None:
