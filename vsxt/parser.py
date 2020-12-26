@@ -900,7 +900,7 @@ class File(String):
         return await super().get_placeholder(arg)
 
     async def arg_string(self, value):
-        if value and value.endswith((os.path.sep, "/")):
+        if value and not self.directory and value.endswith((os.path.sep, "/")):
             raise Error("not a file: {}={!r}".format(self.name, value))
         path = await self.path
         if path and value.startswith(os.path.join(path, "")):

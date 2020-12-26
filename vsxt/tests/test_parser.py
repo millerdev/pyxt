@@ -576,18 +576,18 @@ def test_String():
 
     test = make_arg_string_checker(field)
     yield test, "str", "str"
-    yield test, "a b", '"a b"', 5
-    yield test, "a 'b", '''"a 'b"''', 6
-    yield test, 'a "b', """'a "b'""", 6
+    yield test, "a b", '"a b"'
+    yield test, "a 'b", '''"a 'b"'''
+    yield test, 'a "b', """'a "b'"""
     yield test, """a"'b""", """a"'b"""
-    yield test, """a "'b""", '''"a \\"'b"''', 8
-    yield test, "'ab", '''"'ab"''', 5
-    yield test, '"ab', """'"ab'""", 5
+    yield test, """a "'b""", '''"a \\"'b"'''
+    yield test, "'ab", '''"'ab"'''
+    yield test, '"ab', """'"ab'"""
     yield test, "ab'", "ab'"
     yield test, 'ab"', 'ab"'
     yield test, "\u0168", "\u0168"
-    yield test, '\u0168" \u0168', """'\u0168" \u0168'""", 6
-    yield test, "\u0168' \u0168", '''"\u0168' \u0168"''', 6
+    yield test, '\u0168" \u0168', """'\u0168" \u0168'"""
+    yield test, "\u0168' \u0168", '''"\u0168' \u0168"'''
     for char, esc in String.ESCAPES.items():
         if char not in "\"\\'":
             yield test, esc, "\\" + char
@@ -595,7 +595,7 @@ def test_String():
     yield test, "\\", '\\\\'
     yield test, "\\\\", '\\\\\\\\'
     yield test, "\\\\\\", '\\\\\\\\\\\\'
-    yield test, None, "", 0
+    yield test, None, ""
     yield test, 5, Error("invalid value: str=5")
 
     test = make_placeholder_checker(field)
@@ -664,10 +664,10 @@ def test_File():
 
         test = make_arg_string_checker(field)
         yield test, "/str", "/str"
-        yield test, "/a b", '"/a b"', 6
-        yield test, os.path.expanduser("~/a b"), '"~/a b"', 7
+        yield test, "/a b", '"/a b"'
+        yield test, os.path.expanduser("~/a b"), '"~/a b"'
         yield test, join(tmp, "dir/file"), "file"
-        yield test, join(tmp, "dir/a b"), '"a b"', 5
+        yield test, join(tmp, "dir/a b"), '"a b"'
         yield test, join(tmp, "file"), join(tmp, "file")
         yield test, "arg/", Error("not a file: path='arg/'")
 
@@ -766,6 +766,12 @@ def test_File():
         yield test, "..", ["../"], 0
         yield test, "../", ["dir/", "space dir/"], 3
 
+        test = make_arg_string_checker(field)
+        yield test, "/a", "/a"
+        yield test, "/a/", "/a/"
+        yield test, "/dir/a", "/dir/a"
+        yield test, "/dir/a/", "/dir/a/"
+
         field = File('dir', default="~/dir")
         check = make_completions_checker(field)
 
@@ -815,7 +821,7 @@ def test_DynamicList():
     yield test, "scr", 0, "ew Driver"
 
     test = make_arg_string_checker(field)
-    yield test, "Hammer", '"Hammer"', 8
+    yield test, "Hammer", ""
 
 
 def test_Regex():
@@ -873,12 +879,12 @@ def test_Regex():
     yield test, RegexPattern("/usr/bin"), ":/usr/bin:"
     yield test, RegexPattern("/usr/bin:"), '"/usr/bin:"'
     yield test, RegexPattern(r'''//''\:""'''), r'''://''\:"":'''
-    yield test, RegexPattern(r'''//''\\:""'''), r'''://''\\\:"":''', False
+    yield test, RegexPattern(r'''//''\\:""'''), r'''://''\\\:"":'''
     yield test, RegexPattern(r'''\://''""'''), r''':\://''"":'''
-    yield test, RegexPattern(r'''\\://''""'''), r''':\\\://''"":''', False
+    yield test, RegexPattern(r'''\\://''""'''), r''':\\\://''"":'''
     # pedantic cases with three or more of all except ':'
-    yield test, RegexPattern(r'''///'"'::"'"'''), r''':///'"'\:\:"'":''', False
-    yield test, RegexPattern(r'''///'"':\\:"'"'''), r''':///'"'\:\\\:"'":''', False
+    yield test, RegexPattern(r'''///'"'::"'"'''), r''':///'"'\:\:"'":'''
+    yield test, RegexPattern(r'''///'"':\\:"'"'''), r''':///'"'\:\\\:"'":'''
     yield test, "str", Error("invalid value: regex='str'")
 
     field = Regex('regex', replace=True)
@@ -929,7 +935,7 @@ def test_Regex():
     yield test, (RegexPattern("/usr/bin:"), ":"), '"/usr/bin:":"'
     yield test, (RegexPattern(r'''//''\:""'''), r'''/"'\:'''), r'''://''\:"":/"'\::'''
     yield test, \
-        (RegexPattern(r'''//''\:""'''), r'''/"'\\:'''), r'''://''\:"":/"'\\\::''', False
+        (RegexPattern(r'''//''\:""'''), r'''/"'\\:'''), r'''://''\:"":/"'\\\::'''
     yield test, ("str", "abc"), Error("invalid value: regex=('str', 'abc')")
     yield test, ("str", 42), Error("invalid value: regex=('str', 42)")
 
@@ -1110,17 +1116,12 @@ def make_completions_checker(field):
 
 def make_arg_string_checker(field):
     @async_test
-    async def test_get_argstring(value, argstr, index=None):
+    async def test_get_argstring(value, argstr):
         if isinstance(argstr, Exception):
             def check(err):
                 eq_(err, argstr)
             with assert_raises(type(argstr), msg=check):
                 await field.arg_string(value)
         else:
-            if index is not False:
-                if index is None:
-                    index = len(argstr) + 1
-                eq_(await field.consume(argstr, 0), (value, index))
-            else:
-                assert await field.consume(argstr, 0) != (value, len(argstr))
+            eq_(await field.arg_string(value), argstr)
     return test_get_argstring
