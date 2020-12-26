@@ -130,6 +130,17 @@ async def test_ag_help():
         eq(result["value"], None)
 
 
+@async_test
+async def test_ag_not_installed():
+    with tempdir() as tmp:
+        command = "ag x xxxx"
+        editor = FakeEditor(join(tmp, "file"))
+        editor.ag_path = ag_path = join(tmp, "ag")
+        result = await do_command(command, editor)
+        eq(result["type"], "error")
+        eq(result["message"], Regex(f"{ag_path} not found. "))
+
+
 def test_ag_completions():
     with tempdir() as tmp:
         (Path(tmp) / "dir").mkdir()

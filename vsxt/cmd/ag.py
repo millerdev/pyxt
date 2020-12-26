@@ -6,7 +6,7 @@ import subprocess
 
 from ..command import command, get_context
 from ..parser import CommandParser, File, Regex, RegexPattern, String, VarArgs
-from ..results import result
+from ..results import error, result
 
 log = logging.getLogger(__name__)
 AG_LINE = re.compile(r"""
@@ -21,9 +21,11 @@ DEFAULT_OPTIONS = [
     "--nocolor",
 ]
 AG_NOT_INSTALLED = """
-{} does not appear to be installed.
+{} not found. It may be necessary to set the ag executable path in the
+extension settings.
 
-See https://github.com/ggreer/the_silver_searcher#the-silver-searcher
+For installation instructions, see
+https://github.com/ggreer/the_silver_searcher#the-silver-searcher
 """
 
 
@@ -70,6 +72,8 @@ async def ag(editor, args):
         + [o for o in args.options if o] + options
     try:
         await process_lines(command, cwd=cwd, **line_processor)
+    except AgNotFound:
+        return error(AG_NOT_INSTALLED.format(ag_path))
     except CommandError as err:
         if not items:
             return input_required(str(err), args)
@@ -109,13 +113,12 @@ def make_line_processor(items, ag_path, cwd):
         if item is not None:
             items.append(item)
         if returncode:
-            if is_ag_installed(ag_path):
-                if returncode == 1:
-                    message = "no match"
-                else:
-                    message = f"[exit: {returncode}] {error}"
+            if not is_ag_installed(ag_path):
+                raise AgNotFound
+            if returncode == 1:
+                message = "no match"
             else:
-                message = AG_NOT_INSTALLED.format(ag_path)
+                message = f"[exit: {returncode}] {error}"
             raise CommandError(message)
 
     return {"iter_output": ag_lines, "got_output": got_output}
@@ -204,14 +207,21 @@ IGNORE_ENV = {}
 def is_ag_installed(ag_path="ag", recheck=False, result={}):
     if result.get(ag_path) is not None and not recheck:
         return result.get(ag_path)
-    rcode = subprocess.call(
-        [ag_path, "--version"],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
+    try:
+        rcode = subprocess.call(
+            [ag_path, "--version"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except FileNotFoundError:
+        rcode = -1
     result[ag_path] = rcode == 0
     return result[ag_path]
 
 
 class CommandError(Exception):
+    pass
+
+
+class AgNotFound(CommandError):
     pass
