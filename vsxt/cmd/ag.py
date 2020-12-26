@@ -2,7 +2,6 @@ import asyncio
 import logging
 import os
 import re
-import shlex
 import subprocess
 
 from ..command import command, get_context
@@ -67,8 +66,8 @@ async def ag(editor, args):
         return input_required("path is required", args)
     items = []
     line_processor = make_line_processor(items, ag_path, cwd)
-    command = [ag_path, shlex.quote(pattern)] \
-        + [shlex.quote(o) for o in args.options if o] + options
+    command = [ag_path, pattern] \
+        + [o for o in args.options if o] + options
     try:
         await process_lines(command, cwd=cwd, **line_processor)
     except CommandError as err:
@@ -161,20 +160,19 @@ async def process_lines(command, *, got_output, kill_on_cancel=True, **kw):
     :param kill_on_cancel: When true (the default), kill the subprocess if
     the command is canceled. Otherwise just stop collecting output.
     :param **kw: Keyword arguments accepted by `subprocess.Popen`.
-    :returns: The running `subprocess.Popen` object or `None`.
     """
     from asyncio.subprocess import PIPE, STDOUT
-    log.debug("async run %r %r", command, kw)
     iter_output = kw.pop("iter_output", None)
     env = {k: v for k, v in os.environ.items() if k not in IGNORE_ENV}
     cmd = " ".join(command)
+    log.debug("async run: %s", cmd)
     try:
-        proc = await asyncio.create_subprocess_shell(
-            cmd, stdout=PIPE, stderr=STDOUT, env=env, **kw)
+        proc = await asyncio.create_subprocess_exec(
+            *command, stdout=PIPE, stderr=STDOUT, env=env, **kw)
     except Exception as err:
-        log.warn("cannot open process: %s", command, exc_info=True)
+        log.warn("cannot open process: %s", cmd, exc_info=True)
         got_output(None, -1, str(err))
-        return None
+        return
     lines = iter_lines(proc.stdout, encoding="utf-8")
     items = lines if iter_output is None else iter_output(lines)
     async for item in items:
