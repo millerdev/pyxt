@@ -1,5 +1,6 @@
 const _ = require("lodash")
 const vscode = require('vscode')
+const jsonrpc = require('vscode-jsonrpc')
 const errable = require("./errors").errable
 
 function subscribe(context, client) {
@@ -71,9 +72,17 @@ async function getCommandResult(input, client) {
             disposables.push(input.onDidChangeValue(errable(value => {
                 updateCompletions(input, client, value)
             })))
-            disposables.push(input.onDidAccept(errable(() => {
-                resolve(doCommand(input, client))
-            })))
+            disposables.push(input.onDidAccept(async () => {
+                const promise = errable(doCommand)(input, client)
+                try {
+                    disposables.push(promise)
+                    resolve(await promise)
+                    disposables.pop()
+                } catch (err) {
+                    console.error(err)
+                    throw err
+                }
+            }))
             disposables.push(input.onDidHide(errable(() => resolve())))
         })
     } finally {
@@ -128,7 +137,6 @@ function distributeDetails(input) {
         }
     })
     input.items = input.items
-    console.log(input.items)
 }
 
 function updateCompletions(input, client, value) {
@@ -185,7 +193,7 @@ function doCommand(input, client) {
     let command = input.value || ""
     if (item) {
         if (item.filepath) {
-            return {type: "success", value: item.filepath}
+            return disposable({type: "success", value: item.filepath})
         }
         command = command.slice(0, item.offset) + item.label
         if (item.is_completion) {
@@ -198,12 +206,24 @@ function doCommand(input, client) {
     return exec(client, "do_command", command)
 }
 
-async function exec(client, command, ...args) {
-    await client.onReady()
-    return client.sendRequest(
-        "workspace/executeCommand",
-        {"command": command, "arguments": args}
-    )
+function disposable(value) {
+    promise = Promise.resolve(value)
+    promise.dispose = () => null
+    return promise
+}
+
+function exec(client, command, ...args) {
+    const can = new jsonrpc.CancellationTokenSource()
+    const promise = (async () => {
+        await client.onReady()
+        return client.sendRequest(
+            "workspace/executeCommand",
+            {"command": command, "arguments": args},
+            can.token
+        )
+    })()
+    promise.dispose = () => can.cancel()
+    return promise
 }
 
 async function openFile(path) {

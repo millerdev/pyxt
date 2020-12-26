@@ -2,7 +2,7 @@ import logging
 
 from . import command as cmd
 from .editor import Editor
-from .results import error, result
+from .results import error, handle_cancel, result
 from .types import XTServer
 
 # register commands by importing them
@@ -20,6 +20,7 @@ def xt_command(func):
 
 
 @xt_command
+@handle_cancel
 async def do_command(server: XTServer, params):
     input_value, = value, = params
     if not input_value:
@@ -40,6 +41,7 @@ async def do_command(server: XTServer, params):
 
 
 @xt_command
+@handle_cancel
 async def get_completions(server: XTServer, params):
     input_value, = params
     if input_value:

@@ -173,12 +173,21 @@ async def process_lines(command, *, got_output, kill_on_cancel=True, **kw):
         log.warn("cannot open process: %s", cmd, exc_info=True)
         got_output(None, -1, str(err))
         return
-    lines = iter_lines(proc.stdout, encoding="utf-8")
-    items = lines if iter_output is None else iter_output(lines)
-    async for item in items:
-        got_output(item, None)
-    await proc.wait()
-    got_output(None, proc.returncode)
+    try:
+        lines = iter_lines(proc.stdout, encoding="utf-8")
+        items = lines if iter_output is None else iter_output(lines)
+        async for item in items:
+            got_output(item, None)
+        await proc.wait()
+        got_output(None, proc.returncode)
+    except asyncio.CancelledError:
+        log.debug("cancelled: %s", cmd)
+        if kill_on_cancel:
+            proc.terminate()
+        # HACK `proc` should have a `close()` method
+        # avoid RuntimeError: Event loop is closed
+        proc._transport.close()
+        raise
 
 
 async def iter_lines(stream, encoding):
