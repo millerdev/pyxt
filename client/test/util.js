@@ -74,13 +74,16 @@ function itemText(item) {
  */
 function mockClient(...responses) {
     responses = responses.reverse()
+    const unexpected = []
     return {
         onReady: async () => undefined,
         sendRequest: async (method, params) => {
             const command = params.command
             const args = params.arguments
             if (!responses.length) {
-                assert.fail("unexpected request: " + JSON.stringify(params))
+                const msg = "unexpected request: " + JSON.stringify(params)
+                unexpected.push(msg)
+                assert.fail(msg)
             }
             const response = responses.pop()
             assert.strictEqual(response.length, 3, JSON.stringify(response))
@@ -88,8 +91,16 @@ function mockClient(...responses) {
             return response[2]
         },
         done: () => {
-            const uncalled = responses.reverse().map(JSON.stringify).join("\n")
-            assert(!uncalled, "client not called:\n" + uncalled)
+            const errors = []
+            if (unexpected.length) {
+                errors.push("Unexpected requests:")
+                errors.push(...unexpected)
+            }
+            if (responses.length) {
+                errors.push("Pending requests")
+                errors.push(responses.reverse().map(JSON.stringify).join("\n"))
+            }
+            assert(!errors.length, errors.join("\n"))    
         }
     }
 }

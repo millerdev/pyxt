@@ -195,11 +195,13 @@ function doCommand(input, client) {
         if (item.filepath) {
             return disposable({type: "success", value: item.filepath})
         }
-        command = command.slice(0, item.offset) + item.label
-        if (item.is_completion) {
-            input.busy = true
-            input.value = command
-            return exec(client, "get_completions", command)
+        if (item.is_completion || item.offset > 0 || item.label.startsWith(input.value)) {
+            command = command.slice(0, item.offset) + item.label
+            if (item.is_completion) {
+                input.busy = true
+                input.value = command
+                return exec(client, "get_completions", command)
+            }
         }
     }
     input.busy = true

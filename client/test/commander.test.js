@@ -40,6 +40,7 @@ suite('Commander', () => {
         const result = commander.commandInput(client)
         input = await env.inputItemsChanged()
         input.selectedItems = input.items.slice(0, 1)
+        input.value = "o"
         env.accept(input)
 
         input = await env.inputItemsChanged()
@@ -106,6 +107,24 @@ suite('Commander', () => {
         input.selectedItems = input.items.slice(1, 2)
         env.accept(input)
         input = await env.inputItemsChanged()
+
+        input.hide()
+        assert(!await result)
+    })
+
+    test("should do command with command bar value", async () => {
+        client = util.mockClient(
+            ["get_completions", ["ag x"], {type: "items", items: [
+                {label: "ag x", description: "~/project", offset: 0},
+            ]}],
+            ["do_command", ["ag xyz"], {type: "success", value: ""}]
+        )
+        let input
+        const result = commander.commandInput(client, "ag x")
+        input = await env.inputItemsChanged()
+        input.selectedItems = input.items.slice(0, 1)
+        input.value = "ag xyz"
+        env.accept(input)
 
         input.hide()
         assert(!await result)
