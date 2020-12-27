@@ -66,7 +66,7 @@ suite('Commander', () => {
             ],
         )
         let input
-        const result = commander.commandInput(client, "")
+        const result = commander.commandInput(client)
         input = await env.inputItemsChanged()
         input.selectedItems = input.items.slice(0, 1)
         env.accept(input)
@@ -84,7 +84,7 @@ suite('Commander', () => {
             ]}],
         )
         let input
-        const result = commander.commandInput(client, "open ")
+        const result = commander.commandInput(client, "", "open ")
         input = await env.inputItemsChanged()
         input.selectedItems = input.items.slice(1, 2)
         env.accept(input)
@@ -102,7 +102,7 @@ suite('Commander', () => {
             ]}],
         )
         let input
-        const result = commander.commandInput(client, "ag xyz ")
+        const result = commander.commandInput(client, "", "ag xyz ")
         input = await env.inputItemsChanged()
         input.selectedItems = input.items.slice(1, 2)
         env.accept(input)
@@ -120,7 +120,7 @@ suite('Commander', () => {
             ["do_command", ["ag xyz"], {type: "success", value: ""}]
         )
         let input
-        const result = commander.commandInput(client, "ag x")
+        const result = commander.commandInput(client, "", "ag x")
         input = await env.inputItemsChanged()
         input.selectedItems = input.items.slice(0, 1)
         input.value = "ag xyz"
@@ -139,7 +139,7 @@ suite('Commander', () => {
             ["do_command", ["open file"], {type: "success", value: "file"}]
         )
         let input
-        const result = commander.commandInput(client, "open ")
+        const result = commander.commandInput(client, "", "open ")
         input = await env.inputItemsChanged()
         input.selectedItems = input.items.slice(1)
         env.accept(input)
@@ -152,7 +152,7 @@ suite('Commander', () => {
             ["do_command", ["op "], {type: "error", message: "Unknown command: 'op '"}]
         )
         let input
-        const result = commander.commandInput(client, "op ")
+        const result = commander.commandInput(client, "", "op ")
         input = await env.inputItemsChanged()
         env.assertItems(input, [])
         env.accept(input)
@@ -187,7 +187,7 @@ suite('Commander', () => {
             ["get_completions", ["open dir/"], {items: [{label: "file2", offset: 9}]}],
         )
         let input
-        const result = commander.commandInput(client, "open ")
+        const result = commander.commandInput(client, "", "open ")
         input = await env.inputItemsChanged()
         env.assertItems(input, ["dir/", "file1"])
 
@@ -225,7 +225,7 @@ suite('Commander', () => {
             ]}],
         )
         let input
-        const result = commander.commandInput(client, "open ")
+        const result = commander.commandInput(client, "", "open ")
         input = await env.inputItemsChanged()
 
         await env.changeValue(input, "open d")
@@ -246,7 +246,7 @@ suite('Commander', () => {
             ["get_completions", ["open"], {items: [{label: "open", offset: 0}]}],
         )
         let input
-        const result = commander.commandInput(client, "open ")
+        const result = commander.commandInput(client, "", "open ")
         input = await env.inputItemsChanged()
         await env.changeValue(input, "open d")
         env.assertItems(input, ["dir/"])
@@ -280,7 +280,7 @@ suite('Commander', () => {
             ]}],
         )
         let input
-        const result = commander.commandInput(client, "cmd ")
+        const result = commander.commandInput(client, "", "cmd ")
         input = await env.inputItemsChanged()
         env.assertItems(input, ["text 1/detail 1", "text 2/detail 2"])
 
@@ -299,7 +299,7 @@ suite('Commander', () => {
             ["do_command", ["ag file"], results],
         )
         let input
-        const result = commander.commandInput(client, "ag file")
+        const result = commander.commandInput(client, "", "ag file")
         input = await env.inputItemsChanged()
         env.accept(input)
         input = await env.inputItemsChanged()
@@ -319,7 +319,7 @@ suite('Commander', () => {
             ["do_command", ["ag file"], {type: "items", items, filter_results: true}],
         )
         let input
-        const result = commander.commandInput(client, "ag file")
+        const result = commander.commandInput(client, "", "ag file")
         input = await env.inputItemsChanged()
         env.accept(input)
         input = await env.inputItemsChanged()
@@ -339,7 +339,7 @@ suite('Commander', () => {
             }],
         )
         let input
-        const result = commander.commandInput(client, "ag file")
+        const result = commander.commandInput(client, "", "ag file")
         input = await env.inputItemsChanged()
         env.accept(input)
         input = await env.inputItemsChanged()
@@ -347,6 +347,183 @@ suite('Commander', () => {
 
         input.hide()
         assert(!await result)
+    })
+
+    suite('with command prefix', () => {
+        test("should not add prefix to input value", async () => {
+            client = util.mockClient(
+                ["get_completions", ["open "], {items: [
+                    {label: "dir/", offset: 5},
+                    {label: "file", offset: 5},
+                ]}],
+            )
+            let input
+            const result = commander.command(client, "open ")
+            input = await env.inputItemsChanged()
+            assert.strictEqual(input.value, "")
+            assert.strictEqual(input.placeholder, "open")
+
+            input.hide()
+            assert(!await result)
+        })
+
+        test("should do command with prefix", async () => {
+            client = util.mockClient(
+                ["get_completions", ["ag x"], {type: "items", items: [
+                    {label: "ag x", description: "~/project", offset: 0},
+                ]}],
+                ["do_command", ["ag x"], {type: "success", value: ""}],
+            )
+            let input
+            const result = commander.commandInput(client, "ag ", "x")
+            input = await env.inputItemsChanged()
+            input.selectedItems = input.items.slice(0, 1)
+            env.accept(input)
+
+            input.hide()
+            assert(!await result)
+        })
+
+        test("should accept completion without prefix", async () => {
+            client = util.mockClient(
+                ["get_completions", ["ag xyz "], {type: "items", items: [
+                    {label: "", description: "ag xyz ~/project", offset: 0},
+                    {label: "dir/", is_completion: true, offset: 7},
+                ]}],
+                ["get_completions", ["ag xyz dir/"], {type: "items", items: [
+                    {label: "ag xyz dir/", description: "options ...", offset: 0},
+                ]}],
+            )
+            let input
+            const result = commander.commandInput(client, "ag ", "xyz ")
+            input = await env.inputItemsChanged()
+            input.selectedItems = input.items.slice(1, 2)
+            assert.strictEqual(input.value, "xyz ")
+            env.accept(input)
+            assert.strictEqual(input.value, "xyz dir/")
+            input = await env.inputItemsChanged()
+            assert.strictEqual(input.value, "xyz dir/")
+
+            input.hide()
+            assert(!await result)
+        })
+
+        test("should get completions with prefix", async () => {
+            client = util.mockClient(
+                ["get_completions", ["open "], {items: [
+                    {label: "dir/", offset: 5},
+                    {label: "file1", offset: 5},
+                ]}],
+                ["get_completions", ["open dir/"], {items: [{label: "file2", offset: 9}]}],
+            )
+            let input
+            const result = commander.commandInput(client, "open ", "")
+            input = await env.inputItemsChanged()
+            env.assertItems(input, ["dir/", "file1"])
+
+            await env.changeValue(input, "dir/")
+            input = await env.inputItemsChanged()
+            env.assertItems(input, ["file2"])
+
+            input.hide()
+            assert(!await result)
+        })
+
+        test("should filter completions with value from server", async () => {
+            client = util.mockClient(
+                ["get_completions", ["open dir/"], {value: "open dir/", items: [
+                    {label: "dir/", offset: 9},
+                    {label: "file", offset: 9},
+                ]}],
+            )
+            let input
+            const result = commander.commandInput(client, "open ", "dir/")
+            input = await env.inputItemsChanged()
+            assert.strictEqual(input.value, "dir/")
+            assert.strictEqual(input.xt_completions.value, "open dir/")
+
+            await env.changeValue(input, "dir/d")
+            env.assertItems(input, ["dir/"])
+            assert.strictEqual(input.value, "dir/d")
+            await env.changeValue(input, "dir/")
+            env.assertItems(input, ["dir/", "file"])
+            assert.strictEqual(input.value, "dir/")
+
+            input.hide()
+            assert(!await result)
+        })
+
+        test("should filter completions with input value", async () => {
+            client = util.mockClient(
+                ["get_completions", ["open dir/"], {items: [
+                    {label: "dir/", offset: 9},
+                    {label: "file", offset: 9},
+                ]}],
+            )
+            let input
+            const result = commander.commandInput(client, "open ", "dir/")
+            input = await env.inputItemsChanged()
+            assert.strictEqual(input.value, "dir/")
+            assert.strictEqual(input.xt_completions.value, "open dir/")
+
+            await env.changeValue(input, "dir/d")
+            env.assertItems(input, ["dir/"])
+            assert.strictEqual(input.value, "dir/d")
+            await env.changeValue(input, "dir/")
+            env.assertItems(input, ["dir/", "file"])
+            assert.strictEqual(input.value, "dir/")
+    
+            input.hide()
+            assert(!await result)
+        })
+
+        test("should prompt on input required", async () => {
+            client = util.mockClient(
+                ["get_completions", ["ag x"], {type: "items", items: [
+                    {label: "ag x", description: "", offset: 0},
+                ]}],
+                ["do_command", ["ag x"], {
+                    type: "items",
+                    value: "ag x",
+                    items: [
+                        {label: "", description: "path is required", offset: 0},
+                    ],
+                }]
+            )
+            let input
+            const result = commander.commandInput(client, "ag ", "x")
+            input = await env.inputItemsChanged()
+            assert.strictEqual(input.value, "x")
+            input.selectedItems = input.items.slice(0, 1)
+            env.accept(input)
+            input = await env.inputItemsChanged()
+            env.assertItems(input, [""])
+            assert.strictEqual(input.value, "x")
+
+            input.hide()
+            assert(!await result)
+        })
+
+        test("should show full command as results filter placeholder", async () => {
+            client = util.mockClient(
+                ["get_completions", ["ag file"], {items: []}],
+                ["do_command", ["ag file"], {
+                    type: "items",
+                    items: [{label: "result", offset: 0}],
+                    filter_results: true,
+                }],
+            )
+            let input
+            const result = commander.commandInput(client, "ag ", "file")
+            input = await env.inputItemsChanged()
+            assert.strictEqual(input.value, "file")
+            env.accept(input)
+            input = await env.inputItemsChanged()
+            assert.strictEqual(input.placeholder, "ag file")
+
+            input.hide()
+            assert(!await result)
+        })
     })
 })
 

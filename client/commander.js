@@ -14,9 +14,9 @@ function subscribe(context, client) {
     )
 }
 
-async function command(client, prefix) {
+async function command(client, cmd="") {
     try {
-        const filePath = await commandInput(client, prefix)
+        const filePath = await commandInput(client, cmd)
         if (filePath) {
             await openFile(filePath)
         }
@@ -26,20 +26,19 @@ async function command(client, prefix) {
     }
 }
 
-async function commandInput(client, prefix, completions) {
+async function commandInput(client, cmd="", value="", completions) {
     const input = vscode.window.createQuickPick()
     try {
-        input.placeholder = "XT Command"
+        input.placeholder = cmd.trim() || "XT Command"
         input.ignoreFocusOut = true
+        input.xt_cmd = cmd
         if (completions) {
             setCompletions(input, completions)
         } else {
-            getCompletions(input, client, prefix || "")
+            getCompletions(input, client, cmd + value)
         }
         input.show()
-        if (prefix) {
-            input.value = prefix
-        }
+        input.value = value
         const result = await getCommandResult(input, client)
         input.hide()
         if (!result) {
@@ -47,9 +46,12 @@ async function commandInput(client, prefix, completions) {
         }
         if (result.type === "items") {
             if (result.filter_results) {
-                return filterResults(result, input.value)
+                return filterResults(result, cmd + input.value)
             }
-            return commandInput(client, result.value, result)
+            const value_ = result.value
+                ? result.value.slice(cmd.length)
+                : input.value
+            return commandInput(client, cmd, value_, result)
         }
         if (result.type === "success") {
             return result.value
@@ -140,8 +142,9 @@ function distributeDetails(input) {
 }
 
 function updateCompletions(input, client, value) {
-    const completions = input._command_completions
-    if (completions && input.value.startsWith(completions.value)) {
+    const completions = input.xt_completions
+    value = input.xt_cmd + value
+    if (completions && value.startsWith(completions.value)) {
         const matching = completions.items.filter(item => {
             const term = value.slice(item.offset)
             return item.label.startsWith(term)
@@ -168,9 +171,10 @@ async function getCompletions(input, client, value) {
 const debouncedGetCompletions = _.debounce(getCompletions, 200)
 
 function setCompletions(input, completions, transformItem) {
+    const value = input.xt_cmd + input.value
     const items = completions.items.map(transformItem || toAlwaysShown)
     input.items = items
-    input._command_completions = {value: input.value, ...completions, items}
+    input.xt_completions = {value, ...completions, items}
 }
 
 function toAlwaysShown(item) {
@@ -190,16 +194,16 @@ function toQuickPickItem(item) {
 
 function doCommand(input, client) {
     const item = input.selectedItems[0]
-    let command = input.value || ""
+    let command = input.xt_cmd + input.value
     if (item) {
         if (item.filepath) {
             return disposable({type: "success", value: item.filepath})
         }
-        if (item.is_completion || item.offset > 0 || item.label.startsWith(input.value)) {
+        if (item.is_completion || item.offset > 0 || item.label.startsWith(command)) {
             command = command.slice(0, item.offset) + item.label
             if (item.is_completion) {
                 input.busy = true
-                input.value = command
+                input.value = command.slice(input.xt_cmd.length)
                 return exec(client, "get_completions", command)
             }
         }
