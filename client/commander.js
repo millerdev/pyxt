@@ -33,7 +33,7 @@ async function commandInput(client, cmd="", value="", completions) {
         input.ignoreFocusOut = true
         input.xt_cmd = cmd
         if (completions) {
-            setCompletions(input, completions)
+            setCompletions(input, cmd + value, completions)
         } else {
             getCompletions(input, client, cmd + value)
         }
@@ -100,7 +100,7 @@ async function filterResults(result, command) {
         input.ignoreFocusOut = true
         input.matchOnDescription = true
         input.matchOnDetail = true
-        setCompletions(input, result, toQuickPickItem)
+        setCompletions(input, command, result, toQuickPickItem)
         input.show()
         const item = await new Promise(resolve => {
             if (!result.keep_empty_details) {
@@ -164,14 +164,13 @@ function updateCompletions(input, client, value) {
 async function getCompletions(input, client, value) {
     input.busy = true
     const result = await exec(client, "get_completions", value)
-    setCompletions(input, result)
+    setCompletions(input, value, result)
     input.busy = false
 }
 
 const debouncedGetCompletions = _.debounce(getCompletions, 200)
 
-function setCompletions(input, completions, transformItem) {
-    const value = input.xt_cmd + input.value
+function setCompletions(input, value, completions, transformItem) {
     const items = completions.items.map(transformItem || toAlwaysShown)
     input.items = items
     input.xt_completions = {value, ...completions, items}

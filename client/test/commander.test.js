@@ -178,6 +178,30 @@ suite('Commander', () => {
         assert(!await result)
     })
 
+    test("should save completed value with completions", async () => {
+        client = util.mockClient(
+            ["get_completions", [""], {items: [{label: "open", offset: 0}]}],
+            ["get_completions", ["open "], {items: [
+                {label: "dir/", offset: 5},
+                {label: "file1", offset: 5},
+            ]}],
+        )
+        let input
+        const result = commander.commandInput(client)
+        input = await env.inputItemsChanged()
+        env.assertItems(input, ["open"])
+        assert.strictEqual(input.value, "")
+
+        input._fireDidChangeValue("open ")
+        input.value = "open x"
+        input = await env.inputItemsChanged()
+        assert.strictEqual(input.xt_completions.value, "open ")
+        env.assertItems(input, ["dir/", "file1"])
+
+        input.hide()
+        assert(!await result)
+    })
+
     test("should get more completions on complete match", async () => {
         client = util.mockClient(
             ["get_completions", ["open "], {items: [
