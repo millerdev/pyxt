@@ -8,7 +8,7 @@ suite('Commander', () => {
     let env, client
     beforeEach(() => {
         client = undefined
-        env = util.setup()
+        env = util.setup(commander)
     })
     afterEach(() => util.teardown(env, client))
 
@@ -371,6 +371,73 @@ suite('Commander', () => {
 
         input.hide()
         assert(!await result)
+    })
+
+    suite('history', () => {
+        const items = [{label: "file", offset: 5}]
+
+        test("should save successful command", async () => {
+            client = util.mockClient(
+                ["get_completions", ["open file"], {items}],
+                ["do_command", ["open file"], {type: "success", value: "file"}],
+            )
+            let input
+            const result = commander.commandInput(client, "", "open file")
+            input = await env.inputItemsChanged()
+            assert.deepStrictEqual(env.history.get("open"), [])
+            env.accept(input)
+            assert(await result)
+            assert.deepStrictEqual(env.history.get("open"), ["file"])
+        })
+
+        test("should save filter results command", async () => {
+            client = util.mockClient(
+                ["get_completions", ["ag xyz"], {type: "items", items: []}],
+                ["do_command", ["ag xyz"], {
+                    type: "items",
+                    items: [],
+                    filter_results: true,
+                }],
+            )
+            let input
+            const result = commander.commandInput(client, "ag ", "xyz")
+            input = await env.inputItemsChanged()
+            assert.deepStrictEqual(env.history.get("ag"), [])
+            input = env.accept(input)
+            input = await env.inputItemsChanged()
+            input.hide()
+            assert(!await result)
+            assert.deepStrictEqual(env.history.get("ag"), ["xyz"])
+        })
+
+        test("should not save incomplete command", async () => {
+            client = util.mockClient(
+                ["get_completions", ["open "], {items}],
+                ["do_command", ["open "], {type: "items", items}],
+            )
+            let input
+            const result = commander.commandInput(client, "", "open ")
+            input = await env.inputItemsChanged()
+            env.accept(input)
+            input = await env.inputItemsChanged()
+            input.hide()
+            assert(!await result)
+            assert.deepStrictEqual(env.history.get("open"), [])
+        })
+
+        test("should update for auto-completed command", async () => {
+            client = util.mockClient(
+                ["get_completions", ["open "], {items}],
+                ["do_command", ["open file"], {type: "success", value: "file"}],
+            )
+            let input, result
+            result = commander.commandInput(client, "", "open ")
+            input = await env.inputItemsChanged()
+            input.selectedItems = input.items.slice(0, 1)
+            env.accept(input)
+            assert(await result)
+            assert.deepStrictEqual(env.history.get("open"), ["file"])
+        })
     })
 
     suite('with command prefix', () => {

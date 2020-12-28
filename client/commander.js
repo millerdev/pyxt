@@ -2,6 +2,7 @@ const _ = require("lodash")
 const vscode = require('vscode')
 const jsonrpc = require('vscode-jsonrpc')
 const errable = require("./errors").errable
+let history
 
 function subscribe(context, client) {
     const clientCommand = async () => await command(client)
@@ -12,6 +13,10 @@ function subscribe(context, client) {
         vscode.commands.registerCommand("vsxt.ag", clientAg),
         vscode.commands.registerCommand("vsxt.openFile", clientOpen)
     )
+}
+
+function setHistory(value) {
+    history = value
 }
 
 async function command(client, cmd="") {
@@ -75,8 +80,8 @@ async function getCommandResult(input, client) {
                 updateCompletions(input, client, value)
             })))
             disposables.push(input.onDidAccept(async () => {
-                const promise = errable(doCommand)(input, client)
                 try {
+                    const promise = doCommand(input, client)
                     disposables.push(promise)
                     resolve(await promise)
                     disposables.pop()
@@ -191,7 +196,7 @@ function toQuickPickItem(item) {
     return item
 }
 
-function doCommand(input, client) {
+async function doCommand(input, client) {
     const item = input.selectedItems[0]
     let command = input.xt_cmd + input.value
     if (item) {
@@ -208,7 +213,9 @@ function doCommand(input, client) {
         }
     }
     input.busy = true
-    return exec(client, "do_command", command)
+    const result = await exec(client, "do_command", command)
+    updateHistory(command, result)
+    return result
 }
 
 function disposable(value) {
@@ -229,6 +236,17 @@ function exec(client, command, ...args) {
     })()
     promise.dispose = () => can.cancel()
     return promise
+}
+
+function updateHistory(command, result) {
+    const [cmd, value] = command.split(/ (.*)/, 2)
+    if (result && value) {
+        if (result.type === "success") {
+            history.update(cmd, value)
+        } else if (result.type === "items" && result.filter_results) {
+            history.update(cmd, value)
+        }
+    }
 }
 
 async function openFile(path) {
@@ -264,6 +282,7 @@ function splitGoto(path) {
 
 module.exports = {
     subscribe,
+    setHistory,
     command,
     commandInput,
     splitGoto,

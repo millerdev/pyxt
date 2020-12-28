@@ -1,10 +1,11 @@
 "use strict"
 const net = require('net')
 const path = require('path')
-const workspace = require('vscode').workspace
-const LanguageClient = require('vscode-languageclient').LanguageClient
+const {workspace} = require('vscode')
+const {LanguageClient} = require('vscode-languageclient')
 const jsproxy = require("./jsproxy")
 const commander = require("./commander")
+const {createHistory} = require("./history")
 const DEBUG_PORT = 2087
 let client
 
@@ -17,6 +18,7 @@ function activate(context) {
     context.subscriptions.push(client.start())
     jsproxy.publish(client)
     commander.subscribe(context, client)
+    commander.setHistory(createHistory(context.globalState))
 }
 
 function deactivate() {
