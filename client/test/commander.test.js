@@ -438,6 +438,58 @@ suite('Commander', () => {
             assert(await result)
             assert.deepStrictEqual(env.history.get("open"), ["file"])
         })
+
+        test("should display history before other completions", async () => {
+            client = util.mockClient(
+                ["get_completions", ["open "], {items}],
+                ["do_command", ["open file"], {type: "success", value: "file"}],
+                ["get_completions", ["open "], {items: [
+                    {label: "file1", offset: 5},
+                ]}],
+            )
+            let input, result
+            result = commander.commandInput(client, "", "open ")
+            input = await env.inputItemsChanged()
+            input.selectedItems = input.items.slice(0, 1)
+            env.accept(input)
+            assert(await result)
+
+            result = commander.commandInput(client, "", "open ")
+            input = await env.inputItemsChanged()
+            env.assertItems(input, ["open file", "file1"])
+        })
+
+        test("should display history after exec completion item", async () => {
+            client = util.mockClient(
+                ["get_completions", ["ag x"], {type: "items", items: [
+                    {label: "ag x", description: "~/project", offset: 0},
+                ]}],
+                ["do_command", ["ag xx"], {
+                    type: "items",
+                    items: [{label: "xx result", offset: 0}],
+                    filter_results: true,
+                }],
+                ["get_completions", ["ag x"], {type: "items", items: [
+                    {label: "ag x", description: "~/project", offset: 0},
+                ]}],
+            )
+            let input, result
+            result = commander.commandInput(client, "", "ag x")
+            input = await env.inputItemsChanged()
+            input.value = "ag xx"
+            env.accept(input)
+            input = await env.inputItemsChanged()
+            input.hide()
+            assert(!await result)
+
+            result = commander.commandInput(client, "", "ag x")
+            input = await env.inputItemsChanged()
+            env.assertItems(input, ["ag x", "ag xx"])
+            assert.deepStrictEqual(input.items[1], {label: "ag xx", offset: 0})
+
+            input.hide()
+            assert(!await result)
+        })
     })
 
     suite('with command prefix', () => {
@@ -611,6 +663,38 @@ suite('Commander', () => {
             env.accept(input)
             input = await env.inputItemsChanged()
             assert.strictEqual(input.placeholder, "ag file")
+
+            input.hide()
+            assert(!await result)
+        })
+
+        test("should display history after exec completion item", async () => {
+            client = util.mockClient(
+                ["get_completions", ["ag x"], {type: "items", items: [
+                    {label: "ag x", description: "~/project", offset: 0},
+                ]}],
+                ["do_command", ["ag xx"], {
+                    type: "items",
+                    items: [{label: "xx result", offset: 0}],
+                    filter_results: true,
+                }],
+                ["get_completions", ["ag x"], {type: "items", items: [
+                    {label: "ag x", description: "~/project", offset: 0},
+                ]}],
+            )
+            let input, result
+            result = commander.commandInput(client, "ag ", "x")
+            input = await env.inputItemsChanged()
+            input.value = "xx"
+            env.accept(input)
+            input = await env.inputItemsChanged()
+            input.hide()
+            assert(!await result)
+
+            result = commander.commandInput(client, "ag ", "x")
+            input = await env.inputItemsChanged()
+            env.assertItems(input, ["ag x", "ag xx"])
+            assert.deepStrictEqual(input.items[1], {label: "ag xx", offset: 0})
 
             input.hide()
             assert(!await result)

@@ -105,7 +105,7 @@ async function filterResults(result, command) {
         input.ignoreFocusOut = true
         input.matchOnDescription = true
         input.matchOnDetail = true
-        setCompletions(input, command, result, toQuickPickItem)
+        setCompletions(input, command, result, toQuickPickItem, true)
         input.show()
         const item = await new Promise(resolve => {
             if (!result.keep_empty_details) {
@@ -175,9 +175,9 @@ async function getCompletions(input, client, value) {
 
 const debouncedGetCompletions = _.debounce(getCompletions, 200)
 
-function setCompletions(input, value, completions, transformItem) {
+function setCompletions(input, value, completions, transformItem, noHistory) {
     const items = completions.items.map(transformItem || toAlwaysShown)
-    input.items = items
+    input.items = noHistory ? items : addHistory(items, value)
     input.xt_completions = {value, ...completions, items}
 }
 
@@ -239,7 +239,7 @@ function exec(client, command, ...args) {
 }
 
 function updateHistory(command, result) {
-    const [cmd, value] = command.split(/ (.*)/, 2)
+    const [cmd, value] = splitCommand(command)
     if (result && value) {
         if (result.type === "success") {
             history.update(cmd, value)
@@ -247,6 +247,27 @@ function updateHistory(command, result) {
             history.update(cmd, value)
         }
     }
+}
+
+function addHistory(items, command) {
+    const [cmd, value] = splitCommand(command)
+    const hist = history.get(cmd)
+        .filter(item => item.startsWith(value))
+        .map(label => cmd + " " + label)
+        .map(label => ({label, offset: 0}))
+    if (hist.length) {
+        const zero = items.length ? items[0] : null
+        if (zero && zero.offset === 0) {
+            items = [zero].concat(hist).concat(items.slice(1))
+        } else {
+            items = hist.concat(items)
+        }
+    }
+    return items
+}
+
+function splitCommand(command) {
+    return command.split(/ (.*)/, 2)
 }
 
 async function openFile(path) {
