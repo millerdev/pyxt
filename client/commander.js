@@ -35,6 +35,7 @@ async function commandInput(client, cmd="", value="", completions) {
     const input = vscode.window.createQuickPick()
     try {
         input.placeholder = cmd.trim() || "XT Command"
+        input.sortByLabel = false
         input.ignoreFocusOut = true
         input.xt_cmd = cmd
         if (completions) {
@@ -102,6 +103,7 @@ async function filterResults(result, command) {
     const disposables = [input]
     try {
         input.placeholder = result.placeholder || command
+        input.sortByLabel = false
         input.ignoreFocusOut = true
         input.matchOnDescription = true
         input.matchOnDetail = true
@@ -201,6 +203,7 @@ async function doCommand(input, client) {
     let command = input.xt_cmd + input.value
     if (item) {
         if (item.filepath) {
+            // TODO save history
             return disposable({type: "success", value: item.filepath})
         }
         if (item.is_completion || item.offset > 0 || item.label.startsWith(command)) {
