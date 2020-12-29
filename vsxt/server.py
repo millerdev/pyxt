@@ -74,7 +74,8 @@ def parse_command(input_value):
 
 async def _get_completions(command, parser, input_value, argstr):
     items = await parser.get_completions(argstr)
-    if not (argstr or input_value.endswith(" ")):
+    has_space_after_command = argstr or input_value.endswith(" ")
+    if not has_space_after_command:
         input_value += " "
     offset = len(input_value) - len(argstr)
     items = [itemize(x, offset) for x in items]

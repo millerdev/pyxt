@@ -5,9 +5,9 @@ from testil import eq, replattr
 
 from .. import command
 from .. import server as mod
-from ..parser import Choice, CommandParser
+from ..parser import Choice, CommandParser, String
 from ..results import error, result
-from ..tests.util import async_test
+from ..tests.util import async_test, gentest
 
 
 def test_do_command():
@@ -36,6 +36,48 @@ def test_get_completions():
     yield test, "cmd", result([item("a", 4), item("b", 4)], "cmd ")
     yield test, "cmd ", result([item("a", 4), item("b", 4)], "cmd ")
     yield test, "cmd a", result([item("a", 4)], "cmd a")
+
+
+def test_get_completions_with_placeholder_item():
+    server = object()
+
+    @gentest
+    @async_test
+    async def test(input_value, expected_result):
+        with test_command():
+            @command.command(
+                parser=CommandParser(String("arg"), Choice("yes no")),
+                has_placeholder_item=True,
+            )
+            async def prog(editor, args):
+                return result(value=args.arg)
+
+            res = await mod.get_completions(server, [input_value])
+            eq(res, expected_result)
+
+    yield test("prog", result([
+        item("prog ", 0, description="arg yes"),
+    ], "prog "))
+    yield test("prog ", result([
+        item("prog ", 0, description="arg yes"),
+    ], "prog "))
+    yield test("prog ' ", result([
+        item("prog ' '", 0, description="yes"),
+    ], "prog ' "))
+    yield test("prog ' '", result([
+        item("prog ' '", 0, description="yes"),
+        item("yes", 9, is_completion=True),
+        item("no", 9, is_completion=True),
+    ], "prog ' '"))
+    yield test("prog ' ' ", result([
+        item("prog ' ' ", 0, description="yes"),
+        item("yes", 9, is_completion=True),
+        item("no", 9, is_completion=True),
+    ], "prog ' ' "))
+    yield test("prog ' ' y", result([
+        item("prog ' ' yes", 0, description=""),
+        item("yes", 9, is_completion=True),
+    ], "prog ' ' y"))
 
 
 def test_parse_command():

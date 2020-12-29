@@ -331,6 +331,24 @@ def test_CommandParser_order():
     yield test, 's', Options(selection=True, reverse=False)
 
 
+def test_CommandParser_completions_after_string():
+    @async_test
+    async def test(text, expected_items, index=None):
+        items = await parser.get_completions(text)
+        eq_(items, expected_items)
+        eq_({x.start for x in items}, (set() if index is None else {index}))
+
+    parser = CommandParser(String("value"), yesno)
+    yield test, "'", []
+    yield test, "x", []
+    yield test, "x ", ["yes", "no"], 2
+    yield test, "'x", []
+    yield test, "'x'", ["yes", "no"], 4
+    yield test, "'x' ", ["yes", "no"], 4
+    yield test, "\\ ", []
+    yield test, "\\  ", ["yes", "no"], 3
+
+
 def test_Arg():
     @async_test
     async def test(arg, strval):
@@ -540,7 +558,7 @@ def test_String():
     eq_(repr(field), "String('str')")
 
     test = make_consume_checker(field)
-    yield test, '', 0, (None, 0)
+    yield test, '', 0, (None, 1)
     yield test, 'a', 0, ('a', 2)
     yield test, 'abc', 0, ('abc', 4)
     yield test, 'abc def', 0, ('abc', 4)
@@ -551,7 +569,7 @@ def test_String():
     yield test, '"a c"', 0, ('a c', 5)
     yield test, "'a c'", 0, ('a c', 5)
     yield test, "'a c' ", 0, ('a c', 6)
-    yield test, "'a c", 0, ParseError("unterminated string: 'a c", field, 0, 4)
+    yield test, "'a c", 0, ('a c', 5)
     yield test, r"'a c\' '", 0, ("a c' ", 8)
     yield test, r"'a c\\' ", 0, ("a c\\", 8)
     yield test, r"'a c\"\' '", 0, ("a c\"\' ", 10)
@@ -569,9 +587,9 @@ def test_String():
     yield test, '\\\\\\', 0, ParseError("unterminated string: \\\\\\", field, 0, 3)
     yield test, '\\\\\\\\', 0, ("\\\\", 5)
     yield test, '""', 0, ("", 2)
-    yield test, '"\\"', 0, ParseError('unterminated string: "\\"', field, 0, 3)
+    yield test, '"\\"', 0, ('"', 4)
     yield test, '"\\\\"', 0, ("\\", 4)
-    yield test, '"\\\\\\"', 0, ParseError('unterminated string: "\\\\\\"', field, 0, 5)
+    yield test, '"\\\\\\"', 0, ('\\"', 6)
     yield test, '"\\\\\\\\"', 0, ("\\\\", 6)
 
     test = make_arg_string_checker(field)
@@ -602,6 +620,9 @@ def test_String():
     yield test, "", 0, ("", "str")
     yield test, "a", 0, ""
     yield test, "s", 0, ""
+    yield test, "'a", 0, ("'", "")
+    yield test, "'a'", 0, ("", "")
+    yield test, '"a', 0, ('"', "")
 
     test = make_placeholder_checker(String('str', default='def'))
     yield test, "", 0, ("", "def")
@@ -672,7 +693,7 @@ def test_File():
         yield test, "arg/", Error("not a file: path='arg/'")
 
         test = make_consume_checker(field)
-        yield test, '', 0, (None, 0)
+        yield test, '', 0, (None, 1)
         yield test, 'a', 0, (join(tmp, 'dir/a'), 2)
         yield test, 'abc', 0, (join(tmp, 'dir/abc'), 4)
         yield test, 'abc ', 0, (join(tmp, 'dir/abc'), 4)
@@ -752,7 +773,7 @@ def test_File():
         field = await_coroutine(field.with_context(editor))
 
         test = make_consume_checker(field)
-        yield test, '', 0, (None, 0)
+        yield test, '', 0, (None, 1)
         yield test, 'a', 0, (join(tmp, 'dir/a'), 2)
         yield test, 'abc', 0, (join(tmp, 'dir/abc'), 4)
         yield test, 'abc ', 0, (join(tmp, 'dir/abc'), 4)
@@ -796,7 +817,7 @@ def test_DynamicList():
     # eq_(repr(field), "DynamicList('tool', default='Hammer')")
 
     test = make_consume_checker(field)
-    yield test, '', 0, (field.default, 0)
+    yield test, '', 0, (field.default, 1)
     yield test, 'a', 0, ParseError(
         "'a' does not match any of: Hammer, Hammer Drill, Scewer, Screw Driver",
         field, 0, 1)

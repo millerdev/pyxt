@@ -101,6 +101,8 @@ class CommandParser(object):
                 yield arg
                 if not arg.errors:
                     index = arg.end
+                    if index == len(text) and text[-1] != ' ':
+                        index += 1
             setattr(args, field.name, arg)
         if index < len(text):
             yield await Arg(None, text, index, args)
@@ -238,9 +240,6 @@ class Arg(object):
         if not hasattr(self, "end"):
             try:
                 value, index = await field.consume(text, start)
-                if index == len(text) and not text[start:].endswith(" "):
-                    # this argument could consume more characters
-                    index += 1
             except ParseError as err:
                 self.errors.append(err)
                 value = field.default
@@ -699,6 +698,8 @@ class String(Field):
         :returns: (<string or default value>, <index>)
         """
         if index >= len(text):
+            if index == len(text):
+                index += 1
             return self.default, index
         escapes = self.ESCAPES
         if text[index] not in self.DELIMITERS:
@@ -710,7 +711,7 @@ class String(Field):
             delim = text[index]
             start = index + 1
         chars, esc = [], 0
-        for i, c in enumerate(text[start:]):
+        for i, c in enumerate(text[start:], start=start):
             if esc:
                 esc = 0
                 try:
@@ -721,17 +722,17 @@ class String(Field):
             elif c == delim:
                 if delim == ' ':
                     if not chars:
-                        return self.default, start + i + 1
-                elif text[start + i + 1:start + i + 2] == ' ':
-                    start += 1  # consume trailing space
-                return ''.join(chars), start + i + 1
+                        return self.default, i + 1
+                elif text[i + 1:i + 2] == ' ':
+                    i += 1  # consume trailing space
+                return ''.join(chars), i + 1
             if c == '\\':
                 esc = 1
             else:
                 chars.append(c)
+        if not esc:
+            return ''.join(chars), len(text) + 1
         if delim == ' ':
-            if not esc:
-                return ''.join(chars), len(text) + 1
             delim = ''
         msg = 'unterminated string: {}{}'.format(delim, text[start:])
         raise ParseError(msg, self, index, len(text))
@@ -749,9 +750,14 @@ class String(Field):
 
     async def get_placeholder(self, arg):
         value = self.default
-        if not arg and value:
-            return "", delimit(value, "\"'")[0]
-        return await super().get_placeholder(arg)
+        if not arg:
+            if value:
+                return "", delimit(value, self.DELIMITERS)[0]
+            return await super().get_placeholder(arg)
+        first = str(arg)[0]
+        needs_delim = arg.could_consume_more and first in self.DELIMITERS
+        delim = first if needs_delim else ""
+        return delim, ""
 
 
 class File(String):
