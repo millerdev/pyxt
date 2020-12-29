@@ -1074,26 +1074,26 @@ class Regex(Field):
         return RegexPattern(expr, flags), index
 
     def consume_expression(self, text, index):
+        start = index
         if self.replace or text[index] in self.delimiters:
             delim = text[index]
-            delim_offset = 0
+            start += 1
         else:
             delim = ' '
-            delim_offset = -2
         chars, esc = [], 0
-        i = -1
-        for i, c in enumerate(text[index + 1 + (delim_offset // 2):]):
+        i = start
+        for i, c in enumerate(text[start:], start=start):
             if esc:
                 esc = 0
                 chars.append(c)
                 continue
             elif c == delim:
-                return ''.join(chars), index + i + 2 + delim_offset
+                return ''.join(chars), i + (1 if delim != ' ' else 0)
             chars.append(c)
             if c == '\\':
                 esc = 1
         if not esc:
-            return ''.join(chars), index + i + 3 + delim_offset
+            return ''.join(chars), len(text) + 1
         token = ''.join(chars)
         msg = 'unterminated regex: {}{}'.format(delim, token)
         raise ParseError(msg, self, index, len(text) + 1)
@@ -1101,18 +1101,15 @@ class Regex(Field):
     def consume_flags(self, text, index):
         flags = {'i': re.IGNORECASE, 's': re.DOTALL, 'l': re.LOCALE}
         value = self.flags
-        while index < len(text):
-            char = text[index].lower()
+        for i, char in enumerate(text[index:], start=index):
             if char in flags:
                 value |= flags[char]
             elif char == ' ':
-                return value, index + 1
+                return value, i + 1
             else:
-                c = text[index]
-                msg = 'unknown flag: {}'.format(c)
-                raise ParseError(msg, self, index, index)
-            index += 1
-        return value, index + (0 if index > len(text) else 1)
+                msg = 'unknown flag: {}'.format(char)
+                raise ParseError(msg, self, index, i)
+        return value, len(text) + 1
 
     async def get_placeholder(self, arg):
         if not arg:
