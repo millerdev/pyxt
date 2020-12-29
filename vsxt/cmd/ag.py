@@ -32,7 +32,7 @@ https://github.com/ggreer/the_silver_searcher#the-silver-searcher
 
 async def get_selection_regex(editor=None):
     text = (await editor.selection) if editor else ""
-    return RegexPattern(re.escape(text), default_flags=0) if text else None
+    return RegexPattern(escape(text), default_flags=0) if text else None
 
 
 async def project_dirname(editor=None):
@@ -198,6 +198,11 @@ async def iter_lines(stream, encoding):
 
 
 IGNORE_ENV = {}
+
+
+def escape(text):
+    """Like re.escape(), but does not escape spaces"""
+    return re.escape(text).replace("\\ ", " ")
 
 
 def is_ag_installed(ag_path="ag", recheck=False, result={}):

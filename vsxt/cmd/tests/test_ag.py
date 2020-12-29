@@ -161,7 +161,7 @@ def test_ag_completions():
             eq(result["items"], items)
             eq(result["value"], cmd)
 
-        yield test("ag ", "/b\\ / /dir options ...", project_path="/dir")
+        yield test("ag ", "/b / /dir options ...", project_path="/dir")
         yield test("ag 'x ", "/dir options ...", "ag 'x '", project_path="/dir")
         yield test("ag x dir/", "options ...")
         yield test("ag x dir/ ", "options ...")
