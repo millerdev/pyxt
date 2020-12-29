@@ -874,7 +874,7 @@ def test_Regex():
     yield test, "", 0, ("", "/1 2/")
 
     test = make_arg_string_checker(field)
-    yield test, RegexPattern("str"), "/str/"
+    yield test, RegexPattern("str"), "str"
     yield test, RegexPattern("str", re.I), "/str/i"
     yield test, RegexPattern("/usr/bin"), ":/usr/bin:"
     yield test, RegexPattern("/usr/bin:"), '"/usr/bin:"'

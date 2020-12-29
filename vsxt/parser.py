@@ -1031,7 +1031,7 @@ class Regex(Field):
         self.flags = flags
         default = (None, None) if replace and default is None else default
         if isinstance(default, str):
-            self.placeholder = self.delimit(default)[0]
+            self.placeholder = self.delimit(default, is_replace=replace)[0]
             default = RegexPattern(default, flags)
         super(Regex, self).__init__(name, default)
 
@@ -1124,17 +1124,29 @@ class Regex(Field):
         return end, ""
 
     @classmethod
-    def delimit(cls, value, allchars=None, delimiters=DELIMITERS):
-        """Add delimiters before and after (escaped) value
+    def delimit(cls, value, allchars=None, delimiters=DELIMITERS, is_replace=False):
+        """Add delimiters before and after (escaped) value if necessary
 
         :param value: String to delimit.
         :param allchars: Characters to consider when choosing delimiter.
         Defaults to `value`.
         :param delimiters: A sequence of possible delimiters.
+        :param is_replace: A flag indicating if this is part of a find/
+        replace expression. Default: `False`.
         :returns: (<delimited value>, delimiter)
         """
+        def should_delimit(value):
+            return (
+                is_replace or
+                " " in value or
+                any(c in value for c in delimiters) or
+                (isinstance(value, RegexPattern) and cls.repr_flags(value))
+            )
+
         if allchars is None:
             allchars = value
+        if not should_delimit(value):
+            return value, ''
         delims = []
         for delim in delimiters:
             count = allchars.count(delim)
@@ -1196,7 +1208,7 @@ class Regex(Field):
             allchars = find = value
         if not isinstance(find, RegexPattern):
             raise Error("invalid value: {}={!r}".format(self.name, value))
-        pattern, delim = self.delimit(find, allchars)
+        pattern, delim = self.delimit(find, allchars, is_replace=self.replace)
         if self.replace:
             if delim in replace:
                 replace = self.escape(replace, delim)
