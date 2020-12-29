@@ -53,6 +53,11 @@ def test_ag():
             "/dir/B file:1:0:8          dir/B file      2: size: 10",
             "/dir/b.txt:0:10:1          dir/b.txt       1: name: dir/b.txt",
         ])
+        yield test("ag '[bB]|size: 10'", [
+            "/dir/B file:0:10:1                         1: name: dir/B file",
+            "/dir/B file:1:0:8          dir/B file      2: size: 10",
+            "/dir/b.txt:0:10:1          dir/b.txt       1: name: dir/b.txt",
+        ])
         yield test("ag dir/[bB] ..", [
             "/dir/../dir/B file:0:6:5   dir/B file      1: name: dir/B file",
             "/dir/../dir/b.txt:0:6:5    dir/b.txt       1: name: dir/b.txt",
@@ -161,7 +166,7 @@ def test_ag_completions():
             eq(result["items"], items)
             eq(result["value"], cmd)
 
-        yield test("ag ", "/b / /dir options ...", project_path="/dir")
+        yield test("ag ", "'b ' /dir options ...", project_path="/dir")
         yield test("ag 'x ", "/dir options ...", "ag 'x '", project_path="/dir")
         yield test("ag x dir/", "options ...")
         yield test("ag x dir/ ", "options ...")

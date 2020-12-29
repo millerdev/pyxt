@@ -746,14 +746,14 @@ class String(Field):
             if esc in value and esc not in "\"\\'":
                 value = value.replace(esc, "\\" + char)
         if " " in value or value.startswith(("'", '"')):
-            return Regex.delimit(value, delimiters="\"'")[0]
+            return delimit(value, "\"'")[0]
         return value
 
     async def get_placeholder(self, arg):
         value = self.default
         if not arg and value:
             if " " in value or value.startswith(("'", '"')):
-                return "", Regex.delimit(value, delimiters="\"'")[0]
+                return "", delimit(value, "\"'")[0]
             return "", value
         return await super().get_placeholder(arg)
 
@@ -1024,14 +1024,20 @@ class Regex(Field):
 
     DELIMITERS = "/:\"'"
 
-    def __init__(self, name, replace=False, default=None, flags=0):
+    def __init__(self, name, replace=False, default=None, flags=0, delimiters=DELIMITERS):
         self.args = [name]
-        self.kwargs = {"replace": replace, "default": default, "flags": flags}
+        self.kwargs = {
+            "replace": replace,
+            "default": default,
+            "flags": flags,
+            "delimiters": delimiters,
+        }
         self.replace = replace
         self.flags = flags
+        self.delimiters = delimiters
         default = (None, None) if replace and default is None else default
         if isinstance(default, str):
-            self.placeholder = self.delimit(default, is_replace=replace)[0]
+            self.placeholder = delimit(default, delimiters, always=replace)[0]
             default = RegexPattern(default, flags)
         super(Regex, self).__init__(name, default)
 
@@ -1049,7 +1055,7 @@ class Regex(Field):
             return self.default, index
         if index == len(text) or text[index] == ' ':
             return self.default, index + 1
-        if self.replace and text[index] not in self.DELIMITERS:
+        if self.replace and text[index] not in self.delimiters:
             msg = "invalid search pattern: {!r}".format(text[index:])
             raise ParseError(msg, self, index, index)
         expr, index = self.consume_expression(text, index)
@@ -1066,7 +1072,7 @@ class Regex(Field):
         return RegexPattern(expr, flags), index
 
     def consume_expression(self, text, index):
-        if self.replace or text[index] in self.DELIMITERS:
+        if self.replace or text[index] in self.delimiters:
             delim = text[index]
             delim_offset = 0
         else:
@@ -1111,7 +1117,7 @@ class Regex(Field):
             return "", str(self)
         text = arg.text
         index = arg.start
-        if self.replace and text[index] not in self.DELIMITERS:
+        if self.replace and text[index] not in self.delimiters:
             msg = "invalid search pattern: {!r}".format(text[index:])
             raise ParseError(msg, self, index, index)
         delim = text[index]
@@ -1122,63 +1128,6 @@ class Regex(Field):
             ignore, index = self.consume_expression(text, index - 1)
         end = delim if index > len(text) else ""
         return end, ""
-
-    @classmethod
-    def delimit(cls, value, allchars=None, delimiters=DELIMITERS, is_replace=False):
-        """Add delimiters before and after (escaped) value if necessary
-
-        :param value: String to delimit.
-        :param allchars: Characters to consider when choosing delimiter.
-        Defaults to `value`.
-        :param delimiters: A sequence of possible delimiters.
-        :param is_replace: A flag indicating if this is part of a find/
-        replace expression. Default: `False`.
-        :returns: (<delimited value>, delimiter)
-        """
-        def should_delimit(value):
-            return (
-                is_replace or
-                " " in value or
-                any(c in value for c in delimiters) or
-                (isinstance(value, RegexPattern) and cls.repr_flags(value))
-            )
-
-        if allchars is None:
-            allchars = value
-        if not should_delimit(value):
-            return value, ''
-        delims = []
-        for delim in delimiters:
-            count = allchars.count(delim)
-            if not count:
-                break
-            delims.append((count, delim))
-        else:
-            delim = min(delims)[1]
-            value = cls.escape(value, delim)
-        return "".join([delim, value, delim]), delim
-
-    @classmethod
-    def escape(cls, value, delimiter):
-        """Escape delimiters in value"""
-        return re.subn(
-            r"""
-            (
-                (?:
-                    \A          # beginning of string
-                    |           # or
-                    [^\\]       # not a backslash
-                    |           # or
-                    (?<={0})    # boundary after previous delimiter
-                )
-                (?:\\\\)*       # exactly 0, 2, 4, ... backslashes
-            )
-            {0}                 # delimiter
-            """.format(delimiter),
-            r"\1\\" + delimiter,
-            value,
-            flags=re.UNICODE | re.VERBOSE,
-        )[0]
 
     @classmethod
     def repr_flags(cls, value):
@@ -1208,12 +1157,68 @@ class Regex(Field):
             allchars = find = value
         if not isinstance(find, RegexPattern):
             raise Error("invalid value: {}={!r}".format(self.name, value))
-        pattern, delim = self.delimit(find, allchars, is_replace=self.replace)
+        pattern, delim = delimit(find, self.delimiters, allchars, self.replace)
         if self.replace:
             if delim in replace:
-                replace = self.escape(replace, delim)
+                replace = escape(replace, delim)
             pattern += replace + delim
         return pattern + self.repr_flags(find)
+
+
+def delimit(value, delimiters, allchars=None, always=False):
+    """Add delimiters before and after (escaped) value if necessary
+
+    :param value: String to delimit.
+    :param delimiters: A sequence of possible delimiters.
+    :param allchars: Characters to consider when choosing delimiter.
+    Defaults to `value`.
+    :param always: Always add delimiters, even when not required.
+    :returns: (<delimited value>, delimiter)
+    """
+    def should_delimit(value):
+        return (
+            always or
+            " " in value or
+            any(c in value for c in delimiters) or
+            (hasattr(value, "flags") and Regex.repr_flags(value))
+        )
+
+    if allchars is None:
+        allchars = value
+    if not should_delimit(value):
+        return value, ''
+    delims = []
+    for i, delim in enumerate(delimiters):
+        count = allchars.count(delim)
+        if not count:
+            break
+        delims.append((count, i, delim))
+    else:
+        delim = min(delims)[2]
+        value = escape(value, delim)
+    return "".join([delim, value, delim]), delim
+
+
+def escape(value, delimiter):
+    """Escape delimiters in value"""
+    return re.subn(
+        r"""
+        (
+            (?:
+                \A          # beginning of string
+                |           # or
+                [^\\]       # not a backslash
+                |           # or
+                (?<={0})    # boundary after previous delimiter
+            )
+            (?:\\\\)*       # exactly 0, 2, 4, ... backslashes
+        )
+        {0}                 # delimiter
+        """.format(delimiter),
+        r"\1\\" + delimiter,
+        value,
+        flags=re.UNICODE | re.VERBOSE,
+    )[0]
 
 
 class VarArgs(Field):

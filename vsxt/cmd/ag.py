@@ -45,7 +45,7 @@ async def project_dirname(editor=None):
 @command(
     "ag",
     CommandParser(
-        Regex("pattern", default=get_selection_regex),
+        Regex("pattern", default=get_selection_regex, delimiters="'\""),
         File("path", default=project_dirname, directory=True),
         VarArgs("options", String("options")),
         # TODO SubParser with dynamic dispatch based on pattern matching
