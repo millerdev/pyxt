@@ -745,16 +745,12 @@ class String(Field):
         for char, esc in self.ESCAPES.items():
             if esc in value and esc not in "\"\\'":
                 value = value.replace(esc, "\\" + char)
-        if " " in value or value.startswith(("'", '"')):
-            return delimit(value, "\"'")[0]
-        return value
+        return delimit(value, "\"'")[0]
 
     async def get_placeholder(self, arg):
         value = self.default
         if not arg and value:
-            if " " in value or value.startswith(("'", '"')):
-                return "", delimit(value, "\"'")[0]
-            return "", value
+            return "", delimit(value, "\"'")[0]
         return await super().get_placeholder(arg)
 
 
@@ -1179,7 +1175,7 @@ def delimit(value, delimiters, allchars=None, always=False):
         return (
             always or
             " " in value or
-            any(c in value for c in delimiters) or
+            any(value.startswith(c) for c in delimiters) or
             (hasattr(value, "flags") and Regex.repr_flags(value))
         )
 

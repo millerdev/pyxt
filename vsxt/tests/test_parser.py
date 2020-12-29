@@ -878,10 +878,13 @@ def test_Regex():
     yield test, RegexPattern("str", re.I), "/str/i"
     yield test, RegexPattern("/usr/bin"), ":/usr/bin:"
     yield test, RegexPattern("/usr/bin:"), '"/usr/bin:"'
-    yield test, RegexPattern(r'''//''\:""'''), r'''://''\:"":'''
+    yield test, RegexPattern('/usr/bin:"'), "'/usr/bin:\"'"
+    yield test, RegexPattern('/usr/bin:\'"'), ":/usr/bin\\:'\":"
+    yield test, RegexPattern(r'''//'':""'''), r'''://''\:"":'''
     yield test, RegexPattern(r'''//''\\:""'''), r'''://''\\\:"":'''
-    yield test, RegexPattern(r'''\://''""'''), r''':\://''"":'''
-    yield test, RegexPattern(r'''\\://''""'''), r''':\\\://''"":'''
+    yield test, RegexPattern(r'''://''""'''), r''':\://''"":'''
+    yield test, RegexPattern(r'''\://''""'''), r'''\://''""'''
+    yield test, RegexPattern(r'''\\://''""'''), r'''\\://''""'''
     # pedantic cases with three or more of all except ':'
     yield test, RegexPattern(r'''///'"'::"'"'''), r''':///'"'\:\:"'":'''
     yield test, RegexPattern(r'''///'"':\\:"'"'''), r''':///'"'\:\\\:"'":'''
