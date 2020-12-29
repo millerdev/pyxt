@@ -6,7 +6,7 @@
             "type": "python",
             "request": "launch",
             "module": "nose",
-            "args": [],
+            "args": ["--stop"],
             "justMyCode": false,
             "python": "${command:python.interpreterPath}",
             "cwd": "${workspaceFolder}",
