@@ -4,7 +4,7 @@ const errable = require("./errors").errable
 
 function publish(client) {
     client.onReady().then(errable(() => {
-        client.onRequest("vsxt.resolve", resolve)
+        client.onRequest("pyxt.resolve", resolve)
     }))
 }
 

@@ -9,9 +9,9 @@ function subscribe(context, client) {
     const clientAg = async () => await command(client, "ag ")
     const clientOpen = async () => await command(client, "open ")
     context.subscriptions.push(
-        vscode.commands.registerCommand("vsxt.command", clientCommand),
-        vscode.commands.registerCommand("vsxt.ag", clientAg),
-        vscode.commands.registerCommand("vsxt.openFile", clientOpen)
+        vscode.commands.registerCommand("pyxt.command", clientCommand),
+        vscode.commands.registerCommand("pyxt.ag", clientAg),
+        vscode.commands.registerCommand("pyxt.openFile", clientOpen)
     )
 }
 

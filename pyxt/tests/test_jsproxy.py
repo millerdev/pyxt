@@ -68,7 +68,7 @@ class FakeServer:
 
     @staticmethod
     async def send_request_async(command, params):
-        if command == "vsxt.resolve":
+        if command == "pyxt.resolve":
             eq(len(params), 1, params)
             return params[0]
         raise RuntimeError(f"unknown command: {command}")

@@ -54,7 +54,7 @@ class JSProxy:
 
 async def get(proxy):
     server, params = proxy._resolve()
-    value = await server.lsp.send_request_async("vsxt.resolve", [params])
+    value = await server.lsp.send_request_async("pyxt.resolve", [params])
     if isinstance(value, list) and len(value) == 3 and value[0] == "__error__":
         message = value[1] or "unknown error"
         stack = value[2] or message

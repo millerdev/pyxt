@@ -55,7 +55,7 @@ async def test_ag_path():
     with setup_editor() as editor:
         eq(
             await editor.ag_path,
-            "JSProxy.workspace.getConfiguration('vsxt',).get('agPath',)",
+            "JSProxy.workspace.getConfiguration('pyxt',).get('agPath',)",
         )
 
 

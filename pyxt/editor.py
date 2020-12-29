@@ -40,5 +40,5 @@ class Editor:
 
     @cached_property
     async def ag_path(self):
-        path = self.proxy.workspace.getConfiguration('vsxt').get('agPath')
+        path = self.proxy.workspace.getConfiguration('pyxt').get('agPath')
         return await get(path) or "ag"

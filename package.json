@@ -1,8 +1,8 @@
 {
-  "name": "vsxt",
+  "name": "pyxt",
   "description": "VS Code XT Commands",
   "author": "Daniel Miller",
-  "repository": "https://github.com/millerdev/vsxt",
+  "repository": "https://github.com/millerdev/pyxt",
   "license": "Apache-2.0",
   "version": "0.1.0",
   "publisher": "millerdev",
@@ -13,35 +13,35 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:vsxt.command",
-    "onCommand:vsxt.ag",
-    "onCommand:vsxt.openFile"
+    "onCommand:pyxt.command",
+    "onCommand:pyxt.ag",
+    "onCommand:pyxt.openFile"
   ],
   "contributes": {
     "commands": [
       {
-        "command": "vsxt.command",
+        "command": "pyxt.command",
         "title": "XT: Command"
       },
       {
-        "command": "vsxt.ag",
+        "command": "pyxt.ag",
         "title": "XT: Ag (The Silver Searcher)"
       },
       {
-        "command": "vsxt.openFile",
+        "command": "pyxt.openFile",
         "title": "XT: Open File"
       }
     ],
     "configuration": {
       "type": "object",
-      "title": "vsxt",
+      "title": "pyxt",
       "properties": {
-        "vsxt.pythonPath": {
+        "pyxt.pythonPath": {
           "type": "string",
           "default": "",
           "description": "Python interpreter path. Recommended: create a virtualenv with Python 3.7+ and set this to the absolute path to its Python executable."
         },
-        "vsxt.agPath": {
+        "pyxt.agPath": {
           "type": "string",
           "default": "ag",
           "description": "Ag (The Silver Searcher) executable path."

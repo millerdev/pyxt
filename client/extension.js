@@ -42,14 +42,14 @@ function startLangServerTCP(addr) {
 }
 
 function startLangServer() {
-    const command = workspace.getConfiguration("vsxt").get("pythonPath")
+    const command = workspace.getConfiguration("pyxt").get("pythonPath")
     if (!command) {
-        throw new Error("`vsxt.pythonPath` is not set")
+        throw new Error("`pyxt.pythonPath` is not set")
     }
     const cwd = path.join(__dirname, "..")
-    const args = ["-m", "vsxt"]
+    const args = ["-m", "pyxt"]
     const serverOptions = {command, args, options: {cwd}}
-    return new LanguageClient("vsxt", serverOptions, getClientOptions())
+    return new LanguageClient("pyxt", serverOptions, getClientOptions())
 }
 
 function getClientOptions() {
