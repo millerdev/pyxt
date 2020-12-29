@@ -26,6 +26,11 @@ function createHistory(state) {
             items.unshift(value)
             state.update(key, items)
         },
+
+        /**
+         * Clear command history
+         */
+        clear: cmd => state.update(keyOf(cmd), [])
     }
 }
 

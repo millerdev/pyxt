@@ -54,6 +54,9 @@ async function commandInput(client, cmd="", value="", completions) {
             if (result.filter_results) {
                 return filterResults(result, cmd + input.value)
             }
+            if (result.clear_history && result.command) {
+                return clearHistory(result)
+            }
             const value_ = result.value
                 ? result.value.slice(cmd.length)
                 : input.value
@@ -267,6 +270,20 @@ function addHistory(items, command) {
         }
     }
     return items
+}
+
+async function clearHistory(result) {
+    const answer = await vscode.window.showInputBox({
+        placeHolder: `Type "CLEAR" to delete '${result.command}' command history`,
+    })
+    if (answer === "CLEAR") {
+        history.clear(result.command)
+        vscode.window.showInformationMessage(
+            `'${result.command}' command history has been deleted.`
+        )
+    } else if (answer !== undefined) {
+        vscode.window.showWarningMessage("Bad input: " + answer)
+    }
 }
 
 function splitCommand(command) {

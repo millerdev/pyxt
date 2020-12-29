@@ -8,6 +8,7 @@ from .types import XTServer
 # register commands by importing them
 from .cmd import (  # noqa: F401
     ag,
+    history,
     openfile,
 )
 
