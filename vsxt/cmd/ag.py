@@ -4,6 +4,7 @@ import os
 import re
 import subprocess
 
+from .util import input_required
 from ..command import command, get_context
 from ..parser import CommandParser, File, Regex, RegexPattern, String, VarArgs
 from ..results import error, result
@@ -84,11 +85,6 @@ async def ag(editor, args):
         args.path = cwd
     placeholder = await get_context(args).command.arg_string(args)
     return result(items, filter_results=True, placeholder=placeholder)
-
-
-def input_required(message, args):
-    cmdstr = get_context(args).input_value
-    return result([{"label": "", "description": message}], cmdstr)
 
 
 def make_line_processor(items, ag_path, cwd):
