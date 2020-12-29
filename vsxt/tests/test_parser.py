@@ -349,6 +349,26 @@ def test_CommandParser_completions_after_string():
     yield test, "\\  ", ["yes", "no"], 3
 
 
+def test_CommandParser_completions_after_regex():
+    @async_test
+    async def test(text, expected_items, index=None):
+        items = await parser.get_completions(text)
+        eq_(items, expected_items)
+        eq_({x.start for x in items}, (set() if index is None else {index}))
+
+    parser = CommandParser(Regex("expr"), yesno)
+    yield test, "'", []
+    yield test, "x", []
+    yield test, "x ", ["yes", "no"], 2
+    yield test, "'x", []
+    yield test, "'x'", []
+    yield test, "'x' ", ["yes", "no"], 4
+    yield test, "'x'i", []
+    yield test, "'x'i ", ["yes", "no"], 5
+    yield test, "\\ ", []
+    yield test, "\\  ", ["yes", "no"], 3
+
+
 def test_Arg():
     @async_test
     async def test(arg, strval):
@@ -880,10 +900,10 @@ def test_Regex():
     yield test, '/abc/is def', 0, ('abc', 8), re.I | re.S
     yield test, '/abc/is  def', 0, ('abc', 8), re.I | re.S
     yield test, 'abc', 0, ('abc', 4)
+    yield test, 'abci', 0, ('abci', 5)
     yield test, '^abc$', 0, ('^abc$', 6)
     yield test, '^abc$ def', 0, ('^abc$', 6)
-    yield test, '/abc/X def', 0, \
-        ParseError('unknown flag: X', field, 5, 5)
+    yield test, '/abc/X def', 0, ParseError('unknown flag: X', field, 5, 5)
 
     test = make_placeholder_checker(field)
     yield test, "", 0, ("", "regex")
