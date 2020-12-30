@@ -13,7 +13,7 @@
             "env": {}
         },
         {
-            "name": "Extension Tests",
+            "name": "JS Tests",
             "type": "extensionHost",
             "request": "launch",
             "runtimeExecutable": "${execPath}",

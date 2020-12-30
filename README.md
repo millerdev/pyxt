@@ -4,7 +4,7 @@ A framework for writing Python extensions for VS Code.
 
 ## Installation and setup
 
-See [Packaging] below for instructions to build a vsix file.
+See [Packaging](#packaging) below for instructions to build the .vsix file.
 
 - Setup a virtualenv with Python 3.7+
   ```sh
@@ -28,31 +28,82 @@ See [Packaging] below for instructions to build a vsix file.
 
 ## Usage
 
-Invoke the _XT: Command Bar_ command to type free-form PyXT commands. Some
-commands may be invoked directly from the VS Code  (e.g., _XT: Open File_).
+Type Ctrl+Shift+P and select _XT: Command_ to open the PyXT command bar.
+
+Some commands may also be invoked directly as VS Code commands (e.g.,
+_XT: Open File_), and may be assigned a keyboard shortcut.
 
 ## Commands
 
-- ag - File search with [The Silver Searcher](https://github.com/ggreer/the_silver_searcher).
-- history - clear command history.
-- open - Open files by path with auto-complete.
+- `ag MATCH PATH OPTIONS...` - [The Silver Searcher](https://github.com/ggreer/the_silver_searcher) code
+  search. Ag must be installed separately.  
+  VS Code command: _XT: Ag (The Silver Searcher)_.
+- `history COMMAND` - clear command history. Confirmation is required before history is
+  deleted.
+- `open FILE_PATH` - Open files by path with auto-complete. The entered path is relative to
+  the location of the active text editor's file by default. It may also start
+  with `~` (home directory prefix). Absolute paths are supported as well.  
+  VS Code command: _XT: Open File_.
+
+The command name should not be typed when it is invoked directly via its
+VS Code command (rather than with the PyXT command bar). In this case, simply
+enter arguments as required.
+
+### Command Syntax
+
+Command arguments must be separated by spaces in the command bar. Auto-complete
+suggestions will be provided as the command is entered.
+
+_Important:_ white space is significant! Example: a command accepting multiple
+arguments might be entered as:
+
+`ag match_first ~/path/second -i --after 3`
+
+The default value of an argument may be selected by omitting its value and
+typing a space to advance to the next argument:
+
+`ag  ~/path/second -i --after 3`
+
+Note the two spaces between `ag` and `~/path/second`. In the case of `ag`, the
+first argument defaults to the selected text in the active text editor.
+
+Arguments containing spaces may be enclosed in quotes. Alternately spaces may
+be escaped with a backslash prefix (e.g., `\ `).
+
+Commands will often provide contextual argument hints as the first item in the
+list of quick-pick suggestions. Accepting this suggestion will invoke the
+command with default values as shown.
 
 ### Adding your own custom commands
 
 TODO
 
-## Running tests
+## Extension development
 
-All tests can be run with *Debug: Select and Start Debugging* command
+### Setup
 
-Python tests
+```sh
+python3 -m venv /path/to/virtualenv  # or your preferred way to create a virtualenv
+source /path/to/virtualenv/bin/activate
+pip install -r requirements.txt -r test-requirements.txt
+npm install
+```
+
+### Running tests
+
+All tests can be run with *Debug: Select and Start Debugging* command.
+Python and JavaScript tests may be run this way once the `.vscode` project
+has been loaded.
+
+Python tests may also be run in a terminal
+
 ```sh
 nosetests
 ```
 
-## Packaging
+### Packaging
 
-Build vsix package
+Build .vsix package
 
 ```sh
 npm run pkg
