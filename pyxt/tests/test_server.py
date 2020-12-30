@@ -22,6 +22,10 @@ def test_do_command():
     yield test, "cm", error("Unknown command: 'cm'")
     yield test, "cmd ", result(value="a")
     yield test, "cmd a", result(value="a")
+    yield test, "cmd too many arguments", error(
+        "invalid arguments: too many arguments\n"
+        "'too' does not match any of: a, b"
+    )
 
 
 def test_get_completions():

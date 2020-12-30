@@ -35,13 +35,15 @@ async def do_command(server: XTServer, params):
         return error(f"Unknown command: {argstr!r}")
     editor = Editor(server)
     parser = await command.parser.with_context(editor)
-    args = await parser.parse(argstr)
-    cmd.set_context(args, input_value=input_value, command=command)
     try:
+        args = await parser.parse(argstr)
+        cmd.set_context(args, input_value=input_value, command=command)
         return await command(editor, args)
     except cmd.Incomplete as err:
         value += err.addchars
         argstr += err.addchars
+    except Exception as err:
+        return error(str(err))
     return await _get_completions(command, parser, value, argstr)
 
 
