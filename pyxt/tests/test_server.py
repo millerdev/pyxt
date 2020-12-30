@@ -106,11 +106,28 @@ def test_parse_command():
     yield test, "cmd a b", "a b"
 
 
+def test_command_completions():
+    commands = [x["label"] for x in mod.command_completions()["items"]]
+    assert "hello " not in commands, commands
+    eq(commands, sorted(commands))
+
+
+def test_load_user_script():
+    from os.path import abspath, dirname, join
+    with test_command("zzz"):
+        root = dirname(dirname(abspath(mod.__file__)))
+        path = join(root, "testfiles", "hello.py")
+        mod.load_user_script([path])
+        commands = [x["label"] for x in mod.command_completions()["items"]]
+        assert "hello " in commands, commands
+        eq(commands, sorted(commands))
+
+
 @nottest
 @contextmanager
-def test_command():
+def test_command(name="cmd"):
     with replattr(command, "REGISTRY", {}):
-        @command.command(parser=CommandParser(Choice("a b", name="value")))
+        @command.command(name, parser=CommandParser(Choice("a b", name="value")))
         async def cmd(editor, args):
             return result(value=args.value)
         yield

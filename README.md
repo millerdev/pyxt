@@ -80,7 +80,36 @@ command with default values as shown.
 
 ### Adding your own custom commands
 
-TODO
+Adding a new PyXT command is as simple as writing a Python module and loading
+it as a "user script." Here is a very simple "hello world" example to get
+started:
+
+```py
+from pyxt.command import command
+from pyxt.parser import CommandParser, String
+from pyxt.results import result
+
+@command(parser=CommandParser(String("name", default="world")))
+async def hello(editor, args):
+    return result([f"Hello {args.name}!"])
+```
+
+Save the script in a file, and set the `pyxt.userScript` setting in VS Code.
+Then reload VS Code and open the _XT: Command_ bar to run the new command.
+VS Code must be reloaded (_Developer: Reload Window_) or restarted to register
+changes if the user script is modified.
+
+The value of `pyxt.userScript` may be one of the following:
+
+- absolute path
+- user path accepted by [`expanduser()`](https://docs.python.org/3/library/os.path.html#os.path.expanduser)
+- dot-delimited Python module path that can be imported in the PyXT virtualenv
+  created above
+
+The user script may define multiple `@command` functions and/or import other
+modules that define them. Note that other modules must be importable within the
+PyXT virtualenv (other techniques such as modifying `sys.path` are also
+possible).
 
 ## Extension development
 

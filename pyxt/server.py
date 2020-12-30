@@ -11,6 +11,7 @@ from .cmd import (  # noqa: F401
     history,
     openfile,
 )
+from . import custom
 
 log = logging.getLogger(__name__)
 xt_server = XTServer()
@@ -18,6 +19,9 @@ xt_server = XTServer()
 
 def xt_command(func):
     return xt_server.command(func.__name__)(func)
+
+
+load_user_script = xt_command(custom.load_user_script)
 
 
 @xt_command
@@ -105,5 +109,5 @@ def command_completions(argstr=""):
         "label": name + " ",
         "offset": 0,
         "is_completion": True,
-    } for name in cmd.REGISTRY]
+    } for name in sorted(cmd.REGISTRY)]
     return result(items, argstr)

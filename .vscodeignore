@@ -6,4 +6,5 @@ nosetests.xml
 notes.md
 requirements.in
 test-requirements.txt
+testfiles
 pyxt/**/tests

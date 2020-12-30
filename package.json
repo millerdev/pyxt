@@ -45,6 +45,11 @@
           "type": "string",
           "default": "ag",
           "description": "Ag (The Silver Searcher) executable path."
+        },
+        "pyxt.userScript": {
+          "type": "string",
+          "default": null,
+          "description": "File path or importable Python module path referencing user-defined commands. See 'Adding your own custom commands' in the PyXT README for more details."
         }
       }
     }

@@ -1,6 +1,7 @@
 "use strict"
 const net = require('net')
 const path = require('path')
+const vscode = require('vscode')
 const {workspace} = require('vscode')
 const {LanguageClient} = require('vscode-languageclient')
 const jsproxy = require("./jsproxy")
@@ -19,6 +20,7 @@ function activate(context) {
     jsproxy.publish(client)
     commander.subscribe(context, client)
     commander.setHistory(createHistory(context.globalState))
+    loadUserScript(client)
 }
 
 function deactivate() {
@@ -50,6 +52,23 @@ function startLangServer() {
     const args = ["-m", "pyxt"]
     const serverOptions = {command, args, options: {cwd}}
     return new LanguageClient("pyxt", serverOptions, getClientOptions())
+}
+
+async function loadUserScript(client) {
+    const path = workspace.getConfiguration("pyxt").get("userScript")
+    if (!path || !path.trim()) {
+        return
+    }
+    await client.onReady()
+    const result = await client.sendRequest(
+        "workspace/executeCommand",
+        {"command": "load_user_script", "arguments": [path]},
+    )
+    if (result && result.type === "error") {
+        const msg = result.message || "Error loading user script"
+        console.error(msg, result)
+        vscode.window.showErrorMessage(msg)
+    }
 }
 
 function getClientOptions() {
