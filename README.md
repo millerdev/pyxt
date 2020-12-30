@@ -57,12 +57,16 @@ suggestions will be provided as the command is entered.
 _Important:_ white space is significant! Example: a command accepting multiple
 arguments might be entered as:
 
-`ag match_first ~/path/second -i --after 3`
+```
+ag match_first ~/path/second -i --after 3
+```
 
 The default value of an argument may be selected by omitting its value and
 typing a space to advance to the next argument:
 
-`ag  ~/path/second -i --after 3`
+```
+ag  ~/path/second -i --after 3
+```
 
 Note the two spaces between `ag` and `~/path/second`. In the case of `ag`, the
 first argument defaults to the selected text in the active text editor.
