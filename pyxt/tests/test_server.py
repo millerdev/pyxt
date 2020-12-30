@@ -46,7 +46,10 @@ def test_get_completions_with_placeholder_item():
     async def test(input_value, expected_result):
         with test_command():
             @command.command(
-                parser=CommandParser(String("arg"), Choice("yes no")),
+                parser=CommandParser(
+                    String("arg", default="val"),
+                    Choice("yes no"),
+                ),
                 has_placeholder_item=True,
             )
             async def prog(editor, args):
@@ -56,11 +59,16 @@ def test_get_completions_with_placeholder_item():
             eq(res, expected_result)
 
     yield test("prog", result([
-        item("prog ", 0, description="arg yes"),
+        item("prog ", 0, description="val yes"),
     ], "prog "))
     yield test("prog ", result([
-        item("prog ", 0, description="arg yes"),
+        item("prog ", 0, description="val yes"),
     ], "prog "))
+    yield test("prog  ", result([
+        item("prog val", 0, description="yes"),
+        item("yes", 6, is_completion=True),
+        item("no", 6, is_completion=True),
+    ], "prog  "))
     yield test("prog ' ", result([
         item("prog ' '", 0, description="yes"),
     ], "prog ' "))
@@ -70,7 +78,7 @@ def test_get_completions_with_placeholder_item():
         item("no", 9, is_completion=True),
     ], "prog ' '"))
     yield test("prog ' ' ", result([
-        item("prog ' ' ", 0, description="yes"),
+        item("prog ' '", 0, description="yes"),
         item("yes", 9, is_completion=True),
         item("no", 9, is_completion=True),
     ], "prog ' ' "))

@@ -137,28 +137,27 @@ class CommandParser(object):
         """Get placeholder string to follow the given command text
 
         :param text: Argument string.
-        :returns: A two-tuple of strings: `(arg_end, hints)`.
-        `arg_end` auto-completion text for the given command text.
+        :returns: A two-tuple of strings: `(args, hints)`.
+        `args` is a string of entered arg values (or defaults).
         `hints` is a string of placeholder text, which can be used
         as a hint about remaining arguments to be entered.
         """
-        end_arg = ""
+        args = []
         hints = []
         async for arg in self.tokenize(text, index):
-            if not arg.could_consume_more:
-                continue
-            end, hint = await arg.get_placeholder()
-            if end:
+            if arg.field is None or arg.errors:
+                break
+            value, hint = await arg.get_placeholder()
+            if value:
                 assert not hints, (text, hints, arg)
-                assert not end_arg, (text, end_arg, arg)
-                end_arg = end
+                args.append(value)
             if hint is None:
                 break
             if hint:
                 hints.append(hint)
-            else:
-                assert not hints, (text, arg.field, arg, hints)
-        return end_arg, " ".join(hints)
+            elif hints:
+                raise NotImplementedError
+        return " ".join(args), " ".join(hints)
 
     async def get_completions(self, text, index=0):
         """Get completions for the given command text
@@ -297,6 +296,10 @@ class Arg(object):
 
     def __ne__(self, other):
         return not (self == other)
+
+    @property
+    def defaulted(self):
+        return not self and self.end <= len(self.text)
 
     @property
     def could_consume_more(self):
@@ -464,7 +467,12 @@ class Field(object):
         """Get placeholder string for this argument
 
         :param arg: An ``Arg`` object.
-        :returns: A placeholder string.
+        :returns: A two-tuple: `(arg_string, placeholder)`. `arg_string`
+        is either what has been typed, possibly with end delimiter
+        added, or what could be typed to produce the default value for
+        this argument. `placeholder` is a hint about what could be typed
+        to populate the field. `placeholder` may be `None` if parsing
+        cannot continue, for example, if the entered value is not valid.
         """
         hint = "" if arg else str(self)
         return "", hint
@@ -593,10 +601,12 @@ class Choice(Field):
 
     async def get_placeholder(self, arg):
         if not arg:
+            if arg.defaulted:
+                return str(self), ""
             return "", str(self)
         names = await arg.get_completions()
         if len(names) == 1:
-            return names[0][len(arg):], ""
+            return names[0], ""
         return "", None
 
     async def get_completions(self, arg):
@@ -632,9 +642,11 @@ class Int(Field):
     async def get_placeholder(self, arg):
         if not arg:
             if isinstance(self.default, int):
+                if arg.defaulted:
+                    return str(self.default), ""
                 return "", str(self.default)
             return "", str(self)
-        return "", ""
+        return str(arg), ""
 
     async def arg_string(self, value):
         if value == self.default:
@@ -664,9 +676,11 @@ class Float(Int):
     async def get_placeholder(self, arg):
         if not arg:
             if isinstance(self.default, float):
+                if arg.defaulted:
+                    return str(self.default), ""
                 return "", str(self.default)
             return "", str(self)
-        return "", ""
+        return str(arg), ""
 
     async def arg_string(self, value):
         if value == self.default:
@@ -749,15 +763,17 @@ class String(Field):
         return delimit(value, "\"'")[0]
 
     async def get_placeholder(self, arg):
-        value = self.default
         if not arg:
-            if value:
-                return "", delimit(value, self.DELIMITERS)[0]
+            if isinstance(self.default, str):
+                value = delimit(self.default, self.DELIMITERS)[0]
+                if arg.defaulted:
+                    return value, ""
+                return "", value
             return await super().get_placeholder(arg)
         first = str(arg)[0]
         needs_delim = arg.could_consume_more and first in self.DELIMITERS
         delim = first if needs_delim else ""
-        return delim, ""
+        return str(arg) + delim, ""
 
 
 class File(String):
@@ -898,6 +914,8 @@ class File(String):
 
     async def get_placeholder(self, arg):
         if not arg and isinstance(self.default, str):
+            if arg.defaulted:
+                return user_path(self.default), ""
             return "", user_path(self.default)
         return await super().get_placeholder(arg)
 
@@ -966,14 +984,18 @@ class DynamicList(String):
 
     async def get_placeholder(self, arg):
         if not arg:
+            if arg.defaulted:
+                if isinstance(self.default, str):
+                    return self.default, ""
+                return "", None
             default = str(self.default) if self.default is not None else ""
             hint = default if default else str(self)
             return "", hint
         token = str(arg)
         comps = await self.get_completions(token, lambda n: n)
         if comps:
-            return comps[0][len(token):], ""
-        return "", ""
+            return comps[0], ""
+        return "", None
 
 
 class RegexPattern(str):
@@ -1113,20 +1135,33 @@ class Regex(Field):
 
     async def get_placeholder(self, arg):
         if not arg:
+            if arg.defaulted:
+                if self.replace:
+                    if all(isinstance(v, str) for v in self.default):
+                        find, replace = self.default
+                        value, delim = delimit(find, self.delimiters)
+                        return "".join([value, replace, delim]), ""
+                    return "", None
+                if isinstance(self.default, str):
+                    value = delimit(self.default, self.delimiters)[0]
+                    return value, ""
+                return "", None
             return "", str(self)
         text = arg.text
         index = arg.start
-        if self.replace and text[index] not in self.delimiters:
+        delim = text[index] if text[index] in self.delimiters else ""
+        if self.replace and not delim:
             msg = "invalid search pattern: {!r}".format(text[index:])
             raise ParseError(msg, self, index, index)
-        delim = text[index]
-        ignore, index = self.consume_expression(text, index)
+        value, index = self.consume_expression(text, index)
+        value = delim + value
         if self.replace:
             if index > len(text):
-                return delim * 2, ""
-            ignore, index = self.consume_expression(text, index - 1)
-        end = delim if index > len(text) else ""
-        return end, ""
+                return value + delim * 2, ""
+            replace, index = self.consume_expression(text, index - 1)
+            value += delim + replace
+        end = delim if index >= len(text) else ""
+        return value + end, ""
 
     @classmethod
     def repr_flags(cls, value):
@@ -1177,6 +1212,7 @@ def delimit(value, delimiters, allchars=None, always=False):
     def should_delimit(value):
         return (
             always or
+            not value or
             " " in value or
             any(value.startswith(c) for c in delimiters) or
             (hasattr(value, "flags") and Regex.repr_flags(value))
@@ -1277,21 +1313,24 @@ class VarArgs(Field):
         text = arg.text
         index = arg.start
         start = hint = None
-        end = ""
+        values = []
         while index != start:
             start = index
             sub = await Arg(self.field, text, index, arg.args)
-            if sub.could_consume_more:
-                end, hint = await sub.get_placeholder()
-                if end or hint or index > len(text):
-                    break
+            value, hint = await sub.get_placeholder()
+            if value:
+                assert not hint, (self, arg, value, hint)
+                values.append(value)
+            if hint or index > len(text) or hint is None:
+                break
             if sub.errors:
                 return "", None
             index = sub.end
         if hint is None:
             return "", None
+        value = " ".join(values)
         placeholder = "..." if self.placeholder is None else self.placeholder
-        return end, (f"{hint} {placeholder}" if hint else placeholder)
+        return value, (placeholder if value else f"{hint} {placeholder}")
 
     async def get_completions(self, arg):
         index = arg.start
@@ -1348,6 +1387,7 @@ class SubParser(Field):
         """
         name, end = Arg.consume_token(text, index)
         if not name:
+            # TODO resolve difference with get_placeholder (get first arg defaults)
             return self.default, end
         sub = self.subargs.get(name)
         if sub is None:
@@ -1369,12 +1409,18 @@ class SubParser(Field):
 
     async def get_placeholder(self, arg):
         if not arg:
+            if arg.defaulted:
+                name, sub = next(iter(self.subargs.items()))
+                value, hint = await sub.get_placeholder(arg)
+                assert not hint, (arg, arg.field, arg.text, value, hint)
+                return " ".join([name, value]), ""
             return "", "{} ...".format(self)
         text = arg.text
         name, end = arg.consume_token()
         space_after_name = end < len(text) or text[arg.start:end].endswith(" ")
         if name is None:
             if space_after_name:
+                raise NotImplementedError
                 return "", str(self)
             return "", "{} ...".format(self)
         sub = self.subargs.get(name)
@@ -1387,12 +1433,16 @@ class SubParser(Field):
                     return "", None
                 return "", "..."
             sub = self.subargs[names[0]]
-            arg_end = "" if space_after_name else names[0][len(name):]
+            value = names[0]
         else:
-            arg_end = ""
-        sub_end, hint = await sub.parser.get_placeholder(text, end)
-        assert not sub_end or not arg_end, (self, arg, arg_end, sub_end, hint)
-        return arg_end or sub_end, hint
+            value = name
+        values = [value]
+        sub_value, hint = await sub.parser.get_placeholder(text, end)
+        if hint is None:
+            return ("", None)
+        if sub_value:
+            values.append(sub_value)
+        return " ".join(values), hint
 
     async def get_completions(self, arg):
         text = arg.text
@@ -1458,6 +1508,19 @@ class SubArgs(object):
             msg = 'invalid arguments: {}'.format(text)
             raise ArgumentError(msg, args, errors, index)
         return Options(**{name: arg.value for name, arg in args}), index
+
+    async def get_placeholder(self, arg):
+        if arg.defaulted:
+            values = []
+            for field in self.parser.argspec:
+                value, hint = await field.get_placeholder(arg)
+                if hint:
+                    raise NotImplementedError
+                if hint is None:
+                    return value, hint
+                values.append(value)
+            return " ".join(values), ""
+        raise NotImplementedError
 
     def __repr__(self):
         args = [repr(self.name)]

@@ -169,8 +169,8 @@ def test_ag_completions():
         yield test("ag ", "'b ' /dir options ...", project_path="/dir")
         yield test("ag 'x ", "/dir options ...", "ag 'x '", project_path="/dir")
         yield test("ag x dir/", "options ...")
-        yield test("ag x dir/ ", "options ...")
-        yield test("ag x dir/  ", None)
+        yield test("ag x dir/ ", "options ...", "ag x dir/")
+        yield test("ag x dir/  ", "options ...", "ag x dir/")
         yield test("ag x ../", "options ...", items=[
             {"label": "dir/", "is_completion": True, "offset": 8},
         ])
