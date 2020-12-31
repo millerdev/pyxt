@@ -4,11 +4,16 @@ from dataclasses import dataclass
 log = logging.getLogger(__name__)
 
 
+VSCODE = "vscode"
+EDITOR = "editor"
+
+
 @dataclass
 class JSProxy:
     _parent: object
     _name: str = None
     _args: tuple = None
+    root: str = None
 
     def __getattr__(self, name):
         return type(self)(self, name)
@@ -25,7 +30,7 @@ class JSProxy:
 
     def __repr__(self):
         if self._name is None:
-            return type(self).__name__
+            return self.root or type(self).__name__
         rep = self._name
         if isinstance(rep, int):
             rep = f"[{rep}]"
@@ -49,7 +54,8 @@ class JSProxy:
                 value["next"] = next_value
             return self._parent._resolve(value)
         assert next_value
-        return self._parent, next_value
+        assert self.root, self
+        return self._parent, {**next_value, "root": self.root}
 
 
 async def get(proxy):

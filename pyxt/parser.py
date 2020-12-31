@@ -44,7 +44,7 @@ Command parser specification:
 import asyncio
 import os
 import re
-from inspect import signature, Parameter
+from inspect import iscoroutinefunction, signature, Parameter
 from itertools import chain
 
 from .util import user_path
@@ -553,7 +553,10 @@ class Choice(Field):
                         map[key] = value
         if "default" in kw:
             default = kw.pop("default")
-            default_value = default() if callable(default) else default
+            if iscoroutinefunction(default):
+                default_value = map[names[0]]
+            else:
+                default_value = default() if callable(default) else default
             self.placeholder = self.reverse_map[default_value]
         else:
             default = map[names[0]]

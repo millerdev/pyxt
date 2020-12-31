@@ -1,6 +1,8 @@
 import asyncio
+import sys
 from dataclasses import dataclass
 from functools import wraps
+from inspect import iscoroutine
 from os.path import dirname
 
 from nose.tools import nottest
@@ -84,10 +86,15 @@ class KeywordArgs:
 
 
 async def do_command(input_value, editor=None):
+    def reraise(message):
+        raise sys.exc_info()[1]
     if editor is None:
         editor = FakeEditor()
     srv = object()
-    with replattr(server, "Editor", lambda srv: editor):
+    with replattr(
+        (server, "Editor", lambda srv: editor),
+        (server, "error", reraise),
+    ):
         return await server.do_command(srv, [input_value])
 
 
@@ -116,15 +123,59 @@ class async_property:
 class FakeEditor:
     _file_path: str = None
     _project_path: str = None
-    _selection: str = ""
+    _selected_range: tuple = (0, 0)
+    text: str = ""
     _ag_path: str = "ag"
 
     file_path = async_property("_file_path")
     project_path = async_property("_project_path")
-    selection = async_property("_selection")
     ag_path = async_property("_ag_path")
 
     @property
     async def dirname(self):
         filepath = await self.file_path
         return dirname(filepath) if filepath else None
+
+    @property
+    def selection(self):
+        return self._selection
+
+    @selection.setter
+    def selection(self, value):
+        if isinstance(value, str):
+            self.text = value
+            self._selected_range = (0, len(value))
+        else:
+            self._selected_range = tuple(value)
+
+    async def _selection(self, value=None):
+        if value is None:
+            return self._selected_range
+        self.selection = value
+
+    async def get_text(self, rng=None):
+        if iscoroutine(rng):
+            rng = await rng
+        if rng is None:
+            return self.text
+        start, end = rng
+        return self.text[start:end]
+
+    async def set_text(self, value, rng=None, select=True):
+        if rng is None:
+            start = 0
+            end = len(self.text)
+        else:
+            if iscoroutine(rng):
+                rng = await rng
+            start, end = rng
+        self.text = "".join([
+            self.text[:start],
+            value,
+            self.text[end:],
+        ])
+        self._selection = (start, len(value)) if select else (end, end)
+
+
+class Error(Exception):
+    pass

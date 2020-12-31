@@ -9,6 +9,7 @@ from .types import XTServer
 from .cmd import (  # noqa: F401
     ag,
     history,
+    isort,
     openfile,
 )
 from . import custom

@@ -7,10 +7,12 @@ let history
 function subscribe(context, client) {
     const clientCommand = async () => await command(client)
     const clientAg = async () => await command(client, "ag ")
+    const clientIsort = async () => await command(client, "isort ")
     const clientOpen = async () => await command(client, "open ")
     context.subscriptions.push(
         vscode.commands.registerCommand("pyxt.command", clientCommand),
         vscode.commands.registerCommand("pyxt.ag", clientAg),
+        vscode.commands.registerCommand("pyxt.isort", clientIsort),
         vscode.commands.registerCommand("pyxt.openFile", clientOpen)
     )
 }

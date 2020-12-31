@@ -9,7 +9,7 @@ from ..tests.util import async_test, gentest
 
 @async_test
 async def test_file_path():
-    fsPath = "JSProxy.window.activeTextEditor.document.uri.fsPath"
+    fsPath = "vscode.window.activeTextEditor.document.uri.fsPath"
     with setup_editor() as editor:
         eq(await editor.file_path, fsPath)
 
@@ -55,31 +55,27 @@ async def test_ag_path():
     with setup_editor() as editor:
         eq(
             await editor.ag_path,
-            "JSProxy.workspace.getConfiguration('pyxt',).get('agPath',)",
+            "vscode.workspace.getConfiguration('pyxt',).get('agPath',)",
         )
 
 
 @async_test
 async def test_selection():
-    sel = "JSProxy.window.activeTextEditor.selection"
-    seltext = f"JSProxy.window.activeTextEditor.document.getText({sel},)"
-    with setup_editor() as editor:
-        eq(await editor.selection, seltext)
+    with setup_editor({"editor.selection()": [1, 2]}) as editor:
+        eq(await editor.selection(), (1, 2))
 
 
 @async_test
 async def test_selection_with_null_result():
-    sel = "JSProxy.window.activeTextEditor.selection"
-    seltext = f"JSProxy.window.activeTextEditor.document.getText({sel},)"
-    calls = {seltext: None}
+    calls = {"editor.selection()": None}
     with setup_editor(calls) as editor:
-        eq(await editor.selection, "")
+        eq(await editor.selection(), None)
 
 
-ACTIVE_URI = "JSProxy.window.activeTextEditor.document.uri"
+ACTIVE_URI = "vscode.window.activeTextEditor.document.uri"
 ACTIVE_PATH = f"{ACTIVE_URI}.fsPath"
-FOLDER_CALL = f"JSProxy.workspace.getWorkspaceFolder({ACTIVE_URI},).uri.fsPath"
-FIRST_WORKSPACE = "JSProxy.workspace.workspaceFolders[0].uri.fsPath"
+FOLDER_CALL = f"vscode.workspace.getWorkspaceFolder({ACTIVE_URI},).uri.fsPath"
+FIRST_WORKSPACE = "vscode.workspace.workspaceFolders[0].uri.fsPath"
 
 
 @contextmanager

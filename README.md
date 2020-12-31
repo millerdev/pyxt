@@ -40,6 +40,12 @@ _XT: Open File_), and may be assigned a keyboard shortcut.
   VS Code command: _XT: Ag (The Silver Searcher)_.
 - `history COMMAND` - clear command history. Confirmation is required before history is
   deleted.
+- `isort FIRSTPARTY SELECTION` - [isort](https://pycqa.github.io/isort/) your
+  imports so you don't have to. Sort selection or entire file. `FIRSTPARTY` is a
+  comma-delimited list of known first-party packages. `SELECTION` controls
+  whether to sort the selection or the entire file; it can usually be ignored
+  because it defaults to `selection` if there is one and `all` otherwise.  
+  VS Code command: _XT: isort_.
 - `open FILE_PATH` - Open files by path with auto-complete. The entered path is relative to
   the location of the active text editor's file by default. It may also start
   with `~` (home directory prefix). Absolute paths are supported as well.  

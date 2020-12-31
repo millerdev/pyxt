@@ -1,26 +1,28 @@
+from inspect import iscoroutine
 from os.path import dirname, expanduser, isabs
 
-from .jsproxy import get, JSProxy
+from .jsproxy import EDITOR, get, JSProxy, VSCODE
 from .util import cached_property
 
 
 class Editor:
     def __init__(self, server):
-        self.proxy = JSProxy(server)
+        self.vscode = JSProxy(server, root=VSCODE)
+        self.editor = JSProxy(server, root=EDITOR)
 
     @cached_property
     async def file_path(self):
-        return await get(self.proxy.window.activeTextEditor.document.uri.fsPath)
+        return await get(self.vscode.window.activeTextEditor.document.uri.fsPath)
 
     @cached_property
     async def project_path(self):
-        file_uri = self.proxy.window.activeTextEditor.document.uri
+        file_uri = self.vscode.window.activeTextEditor.document.uri
         if await get(file_uri.fsPath) is not None:
-            folder = self.proxy.workspace.getWorkspaceFolder(file_uri)
+            folder = self.vscode.workspace.getWorkspaceFolder(file_uri)
             path = await get(folder.uri.fsPath)
             if path:
                 return path
-        path = await get(self.proxy.workspace.workspaceFolders[0].uri.fsPath)
+        path = await get(self.vscode.workspace.workspaceFolders[0].uri.fsPath)
         return path if path else expanduser("~")
 
     @cached_property
@@ -33,12 +35,22 @@ class Editor:
         return await self.project_path
 
     @cached_property
-    async def selection(self):
-        sel = self.proxy.window.activeTextEditor.selection
-        doc = self.proxy.window.activeTextEditor.document
-        return await get(doc.getText(sel)) or ""
-
-    @cached_property
     async def ag_path(self):
-        path = self.proxy.workspace.getConfiguration('pyxt').get('agPath')
+        path = self.vscode.workspace.getConfiguration('pyxt').get('agPath')
         return await get(path) or "ag"
+
+    async def selection(self, range=None):
+        sel = await get(self.editor.selection())
+        return tuple(sel) if sel else None
+
+    async def get_text(self, range):
+        if iscoroutine(range):
+            # allows editor.get_text(editor.selection())
+            range = await range
+        return await get(self.editor.get_text(range))
+
+    async def set_text(self, text, range=None, select=True):
+        if iscoroutine(range):
+            # allows editor.set_text(value, editor.selection(), ...)
+            range = await range
+        await get(self.editor.set_text(text, range, select))

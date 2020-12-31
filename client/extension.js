@@ -17,7 +17,7 @@ function activate(context) {
         client = startLangServer()
     }
     context.subscriptions.push(client.start())
-    jsproxy.publish(client)
+    jsproxy.publish(client, context)
     commander.subscribe(context, client)
     commander.setHistory(createHistory(context.globalState))
     loadUserScript(client)

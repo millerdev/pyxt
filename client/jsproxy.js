@@ -2,6 +2,75 @@ const _ = require('lodash')
 const vscode = require('vscode')
 const errable = require("./errors").errable
 
+function withEditor(func) {
+    return function () {
+        const editor = vscode.window.activeTextEditor
+        if (editor) {
+            return func(editor, ...arguments)
+        }
+    }
+}
+
+/**
+ * Convert VS Code selection (two positions) to XT range (two offsets)
+ *
+ * The first element of an XT range is the selection "anchor" and the
+ * second is the "active" or end with the cursor.
+ */
+function xtRange(editor, selection) {
+    const doc = editor.document
+    return [doc.offsetAt(selection.anchor), doc.offsetAt(selection.active)]
+}
+
+/**
+ * Convert xtRange to selection
+ */
+function selection(editor, xtrange) {
+    const doc = editor.document
+    const [anchor, active] = xtrange
+    return new vscode.Selection(doc.positionAt(anchor), doc.positionAt(active))
+}
+
+/**
+ * Interface for text manipulation on the active text editor
+ */
+const editor = {
+    selection: withEditor((editor, value) => {
+        if (!value) {
+            return xtRange(editor, editor.selection)
+        } else {
+            editor.selection = selection(editor, value)
+        }
+    }),
+
+    get_text: withEditor((editor, range) => {
+        const rng = range ? selection(editor, range) : undefined
+        return editor.document.getText(rng)
+    }),
+
+    set_text: withEditor((editor, text, range, select=true) => {
+        editor.edit(async builder => {
+            const doc = editor.document
+            const rng = range ? selection(editor, range) : undefined
+            await builder.replace(rng, text)
+            let start = rng ? rng.start : doc.positionAt(0)
+            let end = doc.positionAt(doc.offsetAt(start) + text.length)
+            if (range && range[0] > range[1]) {
+                [start, end] = [end, start]
+            }
+            if (!select) {
+                start = end
+            }
+            editor.selection = new vscode.Selection(start, end)
+        })
+    }),
+}
+
+const namespace = {
+    "vscode": vscode,
+    "editor": editor,
+}
+
 function publish(client) {
     client.onReady().then(errable(() => {
         client.onRequest("pyxt.resolve", resolve)
@@ -10,7 +79,7 @@ function publish(client) {
 
 function resolve(params) {
     try {
-        return get(vscode, params)
+        return get(namespace[params.root], params)
     } catch (error) {
         console.error(error)
         return ["__error__", error.message, error.stack]

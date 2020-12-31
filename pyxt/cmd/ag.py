@@ -28,7 +28,7 @@ https://github.com/ggreer/the_silver_searcher#the-silver-searcher
 
 
 async def get_selection_regex(editor=None):
-    text = (await editor.selection) if editor else ""
+    text = (await editor.get_text(editor.selection())) if editor else ""
     return RegexPattern(escape(text), default_flags=0) if text else None
 
 
