@@ -131,7 +131,11 @@ def test_load_user_script():
 @contextmanager
 def test_command(name="cmd"):
     with replattr(command, "REGISTRY", {}):
-        @command.command(name, parser=CommandParser(Choice("a b", name="value")))
+        @command.command(
+            name,
+            parser=CommandParser(Choice("a b", name="value")),
+            has_placeholder_item=False,
+        )
         async def cmd(editor, args):
             return result(value=args.value)
         yield

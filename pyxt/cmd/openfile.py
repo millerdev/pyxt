@@ -20,7 +20,7 @@ class FilePath(File):
         return items
 
 
-@command("open", CommandParser(FilePath("path")))
+@command("open", CommandParser(FilePath("path")), has_placeholder_item=False)
 async def open_file(editor, args):
     if not args.path or isdir(args.path):
         raise Incomplete

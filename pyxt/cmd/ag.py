@@ -48,7 +48,6 @@ async def project_dirname(editor=None):
         # TODO SubParser with dynamic dispatch based on pattern matching
         # (if it starts with a "-" it's an option, otherwise a file path)
     ),
-    has_placeholder_item=True,
 )
 async def ag(editor, args):
     """Search for files matching pattern"""

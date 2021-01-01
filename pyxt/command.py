@@ -8,7 +8,7 @@ def command(
     parser=None,
     is_enabled=None,
     lookup_with_parser=False,
-    has_placeholder_item=False,
+    has_placeholder_item=True,
 ):
     """Text command decorator
 

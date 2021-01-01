@@ -9,7 +9,11 @@ def get_commands(editor):
     return sorted(REGISTRY.keys() - {"history"})
 
 
-@command("history", CommandParser(DynamicList("command", get_commands, str)))
+@command(
+    "history",
+    CommandParser(DynamicList("command", get_commands, str)),
+    has_placeholder_item=False,
+)
 async def history(editor, args):
     """Clear command history"""
     if not args.command:

@@ -25,7 +25,7 @@ async def default_scope(editor=None):
 @command(parser=CommandParser(
     String('known_first_party', default=default_package),
     Choice(('selection', True), ('all', False), default=default_scope),
-), has_placeholder_item=True)
+))
 async def isort(editor, args):
     from isort.api import sort_code_string
     sel = (await editor.selection()) if args.selection else None
