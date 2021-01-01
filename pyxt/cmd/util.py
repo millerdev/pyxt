@@ -57,9 +57,27 @@ async def process_lines(command, *, got_output, kill_on_cancel=True, **kw):
         raise
 
 
+async def run_command(command, **kw):
+    def got_output(line, returncode, error=""):
+        if line is not None:
+            lines.append(line)
+        if returncode:
+            if not error:
+                error = "\n".join(lines) or "unknown error"
+            raise ProcessError(f"[exit {returncode}] {error}")
+
+    lines = []
+    await process_lines(command, got_output=got_output, **kw)
+    return "".join(lines)
+
+
 async def iter_lines(stream, encoding):
     while True:
         line = await stream.readline()
         if not line:
             break
         yield line.decode(encoding)
+
+
+class ProcessError(Exception):
+    pass

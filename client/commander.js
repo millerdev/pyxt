@@ -128,6 +128,10 @@ async function filterResults(result, command) {
             })))
             disposables.push(input.onDidHide(errable(() => resolve())))
         })
+        if (item && item.copy) {
+            input.busy = true
+            await vscode.env.clipboard.writeText(item.label)
+        }
         input.hide()
         return item && item.filepath
     } finally {

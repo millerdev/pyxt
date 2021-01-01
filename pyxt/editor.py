@@ -39,6 +39,11 @@ class Editor:
         path = self.vscode.workspace.getConfiguration('pyxt').get('agPath')
         return await get(path) or "ag"
 
+    @cached_property
+    async def python_path(self):
+        path = self.vscode.workspace.getConfiguration('pyxt').get('pythonPath')
+        return await get(path) or "python"
+
     async def selection(self, range=None):
         sel = await get(self.editor.selection())
         return tuple(sel) if sel else None

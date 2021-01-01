@@ -50,6 +50,12 @@ _XT: Open File_), and may be assigned a keyboard shortcut.
   the location of the active text editor's file by default. It may also start
   with `~` (home directory prefix). Absolute paths are supported as well.  
   VS Code command: _XT: Open File_.
+- `python EXECUTABLE SCOPE OPTIONS...` - Run selected text or entire file
+  (depending on `SCOPE`) with the given Python `EXECUTABLE` (or virtualenv) and
+  show the result, which consists of printed output plus non-null result of the
+  final expression. Accept (by pressing Enter) the result quick-pick item to
+  copy it to the clipboard.  
+  VS Code command: _XT: Python_
 
 The command name should not be typed when it is invoked directly via its
 VS Code command (rather than with the PyXT command bar). In this case, simply

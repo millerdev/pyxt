@@ -16,7 +16,8 @@
     "onCommand:pyxt.command",
     "onCommand:pyxt.ag",
     "onCommand:pyxt.isort",
-    "onCommand:pyxt.open"
+    "onCommand:pyxt.open",
+    "onCommand:pyxt.python"
   ],
   "contributes": {
     "commands": [
@@ -35,6 +36,10 @@
       {
         "command": "pyxt.open",
         "title": "XT: Open File"
+      },
+      {
+        "command": "pyxt.python",
+        "title": "XT: Python"
       }
     ],
     "configuration": {

@@ -60,6 +60,15 @@ async def test_ag_path():
 
 
 @async_test
+async def test_python_path():
+    with setup_editor() as editor:
+        eq(
+            await editor.python_path,
+            "vscode.workspace.getConfiguration('pyxt',).get('pythonPath',)",
+        )
+
+
+@async_test
 async def test_selection():
     with setup_editor({"editor.selection()": [1, 2]}) as editor:
         eq(await editor.selection(), (1, 2))

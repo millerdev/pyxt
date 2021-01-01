@@ -87,7 +87,9 @@ class KeywordArgs:
 
 async def do_command(input_value, editor=None):
     def reraise(message):
-        raise sys.exc_info()[1]
+        if sys.exc_info()[1] is not None:
+            raise sys.exc_info()[1]
+        raise Error(message)
     if editor is None:
         editor = FakeEditor()
     srv = object()
@@ -126,10 +128,12 @@ class FakeEditor:
     _selected_range: tuple = (0, 0)
     text: str = ""
     _ag_path: str = "ag"
+    _python_path: str = "python"
 
     file_path = async_property("_file_path")
     project_path = async_property("_project_path")
     ag_path = async_property("_ag_path")
+    python_path = async_property("_python_path")
 
     @property
     async def dirname(self):

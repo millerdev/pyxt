@@ -11,6 +11,7 @@ from .cmd import (  # noqa: F401
     history,
     isort,
     openfile,
+    python,
 )
 from . import custom
 
