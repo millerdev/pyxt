@@ -2,10 +2,10 @@ import os
 import re
 import subprocess
 
-from .util import input_required, process_lines
 from ..command import command, get_context
 from ..parser import CommandParser, File, Regex, RegexPattern, String, VarArgs
-from ..results import error, result
+from ..process import process_lines
+from ..results import input_required, error, result
 
 AG_LINE = re.compile(r"""
     (?P<num>\d*)                    # line number

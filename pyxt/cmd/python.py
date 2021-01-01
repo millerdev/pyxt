@@ -6,8 +6,8 @@ from textwrap import dedent
 
 from ..command import command, Incomplete
 from ..parser import CommandParser, Choice, File, String, VarArgs
+from ..process import run_command
 from ..results import error, result
-from .util import run_command
 
 log = logging.getLogger(__name__)
 

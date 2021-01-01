@@ -2,6 +2,8 @@
 from asyncio.exceptions import CancelledError
 from functools import wraps
 
+from .command import get_context
+
 
 def result(items=None, value=None, **extra):
     if items is None:
@@ -9,6 +11,11 @@ def result(items=None, value=None, **extra):
     else:
         type = "items"
     return {"type": type, **extra, "items": items, "value": value}
+
+
+def input_required(message, args):
+    cmdstr = get_context(args).input_value
+    return result([{"label": "", "description": message}], cmdstr)
 
 
 def error(message):

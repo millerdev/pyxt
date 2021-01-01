@@ -1,7 +1,6 @@
-from .util import input_required
 from ..command import command
 from ..parser import CommandParser, DynamicList
-from ..results import result
+from ..results import input_required, result
 
 
 def get_commands(editor):

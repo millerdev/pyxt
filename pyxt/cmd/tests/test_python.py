@@ -1,6 +1,6 @@
 from testil import eq, Regex
 
-from ..util import ProcessError
+from ...process import ProcessError
 from ...tests.util import async_test, do_command, FakeEditor, gentest
 
 

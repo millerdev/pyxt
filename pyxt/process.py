@@ -1,15 +1,8 @@
-import asyncio
 import logging
-
-from ..command import get_context
-from ..results import result
+from asyncio.exceptions import CancelledError
+from asyncio.subprocess import create_subprocess_exec, PIPE, STDOUT
 
 log = logging.getLogger(__name__)
-
-
-def input_required(message, args):
-    cmdstr = get_context(args).input_value
-    return result([{"label": "", "description": message}], cmdstr)
 
 
 async def process_lines(command, *, got_output, kill_on_cancel=True, **kw):
@@ -29,12 +22,11 @@ async def process_lines(command, *, got_output, kill_on_cancel=True, **kw):
     the command is canceled. Otherwise just stop collecting output.
     :param **kw: Keyword arguments accepted by `subprocess.Popen`.
     """
-    from asyncio.subprocess import PIPE, STDOUT
     iter_output = kw.pop("iter_output", None)
     cmd = " ".join(command)
     log.debug("async run: %s", cmd)
     try:
-        proc = await asyncio.create_subprocess_exec(
+        proc = await create_subprocess_exec(
             *command, stdout=PIPE, stderr=STDOUT, **kw)
     except Exception as err:
         log.warn("cannot open process: %s", cmd, exc_info=True)
@@ -47,7 +39,7 @@ async def process_lines(command, *, got_output, kill_on_cancel=True, **kw):
             got_output(item, None)
         await proc.wait()
         got_output(None, proc.returncode)
-    except asyncio.CancelledError:
+    except CancelledError:
         log.debug("cancelled: %s", cmd)
         if kill_on_cancel:
             proc.terminate()
