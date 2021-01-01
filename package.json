@@ -1,6 +1,6 @@
 {
   "name": "pyxt",
-  "description": "VS Code XT Commands",
+  "description": "Python eXTensions for VS Code",
   "author": "Daniel Miller",
   "repository": "https://github.com/millerdev/pyxt",
   "license": "Apache-2.0",
@@ -16,7 +16,7 @@
     "onCommand:pyxt.command",
     "onCommand:pyxt.ag",
     "onCommand:pyxt.isort",
-    "onCommand:pyxt.openFile"
+    "onCommand:pyxt.open"
   ],
   "contributes": {
     "commands": [
@@ -33,7 +33,7 @@
         "title": "XT: isort"
       },
       {
-        "command": "pyxt.openFile",
+        "command": "pyxt.open",
         "title": "XT: Open File"
       }
     ],

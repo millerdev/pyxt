@@ -18,7 +18,7 @@ function activate(context) {
     }
     context.subscriptions.push(client.start())
     jsproxy.publish(client, context)
-    commander.subscribe(context, client)
+    commander.subscribe(client, context)
     commander.setHistory(createHistory(context.globalState))
     loadUserScript(client)
 }

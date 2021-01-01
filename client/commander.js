@@ -2,19 +2,20 @@ const _ = require("lodash")
 const vscode = require('vscode')
 const jsonrpc = require('vscode-jsonrpc')
 const errable = require("./errors").errable
+const pkg = require("../package.json")
 let history
 
-function subscribe(context, client) {
-    const clientCommand = async () => await command(client)
-    const clientAg = async () => await command(client, "ag ")
-    const clientIsort = async () => await command(client, "isort ")
-    const clientOpen = async () => await command(client, "open ")
-    context.subscriptions.push(
-        vscode.commands.registerCommand("pyxt.command", clientCommand),
-        vscode.commands.registerCommand("pyxt.ag", clientAg),
-        vscode.commands.registerCommand("pyxt.isort", clientIsort),
-        vscode.commands.registerCommand("pyxt.openFile", clientOpen)
-    )
+function subscribe(client, context) {
+    pkg.contributes.commands.forEach(cmd => {
+        registerCommand(cmd.command, client, context)
+    })
+}
+
+function registerCommand(id, client, context) {
+    const slug = id === "pyxt.command" ? "" : (id.slice(5) + " ")
+    const cmd = () => command(client, slug)
+    const reg = vscode.commands.registerCommand(id, cmd)
+    context.subscriptions.push(reg)
 }
 
 function setHistory(value) {
