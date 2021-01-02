@@ -97,7 +97,10 @@ async def _get_completions(command, parser, input_value, argstr):
                 "description": hint,
                 "offset": 0,
             })
-    return result(items, input_value)
+    options = {}
+    if not command.has_history:
+        options["no_history"] = True
+    return result(items, input_value, **options)
 
 
 def itemize(item, offset):

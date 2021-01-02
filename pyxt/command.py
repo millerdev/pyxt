@@ -9,6 +9,7 @@ def command(
     is_enabled=None,
     lookup_with_parser=False,
     has_placeholder_item=True,
+    has_history=True,
 ):
     """Text command decorator
 
@@ -31,6 +32,8 @@ def command(
         other completions, which when accepted will execute the command.
         Other completions will add their value to the command without
         executing.
+    :param has_history: Track and show history for this command if True
+        (the default).
     """
     def command_decorator(func):
         async def arg_string(options):
@@ -51,6 +54,7 @@ def command(
         func.parser = parser or CommandParser()
         func.lookup_with_parser = lookup_with_parser
         func.has_placeholder_item = has_placeholder_item
+        func.has_history = has_history
         func.arg_string = arg_string
         for name_ in func.names:
             REGISTRY[name_] = func

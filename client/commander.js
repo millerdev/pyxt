@@ -253,7 +253,7 @@ function exec(client, command, ...args) {
 
 function updateHistory(command, result) {
     const [cmd, value] = splitCommand(command)
-    if (result && value) {
+    if (result && value && !result.no_history) {
         if (result.type === "success") {
             history.update(cmd, value)
         } else if (result.type === "items" && result.filter_results) {

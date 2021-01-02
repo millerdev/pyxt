@@ -28,13 +28,13 @@ def test_open_file():
         yield test, "open ", result([
             {"label": "dir/", "offset": 5},
             {"label": "file.txt", "filepath": "/file.txt", "offset": 5},
-        ], value="open ")
+        ], value="open ", no_history=True)
         yield test, "open dir", result([
             {"label": "dir/", "offset": 5},
-        ], value="open dir")
+        ], value="open dir", no_history=True)
         yield test, "open dir/", result([
             {"label": "file.txt", "filepath": "/dir/file.txt", "offset": 9},
-        ], value="open dir/")
+        ], value="open dir/", no_history=True)
 
 
 def test_create_new_file():
