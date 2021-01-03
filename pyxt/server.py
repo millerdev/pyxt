@@ -36,10 +36,10 @@ async def do_command(server: XTServer, params):
     if not command:
         return error(f"Unknown command: {argstr!r}")
     editor = Editor(server)
-    parser = await command.parser.with_context(editor)
+    parser = await command.create_parser(editor)
     try:
         args = await parser.parse(argstr)
-        cmd.set_context(args, input_value=input_value, command=command)
+        cmd.set_context(args, input_value=input_value, parser=parser)
         return await command(editor, args)
     except cmd.Incomplete as err:
         value += err.addchars
@@ -61,7 +61,7 @@ async def get_completions(server: XTServer, params):
     if not command:
         return command_completions(argstr)
     editor = Editor(server)
-    parser = await command.parser.with_context(editor)
+    parser = await command.create_parser(editor)
     return await _get_completions(command, parser, input_value, argstr)
 
 

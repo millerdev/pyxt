@@ -30,8 +30,13 @@ class ColonString(String):
         return []
 
 
+def create_parser(*fields):
+    return CommandParser(command, fields)
+
+
 yesno = Choice(('yes', True), ('no', False))
-arg_parser = CommandParser(yesno)
+command = Options(name="cmd", lookup_with_parser=False)
+arg_parser = create_parser(yesno)
 
 
 def test_CommandParser():
@@ -50,7 +55,7 @@ def test_CommandParser():
             opts.__dict__.update(options)
             eq_(await parser.parse(argstr), opts)
 
-    test = partial(test_parser, parser=CommandParser(yesno))
+    test = partial(test_parser, parser=create_parser(yesno))
     yield test, "", Options(yes=True)
     yield test, "no", Options(yes=False)
 
@@ -67,7 +72,7 @@ def test_CommandParser():
         ('low', 1),
         name="level"
     )
-    radio_parser = CommandParser(
+    radio_parser = create_parser(
         SubParser(
             "equalizer",
             manual,
@@ -118,7 +123,7 @@ def test_CommandParser():
     yield test, " ", ["off", "high", "medium", "low"], 1
     yield test, " hi", ["high"], 1
 
-    parser = CommandParser(
+    parser = create_parser(
         Int("num", default=0),
         VarArgs("value", ColonString("value")),
     )
@@ -135,7 +140,7 @@ def test_CommandParser():
     yield test, "1 :ab", ("1 :ab", "...")
     yield test, "1 :ab :cd", ("1 :ab :cd", "...")
 
-    parser = CommandParser(
+    parser = create_parser(
         level, Int("value"), Choice("highlander", "tundra", "4runner"))
     test = partial(check_completions, parser=parser)
     yield test, "h", ["high"], 0
@@ -161,7 +166,7 @@ async def test_CommandParser_too_many_args():
 @async_test
 async def test_CommandParser_incomplete():
     field = Choice('arg', 'all')
-    parser = CommandParser(field)
+    parser = create_parser(field)
     arg = await Arg(field, 'a', 0, Options())
 
     def check(err):
@@ -185,11 +190,11 @@ def test_CommandParser_arg_string():
             result = await parser.arg_string(options)
             eq_(result, argstr)
 
-    parser = CommandParser(yesno, Choice('arg', 'all'))
-    yield test, Options(yes=True, arg="arg"), ""
-    yield test, Options(yes=False, arg="arg"), "no"
-    yield test, Options(yes=True, arg="all"), " all"
-    yield test, Options(yes=False, arg="all"), "no all"
+    parser = create_parser(yesno, Choice('arg', 'all'))
+    yield test, Options(yes=True, arg="arg"), "cmd"
+    yield test, Options(yes=False, arg="arg"), "cmd no"
+    yield test, Options(yes=True, arg="all"), "cmd  all"
+    yield test, Options(yes=False, arg="all"), "cmd no all"
     yield test, Options(), Error("missing option: yes")
     yield test, Options(yes=True), Error("missing option: arg")
     yield test, Options(yes=None), Error("invalid value: yes=None")
@@ -198,7 +203,7 @@ def test_CommandParser_arg_string():
 def test_CommandParser_with_SubParser():
     sub = SubArgs("num", Int("n", default=0), abc="xyz")
     arg = SubParser("var", sub)
-    parser = CommandParser(arg, yesno)
+    parser = create_parser(arg, yesno)
 
     @async_test
     async def test(text, result):
@@ -228,13 +233,13 @@ def test_CommandParser_with_SubParser():
 
     cat = SubArgs("cat", yesno)
     arg = SubParser("var", cat)
-    parser = CommandParser(yesno, arg)
+    parser = create_parser(yesno, arg)
     yield test, "y", ["yes"], 0
     yield test, " cat ", ["yes", "no"], 5
 
     cat = SubArgs("cat", Choice("siamese", "simple"), yesno)
     arg = SubParser("var", cat)
-    parser = CommandParser(arg)
+    parser = create_parser(arg)
     yield test, "", ["cat"], 0
     yield test, "cat si", ["siamese", "simple"], 4
 
@@ -243,7 +248,7 @@ def test_CommandParser_with_SubParser():
 async def test_CommandParser_with_SubParser_errors():
     sub = SubArgs("num", Int("num"), abc="xyz")
     arg = SubParser("var", sub)
-    parser = CommandParser(arg)
+    parser = create_parser(arg)
 
     def check(err):
         arg = Arg(None, 'num x', 0, Options())
@@ -260,7 +265,7 @@ async def test_CommandParser_with_SubParser_errors():
 def test_CommandParser_with_Conditional():
     def not_off(arg):
         return arg.args.level.value != 0
-    parser = CommandParser(
+    parser = create_parser(
         Choice(
             ("off", 0),
             ('high', 4),
@@ -316,7 +321,7 @@ def test_CommandParser_order():
         else:
             with assert_raises(result):
                 await parser.parse(text)
-    parser = CommandParser(
+    parser = create_parser(
         Choice(('selection', True), ('all', False)),
         Choice(('forward', False), ('reverse', True), name='reverse'),
     )
@@ -339,7 +344,7 @@ def test_CommandParser_completions_after_string():
         eq_(items, expected_items)
         eq_({x.start for x in items}, (set() if index is None else {index}))
 
-    parser = CommandParser(String("value"), yesno)
+    parser = create_parser(String("value"), yesno)
     yield test, "'", []
     yield test, "x", []
     yield test, "x ", ["yes", "no"], 2
@@ -357,7 +362,7 @@ def test_CommandParser_completions_after_regex():
         eq_(items, expected_items)
         eq_({x.start for x in items}, (set() if index is None else {index}))
 
-    parser = CommandParser(Regex("expr"), yesno)
+    parser = create_parser(Regex("expr"), yesno)
     yield test, "'", []
     yield test, "x", []
     yield test, "x ", ["yes", "no"], 2

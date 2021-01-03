@@ -5,7 +5,7 @@ from testil import eq, replattr
 
 from .. import command
 from .. import server as mod
-from ..parser import Choice, CommandParser, String
+from ..parser import Choice, String
 from ..results import error, result
 from ..tests.util import async_test, gentest
 
@@ -50,10 +50,8 @@ def test_get_completions_with_placeholder_item():
     async def test(input_value, expected_result):
         with test_command():
             @command.command(
-                parser=CommandParser(
-                    String("arg", default="val"),
-                    Choice("yes no"),
-                ),
+                String("arg", default="val"),
+                Choice("yes no"),
                 has_placeholder_item=True,
             )
             async def prog(editor, args):
@@ -132,8 +130,8 @@ def test_load_user_script():
 def test_command(name="cmd"):
     with replattr(command, "REGISTRY", {}):
         @command.command(
-            name,
-            parser=CommandParser(Choice("a b", name="value")),
+            Choice("a b", name="value"),
+            name=name,
             has_placeholder_item=False,
         )
         async def cmd(editor, args):

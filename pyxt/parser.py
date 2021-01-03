@@ -6,10 +6,10 @@ Command parser specification:
 - Argument names must be valid Python identifiers.
 - Some examples:
 
-    CommandParser(
+    CommandParser(command, [
         Choice('selection all'),
         Choice(('forward', False), ('reverse', True), name='reverse'),
-    )
+    ])
     matches:
         'selection reverse' : selection = 'selection',  reverse = True
         'sel rev'           : selection = 'selection',  reverse = True
@@ -18,11 +18,11 @@ Command parser specification:
         'a f'               : selection = 'all',        reverse = False
         ''                  : selection = 'selection',  reverse = False
 
-    CommandParser(
+    CommandParser(command, [
         Regex('regex'),
         Choice(('no-opt', False), ('opt', True), name='opt'),
         Int('num'),
-    )
+    ])
     matches:
         '/^abc$/ opt 123'
         '/^abc$/ o 123'
@@ -30,11 +30,11 @@ Command parser specification:
 
 - An arguments may be skipped by entering an extra space:
 
-    CommandParser(
+    CommandParser(command, [
         Choice(('yes', True), ('no', False), name='bool'),
         Regex('regex'),
         Int('num', default=42),
-    )
+    ])
     matches:
         'y'         : bool = True, regex = None, num = 42
         ' /abc/ 1'  : bool = None, regex = 'abc', num = 1
@@ -50,13 +50,14 @@ from itertools import chain
 from .util import user_path
 
 
-class CommandParser(object):
+class CommandParser:
     """Text command parser
 
     :params *argspec: Argument specifiers.
     """
 
-    def __init__(self, *argspec):
+    def __init__(self, command, argspec):
+        self.command = command
         self.argspec = argspec
         # TODO assert no duplicate arg names
 
@@ -69,7 +70,7 @@ class CommandParser(object):
         See ``Field.with_context`` for argument specification.
         """
         argspec = [await arg.with_context(editor) for arg in self.argspec]
-        return CommandParser(*argspec)
+        return CommandParser(self.command, argspec)
 
     async def match(self, text, index=0):
         """Check if first argument can consume text at index
@@ -185,6 +186,8 @@ class CommandParser(object):
         :raises: Error
         """
         args = []
+        if not self.command.lookup_with_parser:
+            args.append(self.command.name)
         for field in self.argspec:
             try:
                 value = getattr(options, field.name)
@@ -1479,7 +1482,8 @@ class SubArgs(object):
         self.name = name
         self.data = data
         self._is_enabled = is_enabled
-        self.parser = CommandParser(*argspec)
+        command = Options(lookup_with_parser=True)
+        self.parser = CommandParser(command, argspec)
 
     def is_enabled(self, editor):
         if self._is_enabled is not None:

@@ -5,7 +5,7 @@ from distutils.spawn import find_executable
 from textwrap import dedent
 
 from ..command import command, Incomplete
-from ..parser import CommandParser, Choice, File, String, VarArgs
+from ..parser import Choice, File, String, VarArgs
 from ..process import run_command
 from ..results import error, result
 
@@ -22,11 +22,11 @@ async def default_scope(editor):
     return "all" if a == b else "selection"
 
 
-@command(parser=CommandParser(
+@command(
     File("executable", default=get_python_executable),
     Choice("all", "selection", name="scope", default=default_scope),
     VarArgs("options", String("options")),
-))
+)
 async def python(editor, args):
     """Run the contents of the editor or selection in Python
 

@@ -3,7 +3,7 @@ import re
 import subprocess
 
 from ..command import command, get_context
-from ..parser import CommandParser, File, Regex, RegexPattern, String, VarArgs
+from ..parser import File, Regex, RegexPattern, String, VarArgs
 from ..process import process_lines
 from ..results import input_required, error, result
 
@@ -40,14 +40,11 @@ async def project_dirname(editor=None):
 
 
 @command(
-    "ag",
-    CommandParser(
-        Regex("pattern", default=get_selection_regex, delimiters="'\""),
-        File("path", default=project_dirname, directory=True),
-        VarArgs("options", String("options")),
-        # TODO SubParser with dynamic dispatch based on pattern matching
-        # (if it starts with a "-" it's an option, otherwise a file path)
-    ),
+    Regex("pattern", default=get_selection_regex, delimiters="'\""),
+    File("path", default=project_dirname, directory=True),
+    VarArgs("options", String("options")),
+    # TODO SubParser with dynamic dispatch based on pattern matching
+    # (if it starts with a "-" it's an option, otherwise a file path)
 )
 async def ag(editor, args):
     """Search for files matching pattern"""
@@ -78,7 +75,7 @@ async def ag(editor, args):
         drop_redundant_details(items)
     if not args.path:
         args.path = cwd
-    placeholder = await get_context(args).command.arg_string(args)
+    placeholder = await get_context(args).parser.arg_string(args)
     return result(items, filter_results=True, placeholder=placeholder)
 
 

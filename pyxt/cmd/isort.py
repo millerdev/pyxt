@@ -2,7 +2,7 @@ from os.path import basename, dirname, exists, join
 from pathlib import Path
 
 from ..command import command
-from ..parser import Choice, CommandParser, String
+from ..parser import Choice, String
 
 
 async def default_package(editor):
@@ -22,10 +22,10 @@ async def default_scope(editor=None):
     return bool(end - start)
 
 
-@command(parser=CommandParser(
+@command(
     String('known_first_party', default=default_package),
     Choice(('selection', True), ('all', False), default=default_scope),
-))
+)
 async def isort(editor, args):
     from isort.api import sort_code_string
     sel = (await editor.selection()) if args.selection else None

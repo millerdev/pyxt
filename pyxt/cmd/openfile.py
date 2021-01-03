@@ -3,7 +3,7 @@ from os.path import dirname, exists, expanduser, isabs, isdir, join, sep
 from pathlib import Path
 
 from ..command import command, Incomplete
-from ..parser import CommandParser, CompletionsList, File
+from ..parser import CompletionsList, File
 from ..results import result
 
 
@@ -21,8 +21,8 @@ class FilePath(File):
 
 
 @command(
-    "open",
-    CommandParser(FilePath("path")),
+    FilePath("path"),
+    name="open",
     has_placeholder_item=False,
     has_history=False,
 )

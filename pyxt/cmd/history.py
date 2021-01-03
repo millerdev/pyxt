@@ -1,5 +1,5 @@
 from ..command import command
-from ..parser import CommandParser, DynamicList
+from ..parser import DynamicList
 from ..results import input_required, result
 
 
@@ -8,11 +8,7 @@ def get_commands(editor):
     return sorted(REGISTRY.keys() - {"history"})
 
 
-@command(
-    "history",
-    CommandParser(DynamicList("command", get_commands, str)),
-    has_placeholder_item=False,
-)
+@command(DynamicList("command", get_commands, str), has_placeholder_item=False)
 async def history(editor, args):
     """Clear command history"""
     if not args.command:
