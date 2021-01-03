@@ -4,7 +4,7 @@
   "description": "Python eXTensions for VS Code",
   "author": "Daniel Miller",
   "repository": "https://github.com/millerdev/pyxt",
-  "license": "SEE LICENSE.txt",
+  "license": "See LICENSE file",
   "homepage": "https://github.com/millerdev/pyxt",
   "version": "0.1.0",
   "publisher": "millerdev",

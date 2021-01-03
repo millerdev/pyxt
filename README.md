@@ -1,7 +1,5 @@
 # PyXT: Python eXTensions for VS Code
 
-A framework for writing Python extensions for VS Code.
-
 ## Installation and setup
 
 See [Packaging](#packaging) below for instructions to build the .vsix file.
@@ -17,14 +15,11 @@ See [Packaging](#packaging) below for instructions to build the .vsix file.
     https://github.com/millerdev/PyXT/raw/master/requirements.txt
   ```
 - Install the extension in VS Code
-  ```sh
-  code --install-extension ./pyxt-X.Y.Z.vsix
-  ```
 - Reload VS Code
 - Open Settings in VS Code and search for `pyxt.pythonPath`. Set the value to
   the path of the `python` executable in the virtualenv created above. Something
   like `/path/to/your/virtualenv/bin/python`.
-- Reload VS Code again? (not sure if this is necessary)
+- Reload VS Code
 
 ## Usage
 
@@ -152,4 +147,10 @@ Build .vsix package
 
 ```sh
 npm run pkg
+```
+
+Install the extension in VS Code
+
+```sh
+code --install-extension ./pyxt-X.Y.Z.vsix
 ```
