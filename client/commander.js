@@ -5,16 +5,18 @@ const errable = require("./errors").errable
 const pkg = require("../package.json")
 let history
 
-function subscribe(client, context) {
+function subscribe(getClient, context) {
     pkg.contributes.commands.forEach(cmd => {
-        registerCommand(cmd.command, client, context)
+        registerCommand(cmd.command, getClient, context)
     })
 }
 
-function registerCommand(id, client, context) {
+function registerCommand(id, getClient, context) {
     const slug = id === "pyxt.command" ? "" : (id.slice(5) + " ")
-    const cmd = () => command(client, slug)
-    const reg = vscode.commands.registerCommand(id, cmd)
+    const reg = vscode.commands.registerCommand(id, () => {
+        const client = getClient()
+        client && command(client, slug)
+    })
     context.subscriptions.push(reg)
 }
 

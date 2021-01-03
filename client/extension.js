@@ -11,20 +11,35 @@ const DEBUG_PORT = 2087
 let client
 
 function activate(context) {
-    if (isStartedInDebugMode()) {
-        client = startLangServerTCP(DEBUG_PORT)
-    } else {
-        client = startLangServer()
-    }
-    context.subscriptions.push(client.start())
-    jsproxy.publish(client, context)
-    commander.subscribe(client, context)
-    commander.setHistory(createHistory(context.globalState))
-    loadUserScript(client)
+    commander.subscribe(() => getClient(context), context)
 }
 
 function deactivate() {
     return client ? client.stop() : Promise.resolve()
+}
+
+function getClient(context) {
+    if (!client) {
+        client = startServer()
+        if (client) {
+            setup(client, context)
+        }
+    }
+    return client
+}
+
+function setup(client, context) {
+    context.subscriptions.push(client.start())
+    commander.setHistory(createHistory(context.globalState))
+    jsproxy.publish(client, context)
+    loadUserScript(client)
+}
+
+function startServer() {
+    if (isStartedInDebugMode()) {
+        return startLangServerTCP(DEBUG_PORT)
+    }
+    return startLangServer()
 }
 
 function isStartedInDebugMode() {
@@ -46,13 +61,13 @@ function startLangServerTCP(addr) {
 function startLangServer() {
     const command = workspace.getConfiguration("pyxt").get("pythonPath")
     if (!command) {
+        const url = "https://github.com/millerdev/pyxt/#installation-and-setup"
         vscode.window.showErrorMessage(
-            "pyxt.pythonPath not set. Create a virtualenv, install " +
-            "requirements, and set pyxt.pythonPath in settings. " +
-            "See PyXT README for detailed instructions: " +
-            "https://github.com/millerdev/pyxt/"
+            "[Setup required](" + url + "): create a virtualenv, install " +
+            "requirements, and set pyxt.pythonPath in settings. See the " +
+            "[PyXT README](" + url + ") for detailed instructions."
         )
-        throw new Error("pyxt.pythonPath not set")
+        return
     }
     const cwd = path.join(__dirname, "..")
     const args = ["-m", "pyxt"]
@@ -78,7 +93,7 @@ async function loadUserScript(client) {
 }
 
 function getClientOptions() {
-    return {outputChannelName: "PyXT Server"}
+    return {outputChannelName: "PyXT"}
 }
 
 module.exports = {

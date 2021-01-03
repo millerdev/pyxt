@@ -2,11 +2,10 @@
 
 ## Installation and setup
 
-See [Packaging](#packaging) below for instructions to build the .vsix file.
-
+- Install the extension in VS Code
 - Setup a virtualenv with Python 3.7+
   ```sh
-  python3 -m venv /path/to/your/virtualenv
+  python3 -m venv /path/to/your/virtualenv  # or your preferred way to create a virtualenv
   ```
 - Install requirements in the virtualenv (you may prefer to use the tag of the
   version being installed rather than `master`)
@@ -14,12 +13,9 @@ See [Packaging](#packaging) below for instructions to build the .vsix file.
   /path/to/your/virtualenv/bin/pip install -r \
     https://github.com/millerdev/PyXT/raw/master/requirements.txt
   ```
-- Install the extension in VS Code
-- Reload VS Code
 - Open Settings in VS Code and search for `pyxt.pythonPath`. Set the value to
-  the path of the `python` executable in the virtualenv created above. Something
-  like `/path/to/your/virtualenv/bin/python`.
-- Reload VS Code
+  the path of the `python` executable in the virtualenv created above. It will
+  be something like `/path/to/your/virtualenv/bin/python`.
 
 ## Usage
 
@@ -48,8 +44,8 @@ _PyXT: Open File_), and may be assigned a keyboard shortcut.
 - `python EXECUTABLE SCOPE OPTIONS...` - Run selected text or entire file
   (depending on `SCOPE`) with the given Python `EXECUTABLE` (or virtualenv) and
   show the result, which consists of printed output plus non-null result of the
-  final expression. Accept (by pressing Enter) the result quick-pick item to
-  copy it to the clipboard.  
+  final expression. Accept (by pressing Enter) the result to copy it to the
+  clipboard.  
   VS Code command: _PyXT: Python_
 
 The command name should not be typed when it is invoked directly via its

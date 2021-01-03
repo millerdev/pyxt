@@ -46,7 +46,7 @@
     ],
     "configuration": {
       "type": "object",
-      "title": "pyxt",
+      "title": "PyXT",
       "properties": {
         "pyxt.pythonPath": {
           "type": "string",
@@ -61,7 +61,7 @@
         "pyxt.userScript": {
           "type": "string",
           "default": null,
-          "description": "File path or importable Python module path referencing user-defined commands. See 'Adding your own custom commands' in the PyXT README for more details."
+          "markdownDescription": "File path or importable Python module path referencing user-defined commands. See [Adding your own custom commands](https://github.com/millerdev/pyxt/#adding-your-own-custom-commands) in the [PyXT README](https://github.com/millerdev/pyxt/) for more details."
         }
       }
     }
