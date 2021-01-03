@@ -37,10 +37,10 @@ async function command(client, cmd="") {
 async function commandInput(client, cmd="", value="", completions) {
     const input = vscode.window.createQuickPick()
     try {
-        input.placeholder = cmd.trim() || "XT Command"
+        input.placeholder = cmd.trim() || "PyXT Command"
         input.sortByLabel = false
         input.ignoreFocusOut = true
-        input.xt_cmd = cmd
+        input.pyxt_cmd = cmd
         if (completions) {
             setCompletions(input, cmd + value, completions)
         } else {
@@ -159,8 +159,8 @@ function distributeDetails(input) {
 }
 
 function updateCompletions(input, client, value) {
-    const completions = input.xt_completions
-    value = input.xt_cmd + value
+    const completions = input.pyxt_completions
+    value = input.pyxt_cmd + value
     if (completions && value.startsWith(completions.value)) {
         const matching = completions.items.filter(item => {
             const term = value.slice(item.offset)
@@ -190,7 +190,7 @@ const debouncedGetCompletions = _.debounce(getCompletions, 200)
 function setCompletions(input, value, completions, transformItem, noHistory) {
     const items = completions.items.map(transformItem || toAlwaysShown)
     input.items = noHistory ? items : addHistory(items, value)
-    input.xt_completions = {value, ...completions, items}
+    input.pyxt_completions = {value, ...completions, items}
 }
 
 function toAlwaysShown(item) {
@@ -210,7 +210,7 @@ function toQuickPickItem(item) {
 
 async function doCommand(input, client) {
     const item = input.selectedItems[0]
-    let command = input.xt_cmd + input.value
+    let command = input.pyxt_cmd + input.value
     if (item) {
         if (item.filepath) {
             // TODO save history
@@ -220,7 +220,7 @@ async function doCommand(input, client) {
             command = command.slice(0, item.offset) + item.label
             if (item.is_completion) {
                 input.busy = true
-                input.value = command.slice(input.xt_cmd.length)
+                input.value = command.slice(input.pyxt_cmd.length)
                 return exec(client, "get_completions", command)
             }
         }

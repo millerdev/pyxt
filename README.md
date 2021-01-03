@@ -28,16 +28,16 @@ See [Packaging](#packaging) below for instructions to build the .vsix file.
 
 ## Usage
 
-Type Ctrl+Shift+P and select _XT: Command_ to open the PyXT command bar.
+Type Ctrl+Shift+P and select _PyXT: Command_ to open the PyXT command bar.
 
 Some commands may also be invoked directly as VS Code commands (e.g.,
-_XT: Open File_), and may be assigned a keyboard shortcut.
+_PyXT: Open File_), and may be assigned a keyboard shortcut.
 
 ## Commands
 
 - `ag MATCH PATH OPTIONS...` - [The Silver Searcher](https://github.com/ggreer/the_silver_searcher) code
   search. Ag must be installed separately.  
-  VS Code command: _XT: Ag (The Silver Searcher)_.
+  VS Code command: _PyXT: Ag (The Silver Searcher)_.
 - `history COMMAND` - clear command history. Confirmation is required before history is
   deleted.
 - `isort FIRSTPARTY SELECTION` - [isort](https://pycqa.github.io/isort/) your
@@ -45,17 +45,17 @@ _XT: Open File_), and may be assigned a keyboard shortcut.
   comma-delimited list of known first-party packages. `SELECTION` controls
   whether to sort the selection or the entire file; it can usually be ignored
   because it defaults to `selection` if there is one and `all` otherwise.  
-  VS Code command: _XT: isort_.
+  VS Code command: _PyXT: isort_.
 - `open FILE_PATH` - Open files by path with auto-complete. The entered path is relative to
   the location of the active text editor's file by default. It may also start
   with `~` (home directory prefix). Absolute paths are supported as well.  
-  VS Code command: _XT: Open File_.
+  VS Code command: _PyXT: Open File_.
 - `python EXECUTABLE SCOPE OPTIONS...` - Run selected text or entire file
   (depending on `SCOPE`) with the given Python `EXECUTABLE` (or virtualenv) and
   show the result, which consists of printed output plus non-null result of the
   final expression. Accept (by pressing Enter) the result quick-pick item to
   copy it to the clipboard.  
-  VS Code command: _XT: Python_
+  VS Code command: _PyXT: Python_
 
 The command name should not be typed when it is invoked directly via its
 VS Code command (rather than with the PyXT command bar). In this case, simply
@@ -107,7 +107,7 @@ async def hello(editor, args):
 ```
 
 Save the script in a file, and set the `pyxt.userScript` setting in VS Code.
-Then reload VS Code and open the _XT: Command_ bar to run the new command.
+Then reload VS Code and open the _PyXT: Command_ bar to run the new command.
 VS Code must be reloaded (_Developer: Reload Window_) or restarted to register
 changes if the user script is modified.
 

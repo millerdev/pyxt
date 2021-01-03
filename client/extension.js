@@ -72,7 +72,7 @@ async function loadUserScript(client) {
 }
 
 function getClientOptions() {
-    return {outputChannelName: "XT Server"}
+    return {outputChannelName: "PyXT Server"}
 }
 
 module.exports = {

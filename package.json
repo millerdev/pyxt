@@ -1,9 +1,11 @@
 {
   "name": "pyxt",
+  "displayName": "PyXT",
   "description": "Python eXTensions for VS Code",
   "author": "Daniel Miller",
   "repository": "https://github.com/millerdev/pyxt",
-  "license": "Apache-2.0",
+  "license": "SEE LICENSE.txt",
+  "homepage": "https://github.com/millerdev/pyxt",
   "version": "0.1.0",
   "publisher": "millerdev",
   "engines": {
@@ -23,23 +25,23 @@
     "commands": [
       {
         "command": "pyxt.command",
-        "title": "XT: Command"
+        "title": "PyXT: Command"
       },
       {
         "command": "pyxt.ag",
-        "title": "XT: Ag (The Silver Searcher)"
+        "title": "PyXT: Ag (The Silver Searcher)"
       },
       {
         "command": "pyxt.isort",
-        "title": "XT: isort"
+        "title": "PyXT: isort"
       },
       {
         "command": "pyxt.open",
-        "title": "XT: Open File"
+        "title": "PyXT: Open File"
       },
       {
         "command": "pyxt.python",
-        "title": "XT: Python"
+        "title": "PyXT: Python"
       }
     ],
     "configuration": {

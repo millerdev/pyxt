@@ -12,22 +12,22 @@ function withEditor(func) {
 }
 
 /**
- * Convert VS Code selection (two positions) to XT range (two offsets)
+ * Convert VS Code selection (two positions) to PyXT range (two offsets)
  *
- * The first element of an XT range is the selection "anchor" and the
+ * The first element of a PyXT range is the selection "anchor" and the
  * second is the "active" or end with the cursor.
  */
-function xtRange(editor, selection) {
+function pyxtRange(editor, selection) {
     const doc = editor.document
     return [doc.offsetAt(selection.anchor), doc.offsetAt(selection.active)]
 }
 
 /**
- * Convert xtRange to selection
+ * Convert PyXT range to selection
  */
-function selection(editor, xtrange) {
+function selection(editor, pyxtrange) {
     const doc = editor.document
-    const [anchor, active] = xtrange
+    const [anchor, active] = pyxtrange
     return new vscode.Selection(doc.positionAt(anchor), doc.positionAt(active))
 }
 
@@ -37,7 +37,7 @@ function selection(editor, xtrange) {
 const editor = {
     selection: withEditor((editor, value) => {
         if (!value) {
-            return xtRange(editor, editor.selection)
+            return pyxtRange(editor, editor.selection)
         } else {
             editor.selection = selection(editor, value)
         }

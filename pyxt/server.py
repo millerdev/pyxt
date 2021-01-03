@@ -3,7 +3,7 @@ import logging
 from . import command as cmd
 from .editor import Editor
 from .results import error, handle_cancel, result
-from .types import XTServer
+from .types import PyXTServer
 
 # register commands by importing them
 from .cmd import (  # noqa: F401
@@ -16,19 +16,19 @@ from .cmd import (  # noqa: F401
 from . import custom
 
 log = logging.getLogger(__name__)
-xt_server = XTServer()
+pyxt_server = PyXTServer()
 
 
-def xt_command(func):
-    return xt_server.command(func.__name__)(func)
+def pyxt_command(func):
+    return pyxt_server.command(func.__name__)(func)
 
 
-load_user_script = xt_command(custom.load_user_script)
+load_user_script = pyxt_command(custom.load_user_script)
 
 
-@xt_command
+@pyxt_command
 @handle_cancel
-async def do_command(server: XTServer, params):
+async def do_command(server: PyXTServer, params):
     input_value, = value, = params
     if not input_value:
         return command_completions()
@@ -49,9 +49,9 @@ async def do_command(server: XTServer, params):
     return await _get_completions(command, parser, value, argstr)
 
 
-@xt_command
+@pyxt_command
 @handle_cancel
-async def get_completions(server: XTServer, params):
+async def get_completions(server: PyXTServer, params):
     input_value, = params
     if input_value:
         command, argstr = parse_command(input_value)

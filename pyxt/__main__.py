@@ -1,7 +1,7 @@
 import argparse
 import logging
 
-from .server import xt_server
+from .server import pyxt_server
 
 
 def main():
@@ -10,13 +10,13 @@ def main():
     args = parser.parse_args()
     logging.basicConfig(level=logging.DEBUG if args.tcp else logging.WARNING)
     if args.tcp:
-        xt_server.start_tcp(args.host, args.port)
+        pyxt_server.start_tcp(args.host, args.port)
     else:
-        xt_server.start_io()
+        pyxt_server.start_io()
 
 
 def add_arguments(parser):
-    parser.description = "XT Command Server"
+    parser.description = "PyXT Server"
     parser.add_argument(
         "--tcp", action="store_true",
         help="Use TCP server (debug mode)"
