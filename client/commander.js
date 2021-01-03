@@ -188,6 +188,9 @@ async function getCompletions(input, client, value) {
 const debouncedGetCompletions = _.debounce(getCompletions, 200)
 
 function setCompletions(input, value, completions, transformItem, noHistory) {
+    if (completions.placeholder) {
+        input.placeholder = completions.placeholder
+    }
     const items = completions.items.map(transformItem || toAlwaysShown)
     input.items = noHistory ? items : addHistory(items, value)
     input.pyxt_completions = {value, ...completions, items}

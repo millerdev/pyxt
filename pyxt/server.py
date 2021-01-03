@@ -87,17 +87,19 @@ async def _get_completions(command, parser, input_value, argstr):
         input_value += " "
     offset = len(input_value) - len(argstr)
     items = [itemize(x, offset) for x in items]
+    options = {}
     if command.has_placeholder_item:
         for item in items:
             item.setdefault("is_completion", True)
         args, hint = await parser.get_placeholder(argstr)
+        if hint:
+            options["placeholder"] = hint
         if args or hint:
             items.insert(0, {
                 "label": f"{command.name} {args}" if args else command.name,
                 "description": hint,
                 "offset": 0,
             })
-    options = {}
     if not command.has_history:
         options["no_history"] = True
     return result(items, input_value, **options)

@@ -61,29 +61,29 @@ def test_get_completions_with_placeholder_item():
             eq(res, expected_result)
 
     yield test("prog", result([
-        item("prog ", 0, description="val yes"),
-    ], "prog "))
+        item("prog", 0, description="val yes"),
+    ], "prog ", placeholder="val yes"))
     yield test("prog ", result([
-        item("prog ", 0, description="val yes"),
-    ], "prog "))
+        item("prog", 0, description="val yes"),
+    ], "prog ", placeholder="val yes"))
     yield test("prog  ", result([
         item("prog val", 0, description="yes"),
         item("yes", 6, is_completion=True),
         item("no", 6, is_completion=True),
-    ], "prog  "))
+    ], "prog  ", placeholder="yes"))
     yield test("prog ' ", result([
         item("prog ' '", 0, description="yes"),
-    ], "prog ' "))
+    ], "prog ' ", placeholder="yes"))
     yield test("prog ' '", result([
         item("prog ' '", 0, description="yes"),
         item("yes", 9, is_completion=True),
         item("no", 9, is_completion=True),
-    ], "prog ' '"))
+    ], "prog ' '", placeholder="yes"))
     yield test("prog ' ' ", result([
         item("prog ' '", 0, description="yes"),
         item("yes", 9, is_completion=True),
         item("no", 9, is_completion=True),
-    ], "prog ' ' "))
+    ], "prog ' ' ", placeholder="yes"))
     yield test("prog ' ' y", result([
         item("prog ' ' yes", 0, description=""),
         item("yes", 9, is_completion=True),
