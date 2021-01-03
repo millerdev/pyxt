@@ -8,7 +8,6 @@
             "module": "nose",
             "args": ["--stop"],
             "justMyCode": false,
-            "python": "${command:python.interpreterPath}",
             "cwd": "${workspaceFolder}",
             "env": {}
         },
