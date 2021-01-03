@@ -93,7 +93,7 @@ async def _get_completions(command, parser, input_value, argstr):
         args, hint = await parser.get_placeholder(argstr)
         if args or hint:
             items.insert(0, {
-                "label": f"{command.name} {args}",
+                "label": f"{command.name} {args}" if args else command.name,
                 "description": hint,
                 "offset": 0,
             })
