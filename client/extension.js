@@ -46,7 +46,13 @@ function startLangServerTCP(addr) {
 function startLangServer() {
     const command = workspace.getConfiguration("pyxt").get("pythonPath")
     if (!command) {
-        throw new Error("`pyxt.pythonPath` is not set")
+        vscode.window.showErrorMessage(
+            "pyxt.pythonPath not set. Create a virtualenv, install " +
+            "requirements, and set pyxt.pythonPath in settings. " +
+            "See PyXT README for detailed instructions: " +
+            "https://github.com/millerdev/pyxt/"
+        )
+        throw new Error("pyxt.pythonPath not set")
     }
     const cwd = path.join(__dirname, "..")
     const args = ["-m", "pyxt"]
