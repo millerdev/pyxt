@@ -272,7 +272,7 @@ function addHistory(items, command) {
     const hist = history.get(cmd)
         .filter(item => item.startsWith(value))
         .map(label => cmd + " " + label)
-        .map(label => ({label, offset: 0}))
+        .map(label => ({label, offset: 0, is_completion: true}))
     if (hist.length) {
         const zero = items.length ? items[0] : null
         if (zero && zero.offset === 0) {
