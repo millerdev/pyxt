@@ -21,7 +21,7 @@
 
 Type Ctrl+Shift+P and select _PyXT: Command_ to open the PyXT command bar.
 
-Some commands may also be invoked directly as VS Code commands (e.g.,
+Most commands may also be invoked directly as VS Code commands (e.g.,
 _PyXT: Open File_), and may be assigned a keyboard shortcut.
 
 ## Commands
@@ -49,7 +49,7 @@ _PyXT: Open File_), and may be assigned a keyboard shortcut.
   VS Code command: _PyXT: Python_
 
 The command name should not be typed when it is invoked directly via its
-VS Code command (rather than with the PyXT command bar). In this case, simply
+VS Code command (rather than with the PyXT Command bar). In this case, simply
 enter arguments as required.
 
 ### Command Syntax
