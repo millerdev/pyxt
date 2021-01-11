@@ -1,6 +1,7 @@
 import os
 import re
 import subprocess
+from asyncio.exceptions import CancelledError
 
 from ..command import command, get_context
 from ..parser import File, Regex, RegexPattern, String, VarArgs
@@ -19,6 +20,7 @@ DEFAULT_OPTIONS = [
     "--nocolor",
 ]
 MAX_LINE_LENGTH = 150
+MAX_RESULT_ITEMS = 200
 AG_NOT_INSTALLED = """
 {} not found. It may be necessary to set the ag executable path in the
 extension settings.
@@ -72,6 +74,8 @@ async def ag(editor, args):
         if not items:
             return input_required(str(err), args)
         items.append({"label": "", "description": str(err)})
+    except TooManyResults:
+        pass
     if items:
         drop_redundant_details(items)
     if not args.path:
@@ -111,6 +115,8 @@ def make_line_processor(items, ag_path, cwd):
             else:
                 message = f"[exit: {returncode}] {error}"
             raise CommandError(message)
+        if len(items) >= MAX_RESULT_ITEMS:
+            raise TooManyResults
 
     return {"iter_output": ag_lines, "got_output": got_output}
 
@@ -165,4 +171,8 @@ class CommandError(Exception):
 
 
 class AgNotFound(CommandError):
+    pass
+
+
+class TooManyResults(CancelledError):
     pass

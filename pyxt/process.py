@@ -42,7 +42,10 @@ async def process_lines(command, *, got_output, kill_on_cancel=True, **kw):
     except CancelledError:
         log.debug("cancelled: %s", cmd)
         if kill_on_cancel:
-            proc.terminate()
+            try:
+                proc.terminate()
+            except ProcessLookupError:
+                pass
         # HACK `proc` should have a `close()` method
         # avoid RuntimeError: Event loop is closed
         proc._transport.close()

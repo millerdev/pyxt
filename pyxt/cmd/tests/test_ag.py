@@ -126,6 +126,18 @@ async def test_huge_results():
 
 
 @async_test
+async def test_too_many_results():
+    with tempdir() as tmp:
+        os.mkdir(join(tmp, "dir"))
+        with open(join(tmp, "dir/long_lines.txt"), "w", encoding="utf-8") as fh:
+            fh.write("file.txt\n" * (mod.MAX_RESULT_ITEMS + 1))
+        editor = FakeEditor(join(tmp, "dir/file"), tmp)
+        result = await do_command("ag txt", editor)
+        items = result["items"]
+        eq(len(items), mod.MAX_RESULT_ITEMS, result)
+
+
+@async_test
 async def test_ag_error():
     with tempdir() as tmp:
         command = "ag x xxxx"
