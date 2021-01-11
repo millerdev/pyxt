@@ -13,9 +13,9 @@ function subscribe(getClient, context) {
 
 function registerCommand(id, getClient, context) {
     const slug = id === "pyxt.command" ? "" : (id.slice(5) + " ")
-    const reg = vscode.commands.registerCommand(id, () => {
+    const reg = vscode.commands.registerCommand(id, args => {
         const client = getClient()
-        client && command(client, slug)
+        client && command(client, slug, args)
     })
     context.subscriptions.push(reg)
 }
@@ -24,9 +24,16 @@ function setHistory(value) {
     history = value
 }
 
-async function command(client, cmd="") {
+async function command(client, cmd="", args={}) {
+    const value = args.text || ""
+    let filePath
     try {
-        const filePath = await commandInput(client, cmd)
+        if (args.exec) {
+            const result = await exec(client, "do_command", cmd + value)
+            filePath = await dispatch(result, client, cmd, value)
+        } else {
+            filePath = await commandInput(client, cmd, value)
+        }
         if (filePath) {
             await openFile(filePath)
         }
@@ -52,33 +59,37 @@ async function commandInput(client, cmd="", value="", completions) {
         input.value = value
         const result = await getCommandResult(input, client)
         input.hide()
-        if (!result) {
-            return
-        }
-        if (result.type === "items") {
-            if (result.filter_results) {
-                return filterResults(result, cmd + input.value)
-            }
-            if (result.clear_history && result.command) {
-                return clearHistory(result)
-            }
-            const value_ = result.value
-                ? result.value.slice(cmd.length)
-                : input.value
-            return commandInput(client, cmd, value_, result)
-        }
-        if (result.type === "success") {
-            return result.value
-        }
-        let message = result.message
-        if (!message) {
-            message = "Unknown error"
-            console.log(message, result)
-        }
-        throw new Error(message)
+        return dispatch(result, client, cmd, input.value)
     } finally {
         input.dispose()
     }
+}
+
+function dispatch(result, client, cmd, value) {
+    if (!result) {
+        return Promise.resolve()
+    }
+    if (result.type === "items") {
+        if (result.filter_results) {
+            return filterResults(result, cmd + value)
+        }
+        if (result.clear_history && result.command) {
+            return clearHistory(result)
+        }
+        if (result.value) {
+            value = result.value.slice(cmd.length)
+        }
+        return commandInput(client, cmd, value, result)
+    }
+    if (result.type === "success") {
+        return Promise.resolve(result.value)
+    }
+    let message = result.message
+    if (!message) {
+        message = "Unknown error"
+        console.log(message, result)
+    }
+    throw new Error(message)
 }
 
 async function getCommandResult(input, client) {

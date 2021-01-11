@@ -81,6 +81,34 @@ Commands will often provide contextual argument hints as the first item in the
 list of quick-pick suggestions. Accepting this suggestion will invoke the
 command with default values as shown.
 
+### Keybindings
+
+Keybindings may be assigned to any PyXT command having a corresponding VS Code
+command. These commands may also be invoked directly via the Command Palette.
+Additionally keybindings may be added for custom commands.
+
+#### Example keybindings.json entries
+
+_Ctrl+Shift+A O_ to open command bar with text: `open /my/favorite/directory/`
+
+```json
+{
+  "key": "ctrl+shift+a o",
+  "command": "pyxt.command",
+  "args": {"text": "open /my/favorite/directory/"}
+}
+```
+
+_Ctrl+Shift+A D_ to immediately execute the command: `ag 'hot search'`
+
+```json
+{
+  "key": "ctrl+shift+a g",
+  "command": "pyxt.command",
+  "args": {"text": "ag 'hot search'", "exec": true}
+}
+```
+
 ### Adding your own custom commands
 
 Adding a new PyXT command is as simple as writing a Python module and loading

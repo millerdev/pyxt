@@ -25,6 +25,50 @@ suite('Commander', () => {
         assert(!await result)
     })
 
+    test("should load command with args from keybinding", async () => {
+        client = util.mockClient(
+            ["get_completions", ["open "], {items: [
+                {label: "dir/", offset: 5},
+                {label: "file", filepath: "/file", offset: 5},
+            ]}],
+        )
+        let input
+        const args = {text: "open "}
+        const result = commander.command(client, "", args)
+        input = await env.inputItemsChanged()
+        env.assertItems(input, ["dir/", "file"])
+
+        input.hide()
+        assert(!await result)
+    })
+
+    test("should execute command with args from keybinding", async () => {
+        client = util.mockClient(
+            // return null value to avoid openFile call, which is hard to test here
+            ["do_command", ["open file"], {type: "success", value: null}]
+        )
+        const args = {text: "open file", exec: true}
+        await commander.command(client, "", args)
+    })
+
+    test("should execute command returning completions with args from keybinding", async () => {
+        client = util.mockClient(
+            [
+                "do_command", ["open dir/"],
+                {type: "items", items: [
+                    {label: "file", offset: 5},
+                ], value: "open dir/"},
+            ]
+        )
+        let input
+        const args = {text: "open dir/", exec: true}
+        const result = commander.command(client, "", args)
+        input = await env.inputItemsChanged()
+        env.assertItems(input, ["file"])
+        input.hide()
+        assert(!await result)
+    })
+
     test("should show completions on accept command", async () => {
         client = util.mockClient(
             ["get_completions", [""], {items: [{label: "open", offset: 0}]}],
