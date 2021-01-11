@@ -485,8 +485,7 @@ suite('Commander', () => {
             result = commander.commandInput(client, "", "ag x")
             input = await env.inputItemsChanged()
             env.assertItems(input, ["ag x", "ag xx"])
-            assert.deepStrictEqual(input.items[1],
-                {label: "ag xx", offset: 0, is_completion: true})
+            assert.deepStrictEqual(input.items[1], {label: "ag xx", offset: 0})
 
             input.hide()
             assert(!await result)
@@ -695,8 +694,7 @@ suite('Commander', () => {
             result = commander.commandInput(client, "ag ", "x")
             input = await env.inputItemsChanged()
             env.assertItems(input, ["ag x", "ag xx"])
-            assert.deepStrictEqual(input.items[1],
-                {label: "ag xx", offset: 0, is_completion: true})
+            assert.deepStrictEqual(input.items[1], {label: "ag xx", offset: 0})
 
             input.hide()
             assert(!await result)

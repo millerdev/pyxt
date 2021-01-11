@@ -1,6 +1,5 @@
 0.1.1 - tbd
 
-- Allow `ag` commands from history to be edited before execution.
 - Limit `ag` result item length to 150 as well as the maximum number of results
   to 200.
 - Log errors to PyXT output channel in VS Code.
