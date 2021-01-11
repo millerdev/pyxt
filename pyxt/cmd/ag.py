@@ -18,6 +18,7 @@ DEFAULT_OPTIONS = [
     "--nopager",
     "--nocolor",
 ]
+MAX_LINE_LENGTH = 150
 AG_NOT_INSTALLED = """
 {} not found. It may be necessary to set the ag executable path in the
 extension settings.
@@ -95,6 +96,8 @@ def make_line_processor(items, ag_path, cwd):
                 if match:
                     yield create_item(absfilepath, filepath, **match.groupdict(''))
                 elif line:
+                    if len(line) > MAX_LINE_LENGTH:
+                        line = line[:MAX_LINE_LENGTH]
                     yield {"label": "", "description": line}
 
     def got_output(item, returncode, error=""):
@@ -117,6 +120,8 @@ def create_item(abspath, relpath, num, ranges, delim, text):
     if rng:
         start, length = [int(n) for n in rng.split()]
         rng = f":{start}:{length}"
+    if len(text) > MAX_LINE_LENGTH:
+        text = text[:MAX_LINE_LENGTH]
     return {
         "label": f"{num}: {text.strip()}",
         "detail": relpath,
