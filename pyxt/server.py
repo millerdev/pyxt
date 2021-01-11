@@ -45,6 +45,7 @@ async def do_command(server: PyXTServer, params):
         value += err.addchars
         argstr += err.addchars
     except Exception as err:
+        log.exception("command error")
         return error(str(err))
     return await _get_completions(command, parser, value, argstr)
 

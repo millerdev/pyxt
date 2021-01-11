@@ -1,8 +1,10 @@
-
+import logging
 from asyncio.exceptions import CancelledError
 from functools import wraps
 
 from .command import get_context
+
+log = logging.getLogger(__name__)
 
 
 def result(items=None, value=None, **extra):
@@ -29,4 +31,7 @@ def handle_cancel(func):
             return await func(*args, **kw)
         except CancelledError:
             return
+        except Exception:
+            log.exception("unhandled error")
+            raise
     return decorator
