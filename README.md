@@ -148,5 +148,11 @@ npm run pkg
 Install the extension in VS Code
 
 ```sh
-code --install-extension ./pyxt-X.Y.Z.vsix
+code --install-extension pyxt-X.Y.Z.vsix
+```
+
+Publish on open-vsx.org
+
+```sh
+npx ovsx publish pyxt-X.Y.Z.vsix
 ```
