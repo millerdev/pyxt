@@ -919,10 +919,14 @@ class File(String):
         return CompletionsList(names, title=user_path(root))
 
     async def get_placeholder(self, arg):
-        if not arg and isinstance(self.default, str):
-            if arg.defaulted:
-                return user_path(self.default), ""
-            return "", user_path(self.default)
+        if not arg:
+            if isinstance(self.default, str):
+                if arg.defaulted:
+                    return user_path(self.default), ""
+                return "", user_path(self.default)
+            path = await self.path
+            if path:
+                return "", user_path(path)
         return await super().get_placeholder(arg)
 
     async def arg_string(self, value):

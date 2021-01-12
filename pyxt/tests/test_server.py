@@ -37,8 +37,8 @@ def test_get_completions():
             eq(res, expected_result)
 
     yield test, "cm", result([item("cmd ", 0, is_completion=True)], "cm")
-    yield test, "cmd", result([item("a", 4), item("b", 4)], "cmd ")
-    yield test, "cmd ", result([item("a", 4), item("b", 4)], "cmd ")
+    yield test, "cmd", result([item("a", 4), item("b", 4)], "cmd ", placeholder="cmd a")
+    yield test, "cmd ", result([item("a", 4), item("b", 4)], "cmd ", placeholder="cmd a")
     yield test, "cmd a", result([item("a", 4)], "cmd a")
 
 

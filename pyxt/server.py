@@ -101,6 +101,10 @@ async def _get_completions(command, parser, input_value, argstr):
                 "description": hint,
                 "offset": 0,
             })
+    elif not argstr:
+        args, hint = await parser.get_placeholder(argstr)
+        if hint:
+            options["placeholder"] = input_value + hint
     if not command.has_history:
         options["no_history"] = True
     return result(items, input_value, **options)

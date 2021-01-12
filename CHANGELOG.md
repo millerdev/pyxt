@@ -3,6 +3,7 @@
 - Add support for custom keybindings with arguments.
 - Limit `ag` result item length to 150 as well as the maximum number of results
   to 200.
+- Show current directory in open file placeholder
 - Log errors to PyXT output channel in VS Code.
 
 

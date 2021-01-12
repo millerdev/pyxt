@@ -19,6 +19,8 @@ def test_open_file():
                 eq(result["type"], "success", result)
                 eq(normalize_path(result["value"], base), expect)
             else:
+                if "placeholder" in result:
+                    result["placeholder"] = result["placeholder"].replace(base, "/base")
                 normalize_paths(result["items"], base)
                 eq(result, expect)
 
@@ -28,7 +30,7 @@ def test_open_file():
         yield test, "open ", result([
             {"label": "dir/", "offset": 5},
             {"label": "file.txt", "filepath": "/file.txt", "offset": 5},
-        ], value="open ", no_history=True)
+        ], value="open ", placeholder="open /base", no_history=True)
         yield test, "open dir", result([
             {"label": "dir/", "offset": 5},
         ], value="open dir", no_history=True)
