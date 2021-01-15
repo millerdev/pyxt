@@ -2,6 +2,7 @@ __pycache__
 
 /.noseids
 /.vscode-dev
+/dist
 /node_modules
 /nosetests.xml
 /notes.md

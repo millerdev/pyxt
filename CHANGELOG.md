@@ -1,3 +1,8 @@
+0.3.0 - tbd
+
+- Use webpack for JS packaging => much smaller vsix file.
+
+
 0.2.0 - 2021-01-15
 
 - Add support for custom keybindings.

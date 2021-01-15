@@ -1,10 +1,13 @@
 .*
 .vscode
 .vscode-dev
-client/**/test
+client
+dist/extension.js.map
+node_modules
 nosetests.xml
 notes.md
+pyxt/**/tests
 requirements.in
 test-requirements.txt
 testfiles
-pyxt/**/tests
+webpack.config.js

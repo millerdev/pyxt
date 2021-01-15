@@ -34,7 +34,11 @@
             ],
             "env": {
                 "VSCODE_DEBUG_MODE": "true"
-            }
+            },
+            "outFiles": [
+                "${workspaceFolder}/dist/**/*.js"
+            ],
+            "preLaunchTask": "npm: webpack"
         },
         {
             "name": "Launch Server",
