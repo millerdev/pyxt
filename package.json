@@ -69,7 +69,10 @@
   "main": "./client/extension",
   "scripts": {
     "test": "mocha client/test",
-    "pkg": "vsce package"
+    "pkg": "vsce package",
+    "pub:vsce": "vsce publish -p $VSCE_PAT",
+    "pub:ovsx": "ovsx publish",
+    "pub": "npm run pub:vsce && npm run pub:ovsx"
   },
   "devDependencies": {
     "@types/vscode": "^1.34.0",
