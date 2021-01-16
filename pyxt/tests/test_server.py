@@ -135,6 +135,40 @@ def test_get_completions_with_placeholder_item():
     ], "prog ' ' y"))
 
 
+def test_get_completions_with_history():
+    @gentest
+    @async_test
+    async def test(input_value, result, pre_cache=None, calls=(), cache=None):
+        server = {"history": []}
+        if calls:
+            for call, value in calls.items():
+                server[call] = value
+        with test_command(with_history=True), fake_history(dict(pre_cache or {})):
+            res = await mod.get_completions(server, [input_value])
+            eq(res, result)
+            eq(server["history"], list(calls))
+            eq(history.cache, cache or pre_cache)
+
+    def res(items=()):
+        items = list(items) + [item("a", offset=4), item("b", offset=4)]
+        return result(items, value="cmd ", placeholder="cmd a")
+
+    yield test("cmd", res(), calls={"history.get('cmd',)": []}, cache={"cmd": []})
+    yield test("cmd", res([
+        item("cmd a", 0, is_completion=False),
+        item("cmd b", 0, is_completion=False),
+    ]), {"cmd": ["a", "b"]})
+    yield test(
+        "cmd",
+        res([item("cmd b", 0, is_completion=False)]),
+        calls={"history.get('cmd',)": ["b"]}, cache={"cmd": ["b"]},
+    )
+    yield test("cmd a", result([
+        item("cmd a", 0, is_completion=False),
+        item("a", 4),
+    ], value="cmd a"), {"cmd": ["a", "b"]})
+
+
 def test_parse_command():
     def test(input_value, expected_args, found=True):
         with test_command():
@@ -172,10 +206,15 @@ def test_load_user_script():
 
 @nottest
 @contextmanager
-def test_command(*args, name="cmd"):
+def test_command(*args, name="cmd", with_history=False):
+    async def no_history(server, command, argstr):
+        return []
     if not args:
         args = Choice("a b", name="value"),
-    with replattr(command, "REGISTRY", {}):
+    replaces = []
+    if not with_history:
+        replaces.append((mod, "get_history", no_history))
+    with replattr((command, "REGISTRY", {}), *replaces):
         @command.command(name=name, has_placeholder_item=False, *args)
         async def cmd(editor, args):
             if args.value == "error":
@@ -189,15 +228,21 @@ def item(label, offset, **kw):
 
 
 @contextmanager
-def fake_history():
+def fake_history(cache=None):
     def save_history_call(proxy):
         path = str(proxy)
         calls, params = proxy._resolve()
-        result = calls.get(path, path)
-        calls["history"].append(result)
+        calls["history"].append(path)
+
+    async def get_history(proxy):
+        path = str(proxy)
+        calls, params = proxy._resolve()
+        calls["history"].append(path)
+        return calls.get(path, path)
 
     with replattr(
         (history, "async_do", save_history_call),
-        (history, "cache", {}),
+        (history, "cache", cache or {}),
+        (history, "get", get_history),
     ):
         yield

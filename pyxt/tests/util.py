@@ -8,6 +8,7 @@ from os.path import dirname
 from nose.tools import nottest
 from testil import replattr
 
+from .. import history
 from .. import server
 
 
@@ -90,21 +91,31 @@ async def do_command(input_value, editor=None):
         if sys.exc_info()[1] is not None:
             raise sys.exc_info()[1]
         raise Error(message)
+
+    def do_not_update_history(server, input_value, command):
+        pass
+
     if editor is None:
         editor = FakeEditor()
     srv = object()
     with replattr(
         (server, "Editor", lambda srv: editor),
         (server, "error", reraise),
+        (history, "update_history", do_not_update_history),
     ):
         return await server.do_command(srv, [input_value])
 
 
 async def get_completions(input_value, editor=None):
+    async def no_history(server, command, argstr):
+        return []
     if editor is None:
         editor = FakeEditor()
     srv = object()
-    with replattr(server, "Editor", lambda srv: editor):
+    with replattr(
+        (server, "Editor", lambda srv: editor),
+        (server, "get_history", no_history),
+    ):
         return await server.get_completions(srv, [input_value])
 
 

@@ -2,7 +2,7 @@ import logging
 
 from . import command as cmd
 from .editor import Editor
-from .history import should_update_history, update_history
+from .history import get_history, should_update_history, update_history
 from .results import error, handle_cancel, result
 from .types import PyXTServer
 
@@ -51,7 +51,7 @@ async def do_command(server: PyXTServer, params):
     except Exception as err:
         log.exception("command error")
         return error(str(err))
-    return await _get_completions(command, parser, value, argstr)
+    return await _get_completions(server, command, parser, value, argstr)
 
 
 @pyxt_command
@@ -67,7 +67,7 @@ async def get_completions(server: PyXTServer, params):
         return command_completions(argstr)
     editor = Editor(server)
     parser = await command.create_parser(editor)
-    return await _get_completions(command, parser, input_value, argstr)
+    return await _get_completions(server, command, parser, input_value, argstr)
 
 
 def parse_command(input_value):
@@ -85,8 +85,10 @@ def parse_command(input_value):
     return None, name
 
 
-async def _get_completions(command, parser, input_value, argstr):
+async def _get_completions(server, command, parser, input_value, argstr):
     items = await parser.get_completions(argstr)
+    if command.has_history:
+        items = await get_history(server, command, argstr) + items
     has_space_after_command = argstr or input_value.endswith(" ")
     if not has_space_after_command:
         input_value += " "
