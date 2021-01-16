@@ -21,7 +21,7 @@ function createHistory(state) {
                 if (items[0] === value) {
                     return  // same as most recent command (no change)
                 }
-                items = items.filter(item => item !== value).slice(0, 19)
+                items = items.filter(item => item !== value).slice(0, 9)
             }
             items.unshift(value)
             state.update(key, items)

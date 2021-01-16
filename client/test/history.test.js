@@ -48,8 +48,8 @@ suite("History storage", () => {
         }
 
         const items = history.get("cmd")
-        assert.strictEqual(items.length, 20)
+        assert.strictEqual(items.length, 10)
         assert.strictEqual(items[0], "arg 21")
-        assert.strictEqual(items[19], "arg 2")
+        assert.strictEqual(items[9], "arg 12")
     })
 })

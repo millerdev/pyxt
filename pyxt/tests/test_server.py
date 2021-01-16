@@ -4,6 +4,7 @@ from nose.tools.nontrivial import nottest
 from testil import eq, replattr
 
 from .. import command
+from .. import history
 from .. import server as mod
 from ..parser import Choice, String
 from ..results import error, result
@@ -26,6 +27,50 @@ def test_do_command():
         "invalid arguments: too many arguments\n"
         "'too' does not match any of: a, b"
     )
+
+
+def test_do_command_with_history():
+    @gentest
+    @async_test
+    async def test(input_values, history_cache, client_calls):
+        server = {"history": []}
+        with test_command(String("value")), fake_history():
+            for value in input_values:
+                await mod.do_command(server, [value])
+            eq(history.cache, history_cache)
+            eq(server["history"], client_calls)
+
+    yield test(["cmd"], {}, [])
+    yield test(["cmd a"], {"cmd": ["a"]}, ["history.update('cmd', 'a')"])
+    yield test(["cmd a", "cmd b"], {"cmd": ["a", "b"]}, [
+        "history.update('cmd', 'a')",
+        "history.update('cmd', 'b')",
+    ])
+    yield test(["cmd a", "cmd b", "cmd a"], {"cmd": ["b", "a"]}, [
+        "history.update('cmd', 'a')",
+        "history.update('cmd', 'b')",
+        "history.update('cmd', 'a')",
+    ])
+    yield test([f"cmd {n}" for n in range(15)], {
+        "cmd": [str(n) for n in range(5, 15)]
+    }, [
+        "history.update('cmd', '0')",
+        "history.update('cmd', '1')",
+        "history.update('cmd', '2')",
+        "history.update('cmd', '3')",
+        "history.update('cmd', '4')",
+        "history.update('cmd', '5')",
+        "history.update('cmd', '6')",
+        "history.update('cmd', '7')",
+        "history.update('cmd', '8')",
+        "history.update('cmd', '9')",
+        "history.update('cmd', '10')",
+        "history.update('cmd', '11')",
+        "history.update('cmd', '12')",
+        "history.update('cmd', '13')",
+        "history.update('cmd', '14')",
+    ])
+    yield test(["cmd error"], {}, [])
 
 
 def test_get_completions():
@@ -116,7 +161,7 @@ def test_command_completions():
 
 def test_load_user_script():
     from os.path import abspath, dirname, join
-    with test_command("zzz"):
+    with test_command(name="zzz"):
         root = dirname(dirname(abspath(mod.__file__)))
         path = join(root, "testfiles", "hello.py")
         mod.load_user_script([path])
@@ -127,17 +172,32 @@ def test_load_user_script():
 
 @nottest
 @contextmanager
-def test_command(name="cmd"):
+def test_command(*args, name="cmd"):
+    if not args:
+        args = Choice("a b", name="value"),
     with replattr(command, "REGISTRY", {}):
-        @command.command(
-            Choice("a b", name="value"),
-            name=name,
-            has_placeholder_item=False,
-        )
+        @command.command(name=name, has_placeholder_item=False, *args)
         async def cmd(editor, args):
+            if args.value == "error":
+                return error("error")
             return result(value=args.value)
         yield
 
 
 def item(label, offset, **kw):
     return {"label": label, "offset": offset, **kw}
+
+
+@contextmanager
+def fake_history():
+    def save_history_call(proxy):
+        path = str(proxy)
+        calls, params = proxy._resolve()
+        result = calls.get(path, path)
+        calls["history"].append(result)
+
+    with replattr(
+        (history, "async_do", save_history_call),
+        (history, "cache", {}),
+    ):
+        yield

@@ -1,6 +1,7 @@
 const _ = require('lodash')
 const vscode = require('vscode')
 const errable = require("./errors").errable
+const {createHistory} = require("./history")
 
 function withEditor(func) {
     return function () {
@@ -69,9 +70,11 @@ const editor = {
 const namespace = {
     "vscode": vscode,
     "editor": editor,
+    "history": null,
 }
 
-function publish(client) {
+function publish(client, context) {
+    namespace.history = createHistory(context.globalState)
     client.onReady().then(errable(() => {
         client.onRequest("pyxt.resolve", resolve)
     }))

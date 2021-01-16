@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from dataclasses import dataclass
 
@@ -6,6 +7,7 @@ log = logging.getLogger(__name__)
 
 VSCODE = "vscode"
 EDITOR = "editor"
+HISTORY = "history"
 
 
 @dataclass
@@ -67,6 +69,10 @@ async def get(proxy):
         log.error("Unhandled client error: %s", stack)
         raise Error(message)
     return value
+
+
+def async_do(proxy):
+    return asyncio.create_task(get(proxy))
 
 
 class Error(Exception):

@@ -2,6 +2,7 @@ import logging
 
 from . import command as cmd
 from .editor import Editor
+from .history import should_update_history, update_history
 from .results import error, handle_cancel, result
 from .types import PyXTServer
 
@@ -40,7 +41,10 @@ async def do_command(server: PyXTServer, params):
     try:
         args = await parser.parse(argstr)
         cmd.set_context(args, input_value=input_value, parser=parser)
-        return await command(editor, args)
+        result = await command(editor, args)
+        if should_update_history(input_value, command, result):
+            update_history(server, input_value, command)
+        return result
     except cmd.Incomplete as err:
         value += err.addchars
         argstr += err.addchars
