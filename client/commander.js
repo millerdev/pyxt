@@ -3,7 +3,6 @@ const vscode = require('vscode')
 const jsonrpc = require('vscode-jsonrpc')
 const errable = require("./errors").errable
 const pkg = require("../package.json")
-let history
 
 function subscribe(getClient, context) {
     pkg.contributes.commands.forEach(cmd => {
@@ -18,10 +17,6 @@ function registerCommand(id, getClient, context) {
         client && command(client, slug, args)
     })
     context.subscriptions.push(reg)
-}
-
-function setHistory(value) {
-    history = value
 }
 
 async function command(client, cmd="", args={}) {
@@ -73,9 +68,6 @@ function dispatch(result, client, cmd, value) {
         if (result.filter_results) {
             return filterResults(result, cmd + value)
         }
-        if (result.clear_history && result.command) {
-            return clearHistory(result)
-        }
         if (result.value) {
             value = result.value.slice(cmd.length)
         }
@@ -126,7 +118,7 @@ async function filterResults(result, command) {
         input.ignoreFocusOut = true
         input.matchOnDescription = true
         input.matchOnDetail = true
-        setCompletions(input, command, result, toQuickPickItem, true)
+        setCompletions(input, command, result, toQuickPickItem)
         input.show()
         const item = await new Promise(resolve => {
             if (!result.keep_empty_details) {
@@ -200,12 +192,12 @@ async function getCompletions(input, client, value) {
 
 const debouncedGetCompletions = _.debounce(getCompletions, 200)
 
-function setCompletions(input, value, completions, transformItem, noHistory) {
+function setCompletions(input, value, completions, transformItem) {
     if (completions.placeholder) {
         input.placeholder = completions.placeholder
     }
     const items = completions.items.map(transformItem || toAlwaysShown)
-    input.items = noHistory ? items : addHistory(items, value)
+    input.items = items
     input.pyxt_completions = {value, ...completions, items}
 }
 
@@ -224,12 +216,11 @@ function toQuickPickItem(item) {
     return item
 }
 
-async function doCommand(input, client) {
+function doCommand(input, client) {
     const item = input.selectedItems[0]
     let command = input.pyxt_cmd + input.value
     if (item) {
         if (item.filepath) {
-            // TODO save history
             return disposable({type: "success", value: item.filepath})
         }
         if (item.is_completion || item.offset > 0 || item.label.startsWith(command)) {
@@ -242,9 +233,7 @@ async function doCommand(input, client) {
         }
     }
     input.busy = true
-    const result = await exec(client, "do_command", command)
-    updateHistory(command, result)
-    return result
+    return exec(client, "do_command", command)
 }
 
 function disposable(value) {
@@ -265,52 +254,6 @@ function exec(client, command, ...args) {
     })()
     promise.dispose = () => can.cancel()
     return promise
-}
-
-function updateHistory(command, result) {
-    const [cmd, value] = splitCommand(command)
-    if (result && value && !result.no_history) {
-        if (result.type === "success") {
-            history.update(cmd, value)
-        } else if (result.type === "items" && result.filter_results) {
-            history.update(cmd, value)
-        }
-    }
-}
-
-function addHistory(items, command) {
-    const [cmd, value] = splitCommand(command)
-    const hist = history.get(cmd)
-        .filter(item => item.startsWith(value))
-        .map(label => cmd + " " + label)
-        .map(label => ({label, offset: 0}))
-    if (hist.length) {
-        const zero = items.length ? items[0] : null
-        if (zero && zero.offset === 0) {
-            items = [zero].concat(hist).concat(items.slice(1))
-        } else {
-            items = hist.concat(items)
-        }
-    }
-    return items
-}
-
-async function clearHistory(result) {
-    const answer = await vscode.window.showInputBox({
-        placeHolder: `Type "CLEAR" to delete '${result.command}' command history`,
-    })
-    if (answer === "CLEAR") {
-        history.clear(result.command)
-        vscode.window.showInformationMessage(
-            `'${result.command}' command history has been deleted.`
-        )
-    } else if (answer !== undefined) {
-        vscode.window.showWarningMessage("Bad input: " + answer)
-    }
-}
-
-function splitCommand(command) {
-    return command.split(/ (.*)/, 2)
 }
 
 async function openFile(path) {
@@ -346,7 +289,6 @@ function splitGoto(path) {
 
 module.exports = {
     subscribe,
-    setHistory,
     command,
     commandInput,
     splitGoto,

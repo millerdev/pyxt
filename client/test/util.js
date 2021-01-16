@@ -2,15 +2,12 @@ const _ = require("lodash")
 const assert = require('assert')
 const sinon = require('sinon')
 const vscode = require('vscode')
-const {createHistory} = require("../history")
 
 function setup(commander) {
     const sandbox = sinon.createSandbox()
-    const history = createHistory(mockMemento())
     const inputs = []
     const quickPick = sandbox.stub(vscode.window, "createQuickPick")
     const callbacks = {inputItems: []}
-    commander.setHistory(history)
     quickPick.callsFake(() => {
         // keep a reference to each new QuickPick
         const input = quickPick.wrappedMethod.apply(this, arguments)
@@ -50,16 +47,13 @@ function setup(commander) {
             items = input.items.map(itemText)
             assert.strictEqual(JSON.stringify(items), JSON.stringify(expected))
         },
-        unsetHistory: () => commander.setHistory(undefined),
 
-        history,
         sandbox,
     }
     return env
 }
 
 function teardown(env, client) {
-    env.unsetHistory()
     client && client.done()
     env.sandbox.restore()
 }

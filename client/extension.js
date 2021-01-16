@@ -6,7 +6,6 @@ const {workspace} = require('vscode')
 const {LanguageClient} = require('vscode-languageclient')
 const jsproxy = require("./jsproxy")
 const commander = require("./commander")
-const {createHistory} = require("./history")
 const DEBUG_PORT = 2087
 let client
 
@@ -30,7 +29,6 @@ function getClient(context) {
 
 function setup(client, context) {
     context.subscriptions.push(client.start())
-    commander.setHistory(createHistory(context.globalState))
     jsproxy.publish(client, context)
     loadUserScript(client)
 }
