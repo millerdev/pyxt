@@ -134,5 +134,5 @@ def command_completions(argstr=""):
         "label": name + " ",
         "offset": 0,
         "is_completion": True,
-    } for name in sorted(cmd.REGISTRY)]
+    } for name in sorted(cmd.REGISTRY) if name.startswith(argstr)]
     return result(items, argstr)

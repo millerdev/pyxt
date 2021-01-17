@@ -75,6 +75,9 @@ def test_get_completions():
     async def test(input_value, expected_result):
         server = object()
         with test_command():
+            @command.command(String("value"))
+            def count(editor, args):
+                return result(value=args.value)
             res = await mod.get_completions(server, [input_value])
             eq(res, expected_result)
 
@@ -82,6 +85,10 @@ def test_get_completions():
     yield test, "cmd", result([item("a", 4), item("b", 4)], "cmd ", placeholder="cmd a")
     yield test, "cmd ", result([item("a", 4), item("b", 4)], "cmd ", placeholder="cmd a")
     yield test, "cmd a", result([item("a", 4)], "cmd a")
+    yield test, "c", result([
+        item("cmd ", 0, is_completion=True),
+        item("count ", 0, is_completion=True),
+    ], "c")
 
 
 def test_get_completions_with_placeholder_item():
