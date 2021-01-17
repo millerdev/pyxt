@@ -18,7 +18,7 @@ def get_commands(editor):
 async def history(editor, args):
     """Clear command history"""
     if not args.command:
-        input_required("choose a command", args)
+        return input_required("choose a command", args)
     if args.action == "clear":
         await clear(editor.server, args.command)
         await editor.show_message(f"{args.command} command history cleared.")

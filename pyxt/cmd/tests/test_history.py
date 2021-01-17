@@ -47,6 +47,17 @@ async def test_clear():
 
 
 @async_test
+async def test_clear_with_no_command():
+    server = {"calls": []}
+    history = {"python": ["~/venv"], "ag": ["x"]}
+    with fake_history(history):
+        result = await do_command(server, ["history clear "])
+    eq(result["items"], [{'label': '', 'description': 'choose a command'}])
+    eq(server["calls"], [])
+    eq(history, {"python": ["~/venv"], "ag": ["x"]})
+
+
+@async_test
 async def test_action_completions():
     editor = FakeEditor()
     result = await get_completions("history ", editor)
