@@ -211,6 +211,7 @@ suite('Commander', () => {
     test("should not get more completions on match existing item", async () => {
         client = util.mockClient(
             ["get_completions", [""], {items: [{label: "open", offset: 0}]}],
+            ["get_completions", ["ope"], {items: [{label: "open", offset: 0}]}],
         )
         let input
         const result = commander.commandInput(client)
@@ -260,7 +261,6 @@ suite('Commander', () => {
         env.assertItems(input, ["dir/", "file1"])
 
         await env.changeValue(input, "open dir/")
-        input = await env.inputItemsChanged()
         env.assertItems(input, ["file2"])
 
         input.hide()
@@ -291,6 +291,13 @@ suite('Commander', () => {
                 {label: "dir/", offset: 5},
                 {label: "file", offset: 5},
             ]}],
+            ["get_completions", ["open d"], {items: [
+                {label: "dir/", offset: 5},
+            ]}],
+            ["get_completions", ["open "], {items: [
+                {label: "dir/", offset: 5},
+                {label: "file", offset: 5},
+            ]}],
         )
         let input
         const result = commander.commandInput(client, "", "open ")
@@ -311,6 +318,7 @@ suite('Commander', () => {
                 {label: "dir/", offset: 5},
                 {label: "file", offset: 5},
             ]}],
+            ["get_completions", ["open d"], {items: [{label: "dir/", offset: 5}]}],
             ["get_completions", ["open"], {items: [{label: "open", offset: 0}]}],
         )
         let input
@@ -490,7 +498,6 @@ suite('Commander', () => {
             env.assertItems(input, ["dir/", "file1"])
 
             await env.changeValue(input, "dir/")
-            input = await env.inputItemsChanged()
             env.assertItems(input, ["file2"])
 
             input.hide()
@@ -499,6 +506,13 @@ suite('Commander', () => {
 
         test("should filter completions with value from server", async () => {
             client = util.mockClient(
+                ["get_completions", ["open dir/"], {value: "open dir/", items: [
+                    {label: "dir/", offset: 9},
+                    {label: "file", offset: 9},
+                ]}],
+                ["get_completions", ["open dir/d"], {value: "open dir/d", items: [
+                    {label: "dir/", offset: 9},
+                ]}],
                 ["get_completions", ["open dir/"], {value: "open dir/", items: [
                     {label: "dir/", offset: 9},
                     {label: "file", offset: 9},
@@ -517,30 +531,6 @@ suite('Commander', () => {
             env.assertItems(input, ["dir/", "file"])
             assert.strictEqual(input.value, "dir/")
 
-            input.hide()
-            assert(!await result)
-        })
-
-        test("should filter completions with input value", async () => {
-            client = util.mockClient(
-                ["get_completions", ["open dir/"], {items: [
-                    {label: "dir/", offset: 9},
-                    {label: "file", offset: 9},
-                ]}],
-            )
-            let input
-            const result = commander.commandInput(client, "open ", "dir/")
-            input = await env.inputItemsChanged()
-            assert.strictEqual(input.value, "dir/")
-            assert.strictEqual(input.pyxt_completions.value, "open dir/")
-
-            await env.changeValue(input, "dir/d")
-            env.assertItems(input, ["dir/"])
-            assert.strictEqual(input.value, "dir/d")
-            await env.changeValue(input, "dir/")
-            env.assertItems(input, ["dir/", "file"])
-            assert.strictEqual(input.value, "dir/")
-    
             input.hide()
             assert(!await result)
         })

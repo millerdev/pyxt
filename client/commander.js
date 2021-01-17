@@ -164,23 +164,7 @@ function distributeDetails(input) {
 }
 
 function updateCompletions(input, client, value) {
-    const completions = input.pyxt_completions
-    value = input.pyxt_cmd + value
-    if (completions && value.startsWith(completions.value)) {
-        const matching = completions.items.filter(item => {
-            const term = value.slice(item.offset)
-            return item.label.startsWith(term)
-        })
-        if (matching.length) {
-            input.items = matching
-            if (matching.length > 1 || matching.some(item =>
-                item.label.length > value.slice(item.offset).length
-            )) {
-                return
-            }
-        }
-    }
-    debouncedGetCompletions(input, client, value);
+    debouncedGetCompletions(input, client, input.pyxt_cmd + value);
 }
 
 async function getCompletions(input, client, value) {
