@@ -4,13 +4,13 @@ LIMIT = 10
 cache = {}
 
 
-async def get_history(server, command, argstr):
-    if command.name not in cache:
+async def get_history(server, command_name, argstr=""):
+    if command_name not in cache:
         history = JSProxy(server, root=HISTORY)
-        cache[command.name] = await get(history.get(command.name))
-    items = cache[command.name]
-    cmd = command.name + " "
-    return [itemize(cmd + x) for x in items if x.startswith(argstr)]
+        cache[command_name] = await get(history.get(command_name))
+    items = cache[command_name]
+    cmd = command_name + " "
+    return [cmd + x for x in items if x.startswith(argstr)]
 
 
 def update_history(server, input_value, command):
@@ -26,10 +26,6 @@ async def clear(server, command_name):
     history = JSProxy(server, root=HISTORY)
     await get(history.clear(command_name))
     cache.pop(command_name, None)
-
-
-def itemize(label):
-    return {"label": label, "offset": 0, "is_completion": False}
 
 
 def update_local_cache(cmd, value):

@@ -1,14 +1,11 @@
-from contextlib import contextmanager
-
-from nose.tools.nontrivial import nottest
-from testil import eq, replattr
+from testil import eq
 
 from .. import command
 from .. import history
 from .. import server as mod
 from ..parser import Choice, String
 from ..results import error, result
-from ..tests.util import async_test, fake_history, gentest
+from ..tests.util import async_test, fake_history, gentest, test_command
 
 
 def test_do_command():
@@ -202,25 +199,6 @@ def test_load_user_script():
         commands = [x["label"] for x in mod.command_completions()["items"]]
         assert "hello " in commands, commands
         eq(commands, sorted(commands))
-
-
-@nottest
-@contextmanager
-def test_command(*args, name="cmd", with_history=False):
-    async def no_history(server, command, argstr):
-        return []
-    if not args:
-        args = Choice("a b", name="value"),
-    replaces = []
-    if not with_history:
-        replaces.append((mod, "get_history", no_history))
-    with replattr((command, "REGISTRY", {}), *replaces):
-        @command.command(name=name, has_placeholder_item=False, *args)
-        async def cmd(editor, args):
-            if args.value == "error":
-                return error("error")
-            return result(value=args.value)
-        yield
 
 
 def item(label, offset, **kw):

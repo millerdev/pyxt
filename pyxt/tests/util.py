@@ -9,9 +9,12 @@ from os.path import dirname
 from nose.tools import nottest
 from testil import replattr
 
+from .. import command
 from .. import editor
 from .. import history
 from .. import server
+from ..parser import Choice
+from ..results import error, result
 
 
 @nottest
@@ -109,7 +112,7 @@ async def do_command(input_value, editor=None):
 
 
 async def get_completions(input_value, editor=None):
-    async def no_history(server, command, argstr):
+    async def no_history(server, command_name, argstr=""):
         return []
     if editor is None:
         editor = FakeEditor()
@@ -119,6 +122,25 @@ async def get_completions(input_value, editor=None):
         (server, "get_history", no_history),
     ):
         return await server.get_completions(srv, [input_value])
+
+
+@nottest
+@contextmanager
+def test_command(*args, name="cmd", with_history=False):
+    async def no_history(server, command_name, argstr=""):
+        return []
+    if not args:
+        args = Choice("a b", name="value"),
+    replaces = []
+    if not with_history:
+        replaces.append((server, "get_history", no_history))
+    with replattr((command, "REGISTRY", {}), *replaces):
+        @command.command(name=name, has_placeholder_item=False, *args)
+        async def cmd(editor, args):
+            if args.value == "error":
+                return error("error")
+            return result(value=args.value)
+        yield
 
 
 @contextmanager

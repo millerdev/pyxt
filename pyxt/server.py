@@ -88,7 +88,7 @@ def parse_command(input_value):
 async def _get_completions(server, command, parser, input_value, argstr):
     items = await parser.get_completions(argstr)
     if command.has_history:
-        items = await get_history(server, command, argstr) + items
+        items = await get_history_items(server, command.name, argstr) + items
     has_space_after_command = argstr or input_value.endswith(" ")
     if not has_space_after_command:
         input_value += " "
@@ -112,6 +112,13 @@ async def _get_completions(server, command, parser, input_value, argstr):
         if hint:
             options["placeholder"] = input_value + hint
     return result(items, input_value, **options)
+
+
+async def get_history_items(*args):
+    return [
+        {"label": hist, "offset": 0, "is_completion": False}
+        for hist in await get_history(*args)
+    ]
 
 
 def itemize(item, offset):
