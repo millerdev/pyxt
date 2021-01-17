@@ -117,25 +117,25 @@ def test_get_completions_with_placeholder_item():
     ], "prog ", placeholder="val yes"))
     yield test("prog  ", result([
         item("prog val", 0, description="yes"),
-        item("yes", 6, is_completion=True),
-        item("no", 6, is_completion=True),
+        item("yes", 6),
+        item("no", 6),
     ], "prog  ", placeholder="yes"))
     yield test("prog ' ", result([
         item("prog ' '", 0, description="yes"),
     ], "prog ' ", placeholder="yes"))
     yield test("prog ' '", result([
         item("prog ' '", 0, description="yes"),
-        item("yes", 9, is_completion=True),
-        item("no", 9, is_completion=True),
+        item("yes", 9),
+        item("no", 9),
     ], "prog ' '", placeholder="yes"))
     yield test("prog ' ' ", result([
         item("prog ' '", 0, description="yes"),
-        item("yes", 9, is_completion=True),
-        item("no", 9, is_completion=True),
+        item("yes", 9),
+        item("no", 9),
     ], "prog ' ' ", placeholder="yes"))
     yield test("prog ' ' y", result([
         item("prog ' ' yes", 0, description=""),
-        item("yes", 9, is_completion=True),
+        item("yes", 9),
     ], "prog ' ' y"))
 
 
@@ -159,16 +159,16 @@ def test_get_completions_with_history():
 
     yield test("cmd", res(), calls={"history.get('cmd',)": []}, cache={"cmd": []})
     yield test("cmd", res([
-        item("cmd a", 0, is_completion=False),
-        item("cmd b", 0, is_completion=False),
+        item("cmd a", 0),
+        item("cmd b", 0),
     ]), {"cmd": ["a", "b"]})
     yield test(
         "cmd",
-        res([item("cmd b", 0, is_completion=False)]),
+        res([item("cmd b", 0)]),
         calls={"history.get('cmd',)": ["b"]}, cache={"cmd": ["b"]},
     )
     yield test("cmd a", result([
-        item("cmd a", 0, is_completion=False),
+        item("cmd a", 0),
         item("a", 4),
     ], value="cmd a"), {"cmd": ["a", "b"]})
 

@@ -171,8 +171,9 @@ class CommandParser:
             if arg.field is None:
                 return []
             if arg.could_consume_more:
+                is_last_arg = arg.field is self.argspec[-1]
                 # TODO what if arg has errors? is raw reliable?
-                return await arg.get_completions()
+                return await arg.get_completions(is_last_arg)
         return []
 
     def get_help(self, text):
@@ -347,12 +348,13 @@ class Arg(object):
     async def get_placeholder(self):
         return await self.field.get_placeholder(self)
 
-    async def get_completions(self):
+    async def get_completions(self, is_last_arg=None):
         def add_start(word, index):
             if getattr(word, 'start', None) is not None:
                 word.start += index
             else:
                 word = CompleteWord(word, start=index)
+            word.is_last_arg = is_last_arg
             return word
 
         words = await self.field.get_completions(self)

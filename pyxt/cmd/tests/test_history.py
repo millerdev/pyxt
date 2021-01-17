@@ -47,6 +47,13 @@ async def test_clear():
 
 
 @async_test
+async def test_action_completions():
+    editor = FakeEditor()
+    result = await get_completions("history ", editor)
+    eq([x["label"] for x in result["items"]], ["redo ", "clear "])
+
+
+@async_test
 async def test_command_completions():
     editor = FakeEditor()
     result = await get_completions("history clear ", editor)

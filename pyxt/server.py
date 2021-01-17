@@ -87,17 +87,15 @@ def parse_command(input_value):
 
 async def _get_completions(server, command, parser, input_value, argstr):
     items = await parser.get_completions(argstr)
-    if command.has_history:
-        items = await get_history_items(server, command.name, argstr) + items
     has_space_after_command = argstr or input_value.endswith(" ")
     if not has_space_after_command:
         input_value += " "
     offset = len(input_value) - len(argstr)
     items = [itemize(x, offset) for x in items]
+    if command.has_history:
+        items = await get_history_items(server, command.name, argstr) + items
     options = {}
     if command.has_placeholder_item:
-        for item in items:
-            item.setdefault("is_completion", True)
         args, hint = await parser.get_placeholder(argstr)
         if hint:
             options["placeholder"] = hint
@@ -114,19 +112,20 @@ async def _get_completions(server, command, parser, input_value, argstr):
     return result(items, input_value, **options)
 
 
-async def get_history_items(*args):
-    return [
-        {"label": hist, "offset": 0, "is_completion": False}
-        for hist in await get_history(*args)
-    ]
-
-
 def itemize(item, offset):
     if isinstance(item, str):
         item = {"label": item}
+    word = item["label"]
     if "offset" not in item:
-        item["offset"] = offset + item["label"].start
+        item["offset"] = offset + word.start
+    if not word.is_last_arg:
+        item["label"] = word.complete()
+        item.setdefault("is_completion", True)
     return item
+
+
+async def get_history_items(*args):
+    return [{"label": h, "offset": 0} for h in await get_history(*args)]
 
 
 def command_completions(argstr=""):
