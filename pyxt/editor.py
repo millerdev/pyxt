@@ -7,6 +7,7 @@ from .util import cached_property
 
 class Editor:
     def __init__(self, server):
+        self.server = server
         self.vscode = JSProxy(server, root=VSCODE)
         self.editor = JSProxy(server, root=EDITOR)
 
@@ -59,3 +60,6 @@ class Editor:
             # allows editor.set_text(value, editor.selection(), ...)
             range = await range
         await get(self.editor.set_text(text, range, select))
+
+    async def show_message(self, message):
+        await get(self.vscode.window.showInformationMessage(message))

@@ -8,7 +8,7 @@ from .. import history
 from .. import server as mod
 from ..parser import Choice, String
 from ..results import error, result
-from ..tests.util import async_test, gentest
+from ..tests.util import async_test, fake_history, gentest
 
 
 def test_do_command():
@@ -33,12 +33,12 @@ def test_do_command_with_history():
     @gentest
     @async_test
     async def test(input_values, history_cache, client_calls):
-        server = {"history": []}
+        server = {"calls": []}
         with test_command(String("value")), fake_history():
             for value in input_values:
                 await mod.do_command(server, [value])
             eq(history.cache, history_cache)
-            eq(server["history"], client_calls)
+            eq(server["calls"], client_calls)
 
     yield test(["cmd"], {}, [])
     yield test(["cmd a"], {"cmd": ["a"]}, ["history.update('cmd', 'a')"])
@@ -139,14 +139,14 @@ def test_get_completions_with_history():
     @gentest
     @async_test
     async def test(input_value, result, pre_cache=None, calls=(), cache=None):
-        server = {"history": []}
+        server = {"calls": []}
         if calls:
             for call, value in calls.items():
                 server[call] = value
         with test_command(with_history=True), fake_history(dict(pre_cache or {})):
             res = await mod.get_completions(server, [input_value])
             eq(res, result)
-            eq(server["history"], list(calls))
+            eq(server["calls"], list(calls))
             eq(history.cache, cache or pre_cache)
 
     def res(items=()):
@@ -225,24 +225,3 @@ def test_command(*args, name="cmd", with_history=False):
 
 def item(label, offset, **kw):
     return {"label": label, "offset": offset, **kw}
-
-
-@contextmanager
-def fake_history(cache=None):
-    def save_history_call(proxy):
-        path = str(proxy)
-        calls, params = proxy._resolve()
-        calls["history"].append(path)
-
-    async def get_history(proxy):
-        path = str(proxy)
-        calls, params = proxy._resolve()
-        calls["history"].append(path)
-        return calls.get(path, path)
-
-    with replattr(
-        (history, "async_do", save_history_call),
-        (history, "cache", cache or {}),
-        (history, "get", get_history),
-    ):
-        yield

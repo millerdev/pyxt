@@ -1,5 +1,6 @@
 import asyncio
 import sys
+from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import wraps
 from inspect import iscoroutine
@@ -8,6 +9,7 @@ from os.path import dirname
 from nose.tools import nottest
 from testil import replattr
 
+from .. import editor
 from .. import history
 from .. import server
 
@@ -117,6 +119,28 @@ async def get_completions(input_value, editor=None):
         (server, "get_history", no_history),
     ):
         return await server.get_completions(srv, [input_value])
+
+
+@contextmanager
+def fake_history(cache=None):
+    def async_do(proxy):
+        path = str(proxy)
+        server, params = proxy._resolve()
+        server["calls"].append(path)
+
+    async def get(proxy):
+        path = str(proxy)
+        server, params = proxy._resolve()
+        server["calls"].append(path)
+        return server.get(path, path)
+
+    with replattr(
+        (history, "async_do", async_do),
+        (history, "cache", cache or {}),
+        (history, "get", get),
+        (editor, "get", get),
+    ):
+        yield
 
 
 class async_property:

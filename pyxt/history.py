@@ -13,10 +13,6 @@ async def get_history(server, command, argstr):
     return [itemize(cmd + x) for x in items if x.startswith(argstr)]
 
 
-def itemize(label):
-    return {"label": label, "offset": 0, "is_completion": False}
-
-
 def update_history(server, input_value, command):
     assert input_value.startswith(command.name + " "), (command.name, input_value)
     value = input_value[len(command.name) + 1:]
@@ -24,6 +20,16 @@ def update_history(server, input_value, command):
         history = JSProxy(server, root=HISTORY)
         async_do(history.update(command.name, value))
         update_local_cache(command.name, value)
+
+
+async def clear(server, command_name):
+    history = JSProxy(server, root=HISTORY)
+    await get(history.clear(command_name))
+    cache.pop(command_name, None)
+
+
+def itemize(label):
+    return {"label": label, "offset": 0, "is_completion": False}
 
 
 def update_local_cache(cmd, value):
