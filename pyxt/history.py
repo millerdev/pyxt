@@ -34,12 +34,12 @@ def itemize(label):
 
 def update_local_cache(cmd, value):
     items = cache.setdefault(cmd, [])
-    if not (items and value == items[-1]):
+    if not (items and value == items[0]):
         if value in items:
             items = cache[cmd] = [x for x in items if x != value]
-        items.append(value)
-        if len(items) > LIMIT:
-            del items[:-LIMIT]
+        if len(items) >= LIMIT:
+            del items[LIMIT - 1:]
+        items.insert(0, value)
 
 
 def should_update_history(input_value, command, result):

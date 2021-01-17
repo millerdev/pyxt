@@ -42,17 +42,17 @@ def test_do_command_with_history():
 
     yield test(["cmd"], {}, [])
     yield test(["cmd a"], {"cmd": ["a"]}, ["history.update('cmd', 'a')"])
-    yield test(["cmd a", "cmd b"], {"cmd": ["a", "b"]}, [
+    yield test(["cmd a", "cmd b"], {"cmd": ["b", "a"]}, [
         "history.update('cmd', 'a')",
         "history.update('cmd', 'b')",
     ])
-    yield test(["cmd a", "cmd b", "cmd a"], {"cmd": ["b", "a"]}, [
+    yield test(["cmd a", "cmd b", "cmd a"], {"cmd": ["a", "b"]}, [
         "history.update('cmd', 'a')",
         "history.update('cmd', 'b')",
         "history.update('cmd', 'a')",
     ])
     yield test([f"cmd {n}" for n in range(15)], {
-        "cmd": [str(n) for n in range(5, 15)]
+        "cmd": [str(n) for n in reversed(range(5, 15))]
     }, [
         "history.update('cmd', '0')",
         "history.update('cmd', '1')",
