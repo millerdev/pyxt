@@ -1,5 +1,9 @@
-0.3.0 - tbd
+0.3.0 - 2021-01-22
 
+- Add "history redo COMMAND" to redo most recent invocation of command.
+- Change "history COMMAND" to "history clear COMMAND". History is cleared
+  immediately on command execution.
+- Move most history logic into Python.
 - Use webpack for JS packaging => much smaller vsix file.
 
 
