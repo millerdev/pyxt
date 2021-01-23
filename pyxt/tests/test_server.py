@@ -1,4 +1,4 @@
-from testil import eq
+from testil import eq, replattr
 
 from .. import command
 from .. import history
@@ -89,6 +89,11 @@ def test_get_completions():
         item("cmd ", 0, is_completion=True),
         item("count ", 0, is_completion=True),
     ], "c")
+
+    def err_completions(self, arg):
+        raise Exception("boink!")
+    with replattr(String, "get_completions", err_completions):
+        yield test, "count error", result(["boink!"])
 
 
 def test_get_completions_with_placeholder_item():

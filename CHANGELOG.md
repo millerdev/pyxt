@@ -1,3 +1,8 @@
+0.3.1 - tbd
+
+- Improve error handling on get command completions.
+
+
 0.3.0 - 2021-01-22
 
 - Add "history redo COMMAND" to redo most recent invocation of command.

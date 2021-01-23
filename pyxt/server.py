@@ -86,30 +86,34 @@ def parse_command(input_value):
 
 
 async def _get_completions(server, command, parser, input_value, argstr):
-    items = await parser.get_completions(argstr)
-    has_space_after_command = argstr or input_value.endswith(" ")
-    if not has_space_after_command:
-        input_value += " "
-    offset = len(input_value) - len(argstr)
-    items = [itemize(x, offset) for x in items]
-    if command.has_history:
-        items = await get_history_items(server, command.name, argstr) + items
-    options = {}
-    if command.has_placeholder_item:
-        args, hint = await parser.get_placeholder(argstr)
-        if hint:
-            options["placeholder"] = hint
-        if args or hint:
-            items.insert(0, {
-                "label": f"{command.name} {args}" if args else command.name,
-                "description": hint,
-                "offset": 0,
-            })
-    elif not argstr:
-        args, hint = await parser.get_placeholder(argstr)
-        if hint:
-            options["placeholder"] = input_value + hint
-    return result(items, input_value, **options)
+    try:
+        items = await parser.get_completions(argstr)
+        has_space_after_command = argstr or input_value.endswith(" ")
+        if not has_space_after_command:
+            input_value += " "
+        offset = len(input_value) - len(argstr)
+        items = [itemize(x, offset) for x in items]
+        if command.has_history:
+            items = await get_history_items(server, command.name, argstr) + items
+        options = {}
+        if command.has_placeholder_item:
+            args, hint = await parser.get_placeholder(argstr)
+            if hint:
+                options["placeholder"] = hint
+            if args or hint:
+                items.insert(0, {
+                    "label": f"{command.name} {args}" if args else command.name,
+                    "description": hint,
+                    "offset": 0,
+                })
+        elif not argstr:
+            args, hint = await parser.get_placeholder(argstr)
+            if hint:
+                options["placeholder"] = input_value + hint
+        return result(items, input_value, **options)
+    except Exception as err:
+        log.exception("unhandled error")
+        return result([str(err)])
 
 
 def itemize(item, offset):
