@@ -1,7 +1,6 @@
-from inspect import iscoroutine
 from os.path import dirname, expanduser, isabs
 
-from .jsproxy import EDITOR, get, JSProxy, VSCODE
+from .jsproxy import EDITOR, JSProxy, VSCODE
 from .util import cached_property
 
 
@@ -13,17 +12,17 @@ class Editor:
 
     @cached_property
     async def file_path(self):
-        return await get(self.vscode.window.activeTextEditor.document.uri.fsPath)
+        return await self.vscode.window.activeTextEditor.document.uri.fsPath
 
     @cached_property
     async def project_path(self):
         file_uri = self.vscode.window.activeTextEditor.document.uri
-        if await get(file_uri.fsPath) is not None:
+        if await file_uri.fsPath is not None:
             folder = self.vscode.workspace.getWorkspaceFolder(file_uri)
-            path = await get(folder.uri.fsPath)
+            path = await folder.uri.fsPath
             if path:
                 return path
-        path = await get(self.vscode.workspace.workspaceFolders[0].uri.fsPath)
+        path = await self.vscode.workspace.workspaceFolders[0].uri.fsPath
         return path if path else expanduser("~")
 
     @cached_property
@@ -38,38 +37,27 @@ class Editor:
     @cached_property
     async def ag_path(self):
         path = self.vscode.workspace.getConfiguration('pyxt').get('agPath')
-        return await get(path) or "ag"
+        return await path or "ag"
 
     @cached_property
     async def python_path(self):
         path = self.vscode.workspace.getConfiguration('pyxt').get('pythonPath')
-        return await get(path) or "python"
+        return await path or "python"
 
-    async def selection(self, range=None):
-        sel = await get(self.editor.selection(range))
-        return tuple(sel) if sel else None
+    def selection(self, range=None):
+        return self.editor.selection(range)
 
-    async def selections(self, ranges=None):
-        selections = await get(self.editor.selections(ranges))
-        return [tuple(s) for s in selections] if ranges is None else None
+    def selections(self, ranges=None):
+        return self.editor.selections(ranges)
 
-    async def get_text(self, range):
-        if iscoroutine(range):
-            # allows editor.get_text(editor.selection())
-            range = await range
-        return await get(self.editor.get_text(range))
+    def get_text(self, range):
+        return self.editor.get_text(range)
 
-    async def get_texts(self, ranges):
-        if iscoroutine(ranges):
-            # allows editor.get_texts(editor.selections())
-            ranges = await ranges
-        return await get(self.editor.get_texts(ranges))
+    def get_texts(self, ranges):
+        return self.editor.get_texts(ranges)
 
     async def set_text(self, text, range=None, select=True):
-        if iscoroutine(range):
-            # allows editor.set_text(value, editor.selection(), ...)
-            range = await range
-        await get(self.editor.set_text(text, range, select))
+        await self.editor.set_text(text, range, select)
 
     async def show_message(self, message):
-        await get(self.vscode.window.showInformationMessage(message))
+        await self.vscode.window.showInformationMessage(message)

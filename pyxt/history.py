@@ -1,4 +1,4 @@
-from .jsproxy import async_do, get, HISTORY, JSProxy
+from .jsproxy import async_do, HISTORY, JSProxy
 
 LIMIT = 10
 cache = {}
@@ -7,7 +7,7 @@ cache = {}
 async def get_history(server, command_name, argstr=""):
     if command_name not in cache:
         history = JSProxy(server, root=HISTORY)
-        cache[command_name] = await get(history.get(command_name))
+        cache[command_name] = await history.get(command_name)
     items = cache[command_name]
     cmd = command_name + " "
     return [cmd + x for x in items if x.startswith(argstr)]
@@ -24,7 +24,7 @@ def update_history(server, input_value, command):
 
 async def clear(server, command_name):
     history = JSProxy(server, root=HISTORY)
-    await get(history.clear(command_name))
+    await history.clear(command_name)
     cache.pop(command_name, None)
 
 

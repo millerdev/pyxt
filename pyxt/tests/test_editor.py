@@ -3,7 +3,7 @@ from contextlib import contextmanager
 from testil import eq, replattr
 
 from .. import editor as mod
-from ..jsproxy import Error
+from .. import jsproxy
 from ..tests.util import async_test, gentest
 
 
@@ -29,7 +29,7 @@ def test_project_path():
     yield test, "/space", {FIRST_WORKSPACE: "/space"}
     yield test, "/project", {
         ACTIVE_PATH: None,
-        FOLDER_CALL: Error,
+        FOLDER_CALL: jsproxy.Error,
         FIRST_WORKSPACE: "/project",
     }
 
@@ -71,13 +71,13 @@ async def test_python_path():
 @async_test
 async def test_selection():
     with setup_editor({"editor.selection(None,)": [1, 2]}) as editor:
-        eq(await editor.selection(), (1, 2))
+        eq(await editor.selection(), [1, 2])
 
 
 @async_test
 async def test_selections():
     with setup_editor({"editor.selections(None,)": [[1, 2], [5, 7]]}) as editor:
-        eq(await editor.selections(), [(1, 2), (5, 7)])
+        eq(await editor.selections(), [[1, 2], [5, 7]])
 
 
 @async_test
@@ -85,6 +85,14 @@ async def test_selection_with_null_result():
     calls = {"editor.selection(None,)": None}
     with setup_editor(calls) as editor:
         eq(await editor.selection(), None)
+
+
+@async_test
+async def test_get_text():
+    selection = "editor.selection(None,)"
+    get_text = f"editor.get_text({selection},)"
+    with setup_editor({get_text: "text"}) as editor:
+        eq(await editor.get_text(editor.selection()), "text")
 
 
 ACTIVE_URI = "vscode.window.activeTextEditor.document.uri"
@@ -97,7 +105,7 @@ FIRST_WORKSPACE = "vscode.workspace.workspaceFolders[0].uri.fsPath"
 def setup_editor(srv=None):
     with replattr(
         (mod, "expanduser", lambda path: "/home/user"),
-        (mod, "get", fake_get),
+        (jsproxy, "_get", fake_get),
     ):
         yield mod.Editor(srv or {})
 
@@ -106,6 +114,6 @@ async def fake_get(proxy):
     path = str(proxy)
     calls, params = proxy._resolve()
     value = calls.get(path, path)
-    if value is Error:
+    if value is jsproxy.Error:
         raise value
     return value

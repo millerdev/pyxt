@@ -59,8 +59,11 @@ class JSProxy:
         assert self.root, self
         return self._parent, {**next_value, "root": self.root}
 
+    def __await__(self):
+        return _get(self).__await__()
 
-async def get(proxy):
+
+async def _get(proxy):
     server, params = proxy._resolve()
     value = await server.lsp.send_request_async("pyxt.resolve", [params])
     if isinstance(value, list) and len(value) == 3 and value[0] == "__error__":
@@ -72,7 +75,7 @@ async def get(proxy):
 
 
 def async_do(proxy):
-    return asyncio.create_task(get(proxy))
+    return asyncio.create_task(_get(proxy))
 
 
 class Error(Exception):

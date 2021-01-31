@@ -10,8 +10,8 @@ from nose.tools import nottest
 from testil import replattr
 
 from .. import command
-from .. import editor
 from .. import history
+from .. import jsproxy
 from .. import server
 from ..parser import Choice
 from ..results import error, result
@@ -159,8 +159,7 @@ def fake_history(cache=None):
     with replattr(
         (history, "async_do", async_do),
         (history, "cache", cache or {}),
-        (history, "get", get),
-        (editor, "get", get),
+        (jsproxy, "_get", get),
     ):
         yield
 
