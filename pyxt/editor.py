@@ -46,14 +46,24 @@ class Editor:
         return await get(path) or "python"
 
     async def selection(self, range=None):
-        sel = await get(self.editor.selection())
+        sel = await get(self.editor.selection(range))
         return tuple(sel) if sel else None
+
+    async def selections(self, ranges=None):
+        selections = await get(self.editor.selections(ranges))
+        return [tuple(s) for s in selections] if ranges is None else None
 
     async def get_text(self, range):
         if iscoroutine(range):
             # allows editor.get_text(editor.selection())
             range = await range
         return await get(self.editor.get_text(range))
+
+    async def get_texts(self, ranges):
+        if iscoroutine(ranges):
+            # allows editor.get_texts(editor.selections())
+            ranges = await ranges
+        return await get(self.editor.get_texts(ranges))
 
     async def set_text(self, text, range=None, select=True):
         if iscoroutine(range):

@@ -1,6 +1,7 @@
-0.3.1 - tbd
+0.3.2 - tbd
 
 - Improve error handling on get command completions.
+- Execute all selections with "python" command.
 
 
 0.3.0 - 2021-01-22

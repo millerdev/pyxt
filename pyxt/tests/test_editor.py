@@ -70,13 +70,19 @@ async def test_python_path():
 
 @async_test
 async def test_selection():
-    with setup_editor({"editor.selection()": [1, 2]}) as editor:
+    with setup_editor({"editor.selection(None,)": [1, 2]}) as editor:
         eq(await editor.selection(), (1, 2))
 
 
 @async_test
+async def test_selections():
+    with setup_editor({"editor.selections(None,)": [[1, 2], [5, 7]]}) as editor:
+        eq(await editor.selections(), [(1, 2), (5, 7)])
+
+
+@async_test
 async def test_selection_with_null_result():
-    calls = {"editor.selection()": None}
+    calls = {"editor.selection(None,)": None}
     with setup_editor(calls) as editor:
         eq(await editor.selection(), None)
 

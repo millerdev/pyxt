@@ -44,9 +44,21 @@ const editor = {
         }
     }),
 
+    selections: withEditor((editor, value) => {
+        if (!value) {
+            return editor.selections.map(sel => pyxtRange(editor, sel))
+        } else {
+            editor.selections = value.map(sel => selection(editor, sel))
+        }
+    }),
+
     get_text: withEditor((editor, range) => {
         const rng = range ? selection(editor, range) : undefined
         return editor.document.getText(rng)
+    }),
+
+    get_texts: withEditor((editor, ranges) => {
+        return ranges.map(rng => editor.document.getText(selection(editor, rng)))
     }),
 
     set_text: withEditor((editor, text, range, select=true) => {

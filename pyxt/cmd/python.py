@@ -58,8 +58,10 @@ async def python(editor, args):
 
 
 async def get_code(editor, scope):
-    sel = editor.selection() if scope == "selection" else None
-    code = await editor.get_text(sel)
+    if scope == "selection":
+        code = "\n".join(await editor.get_texts(editor.selections()))
+    else:
+        code = await editor.get_text()
     return print_last_line(dedent(code))
 
 
