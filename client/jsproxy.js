@@ -32,6 +32,10 @@ function selection(editor, pyxtrange) {
     return new vscode.Selection(doc.positionAt(anchor), doc.positionAt(active))
 }
 
+function allTextRange(doc) {
+    return doc.validateRange(new vscode.Range(0, 0, doc.lineCount, 0))
+}
+
 /**
  * Interface for text manipulation on the active text editor
  */
@@ -64,7 +68,7 @@ const editor = {
     set_text: withEditor((editor, text, range, select=true) => {
         editor.edit(async builder => {
             const doc = editor.document
-            const rng = range ? selection(editor, range) : undefined
+            const rng = range ? selection(editor, range) : allTextRange(doc)
             await builder.replace(rng, text)
             let start = rng ? rng.start : doc.positionAt(0)
             let end = doc.positionAt(doc.offsetAt(start) + text.length)

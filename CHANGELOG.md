@@ -1,5 +1,6 @@
 0.3.2 - tbd
 
+- Fix isort entire document (not selection).
 - Improve error handling on get command completions.
 - Execute all selections with "python" command.
 
