@@ -29,8 +29,7 @@ _PyXT: Open File_), and may be assigned a keyboard shortcut.
 - `ag MATCH PATH OPTIONS...` - [The Silver Searcher](https://github.com/ggreer/the_silver_searcher) code
   search. Ag must be installed separately.  
   VS Code command: _PyXT: Ag (The Silver Searcher)_.
-- `history COMMAND` - clear command history. Confirmation is required before history is
-  deleted.
+- `history ACTION COMMAND` - redo most recent command or clear command history.
 - `isort FIRSTPARTY SELECTION` - [isort](https://pycqa.github.io/isort/) your
   imports so you don't have to. Sort selection or entire file. `FIRSTPARTY` is a
   comma-delimited list of known first-party packages. `SELECTION` controls
