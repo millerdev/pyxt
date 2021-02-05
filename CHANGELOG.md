@@ -1,4 +1,4 @@
-0.3.2 - tbd
+0.3.2 - 2021-02-05
 
 - Fix isort entire document (not selection).
 - Improve error handling on get command completions.
