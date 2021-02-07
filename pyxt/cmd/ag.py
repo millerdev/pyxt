@@ -118,7 +118,11 @@ def make_line_processor(items, ag_path, cwd):
         if len(items) >= MAX_RESULT_ITEMS:
             raise TooManyResults
 
-    return {"iter_output": ag_lines, "got_output": got_output}
+    return {
+        "iter_output": ag_lines,
+        "got_output": got_output,
+        "limit": MAX_LINE_LENGTH,
+    }
 
 
 def create_item(abspath, relpath, num, ranges, delim, text):

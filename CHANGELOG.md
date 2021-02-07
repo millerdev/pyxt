@@ -1,3 +1,8 @@
+0.3.3 - tbd
+
+- Fix `ag` command handling of very long line matches.
+
+
 0.3.2 - 2021-02-05
 
 - Fix isort entire document (not selection).

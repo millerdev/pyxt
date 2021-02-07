@@ -117,11 +117,11 @@ async def test_huge_results():
     with tempdir() as tmp:
         os.mkdir(join(tmp, "dir"))
         with open(join(tmp, "dir/long_lines.txt"), "w", encoding="utf-8") as fh:
-            fh.write("file.txt " * 100)
+            fh.write("xyz " + "file.txt " * 100)
         editor = FakeEditor(join(tmp, "dir/file"), tmp)
-        result = await do_command("ag txt", editor)
+        result = await do_command("ag xyz", editor)
         items = result["items"]
-        eq(len(items[0]["label"]), mod.MAX_LINE_LENGTH + 3, result)
+        eq(len(items[0]["label"]), mod.MAX_LINE_LENGTH - 3, result)
         eq(len(items), 1, result)
 
 

@@ -1,5 +1,5 @@
 import logging
-from asyncio.exceptions import CancelledError
+from asyncio.exceptions import CancelledError, IncompleteReadError, LimitOverrunError
 from asyncio.subprocess import create_subprocess_exec, PIPE, STDOUT
 
 log = logging.getLogger(__name__)
@@ -68,10 +68,42 @@ async def run_command(command, **kw):
 
 async def iter_lines(stream, encoding):
     while True:
-        line = await stream.readline()
+        line = await readline(stream)
         if not line:
             break
         yield line.decode(encoding)
+
+
+async def readline(stream):
+    # adapted from StreamReader.readline
+    sep = b'\n'
+    try:
+        line = await stream.readuntil(sep)
+    except IncompleteReadError as e:
+        return e.partial
+    except LimitOverrunError as e:
+        line = stream._buffer[:stream._limit]
+        await _discard_overrun(stream, sep, e.consumed)
+    return line
+
+
+async def _discard_overrun(stream, sep, consumed):
+    seplen = len(sep)
+    while True:
+        if stream._buffer.startswith(sep, consumed):
+            del stream._buffer[:consumed + seplen]
+            found_sep = True
+        else:
+            stream._buffer.clear()
+            found_sep = False
+        stream._maybe_resume_transport()
+        if not found_sep:
+            try:
+                await stream.readuntil(sep)
+            except LimitOverrunError as e:
+                consumed = e.consumed
+                continue
+        break
 
 
 class ProcessError(Exception):
