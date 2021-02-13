@@ -1,4 +1,4 @@
-0.3.3 - tbd
+0.3.3 - 2021-02-13
 
 - Fix `ag` command handling of very long line matches.
 
