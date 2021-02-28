@@ -4,5 +4,7 @@
 #
 #    pip-compile
 #
-isort==5.6.4              # via -r requirements.in
-pygls==0.9.1              # via -r requirements.in
+isort==5.7.0
+    # via -r requirements.in
+pygls==0.9.1
+    # via -r requirements.in
