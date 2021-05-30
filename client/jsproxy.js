@@ -81,6 +81,18 @@ const editor = {
             editor.selection = new vscode.Selection(start, end)
         })
     }),
+
+    set_texts: withEditor((editor, texts, ranges) => {
+        const uri = editor.document.uri
+        const edits = new vscode.WorkspaceEdit()
+        texts.forEach((text, i) => {
+            if (ranges[i]) {
+                let rng = selection(editor, ranges[i])
+                edits.replace(uri, rng, text)
+            }
+        })
+        vscode.workspace.applyEdit(edits)
+    }),
 }
 
 const namespace = {

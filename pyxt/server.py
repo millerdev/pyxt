@@ -13,6 +13,7 @@ from .cmd import (  # noqa: F401
     isort,
     openfile,
     python,
+    replace,
 )
 from . import custom
 

@@ -59,5 +59,8 @@ class Editor:
     async def set_text(self, text, range=None, select=True):
         await self.editor.set_text(text, range, select)
 
+    async def set_texts(self, texts, ranges):
+        await self.editor.set_texts(texts, ranges)
+
     async def show_message(self, message):
         await self.vscode.window.showInformationMessage(message)

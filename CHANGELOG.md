@@ -1,3 +1,8 @@
+0.3.4 - unreleased
+
+- Add `replace` command.
+
+
 0.3.3 - 2021-02-13
 
 - Fix `ag` command handling of very long line matches.

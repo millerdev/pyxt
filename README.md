@@ -46,6 +46,13 @@ _PyXT: Open File_), and may be assigned a keyboard shortcut.
   final expression. Accept (by pressing Enter) the result to copy it to the
   clipboard.  
   VS Code command: _PyXT: Python_
+- `replace PATTERN RANGE SEARCH_TYPE` - Find and replace text in the active
+  editor. `PATTERN` is a find/replace pattern in the form `/find/replace/flags`
+  where `find` is a regex or literal (depending on `SEARCH_TYPE`), `replace` is
+  a replacement pattern, and `flags` are optional regular expression flags.
+  Supported flags are `i` (ignore case) and `s` (dot matches any character,
+  including newline).  
+  VS Code Command: _PyXT: Replace_.
 
 The command name should not be typed when it is invoked directly via its
 VS Code command (rather than with the PyXT Command bar). In this case, simply

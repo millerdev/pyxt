@@ -19,7 +19,8 @@
     "onCommand:pyxt.ag",
     "onCommand:pyxt.isort",
     "onCommand:pyxt.open",
-    "onCommand:pyxt.python"
+    "onCommand:pyxt.python",
+    "onCommand:pyxt.replace"
   ],
   "contributes": {
     "commands": [
@@ -42,6 +43,10 @@
       {
         "command": "pyxt.python",
         "title": "PyXT: Python"
+      },
+      {
+        "command": "pyxt.replace",
+        "title": "PyXT: Replace"
       }
     ],
     "configuration": {

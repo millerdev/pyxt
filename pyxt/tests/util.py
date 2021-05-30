@@ -213,6 +213,11 @@ class FakeEditor:
             return self._selected_range
         self.selection = value
 
+    async def selections(self, values=None):
+        if values is None:
+            return [self._selected_range]
+        raise NotImplementedError
+
     async def get_text(self, rng=None):
         if iscoroutine(rng):
             rng = await rng
@@ -220,6 +225,9 @@ class FakeEditor:
             return self.text
         start, end = rng
         return self.text[start:end]
+
+    async def get_texts(self, ranges):
+        return await asyncio.gather(*[self.get_text(rng) for rng in ranges])
 
     async def set_text(self, value, rng=None, select=True):
         if rng is None:
@@ -235,6 +243,14 @@ class FakeEditor:
             self.text[end:],
         ])
         self._selection = (start, len(value)) if select else (end, end)
+
+    async def set_texts(self, values, ranges, select=True):
+        if len(values) != len(ranges):
+            raise ValueError(
+                f"values/ranges mismatch: {len(values)} != {len(ranges)}")
+        if len(values) > 1:
+            raise NotImplementedError
+        await self.set_text(values[0], ranges[0], select)
 
 
 class Error(Exception):
