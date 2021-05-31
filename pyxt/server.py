@@ -130,7 +130,10 @@ def itemize(item, offset):
 
 
 async def get_history_items(*args):
-    return [{"label": h, "offset": 0} for h in await get_history(*args)]
+    return [
+        {"label": h, "is_history": True, "offset": 0}
+        for h in await get_history(*args)
+    ]
 
 
 def command_completions(argstr=""):

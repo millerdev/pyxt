@@ -164,16 +164,16 @@ def test_get_completions_with_history():
 
     yield test("cmd", res(), calls={"history.get('cmd',)": []}, cache={"cmd": []})
     yield test("cmd", res([
-        item("cmd a", 0),
-        item("cmd b", 0),
+        item("cmd a", 0, is_history=True),
+        item("cmd b", 0, is_history=True),
     ]), {"cmd": ["a", "b"]})
     yield test(
         "cmd",
-        res([item("cmd b", 0)]),
+        res([item("cmd b", 0, is_history=True)]),
         calls={"history.get('cmd',)": ["b"]}, cache={"cmd": ["b"]},
     )
     yield test("cmd a", result([
-        item("cmd a", 0),
+        item("cmd a", 0, is_history=True),
         item("a", 4),
     ], value="cmd a"), {"cmd": ["a", "b"]})
 

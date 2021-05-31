@@ -88,6 +88,9 @@ async function getCommandResult(input, client) {
     const disposables = []
     try {
         return await new Promise(resolve => {
+            disposables.push(input.onDidChangeActive(([item]) => {
+                item && updateValue(input, item)
+            }))
             disposables.push(input.onDidChangeValue(errable(value => {
                 updateCompletions(input, client, value)
             })))
@@ -163,7 +166,26 @@ function distributeDetails(input) {
     input.items = input.items
 }
 
+function updateValue(input, item) {
+    if (item.is_history) {
+        input.value = item.label.slice(input.pyxt_cmd.length)
+        input.pyxt_is_history = true
+    } else if (input.pyxt_is_history && input.pyxt_completions) {
+        // HACK timeout to avoid update before edit value from history.
+        // Edit history triggers onDidChangeValue -> updateCompletions.
+        input.pyxt_value_timeout = setTimeout(() => {
+            delete input.pyxt_value_timeout
+            const command = input.pyxt_completions.value
+            input.value = command.slice(input.pyxt_cmd.length)
+        })
+    }
+}
+
 function updateCompletions(input, client, value) {
+    if (input.pyxt_value_timeout) {
+        clearTimeout(input.pyxt_value_timeout)
+        delete input.pyxt_value_timeout
+    }
     debouncedGetCompletions(input, client, input.pyxt_cmd + value);
 }
 

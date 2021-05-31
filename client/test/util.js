@@ -23,6 +23,20 @@ function setup(commander) {
     })
     const env = {
         accept: input => input._fireDidAccept(),
+        activate: (index) => new Promise(resolve => {
+            const input = inputs[inputs.length - 1]
+            const event = input.onDidChangeActive(() => {
+                event.dispose()
+                if (input.pyxt_value_timeout) {
+                    // HACK trigger timeout to force update value
+                    input.pyxt_value_timeout._onTimeout()
+                    clearTimeout(input.pyxt_value_timeout)
+                    delete input.pyxt_value_timeout
+                }
+                resolve(input)
+            })
+            input._fireDidChangeActive([index])
+        }),
         changeValue: async (input, value) => {
             const itemsChanged = env.inputItemsChanged()
             input._fireDidChangeValue(value)

@@ -156,6 +156,30 @@ suite('Commander', () => {
         assert(!await result)
     })
 
+    test("should update value with history item", async () => {
+        client = util.mockClient(
+            ["get_completions", ["ag "], {type: "items", items: [
+                {label: "", description: "ag xyz ~/project", offset: 0},
+                {label: "ag  .", is_history: true, offset: 0},
+                {label: "ag del ~/mar", is_history: true, offset: 0},
+            ]}],
+        )
+        let input
+        const result = commander.commandInput(client, "", "ag ")
+        input = await env.inputItemsChanged()
+        await env.activate(1)
+        assert.strictEqual(input.value, "ag  .")
+
+        await env.activate(2)
+        assert.strictEqual(input.value, "ag del ~/mar")
+
+        await env.activate(0)
+        assert.strictEqual(input.value, "ag ")
+
+        input.hide()
+        assert(!await result)
+    })
+
     test("should do command with command bar value", async () => {
         client = util.mockClient(
             ["get_completions", ["ag x"], {type: "items", items: [
@@ -484,6 +508,30 @@ suite('Commander', () => {
             assert(!await result)
         })
 
+        test("should update value with history item", async () => {
+            client = util.mockClient(
+                ["get_completions", ["ag "], {type: "items", items: [
+                    {label: "", description: "ag xyz ~/project", offset: 0},
+                    {label: "ag  .", is_history: true, offset: 0},
+                    {label: "ag del ~/mar", is_history: true, offset: 0},
+                ]}],
+            )
+            let input
+            const result = commander.commandInput(client, "ag ", "")
+            input = await env.inputItemsChanged()
+            await env.activate(1)
+            assert.strictEqual(input.value, " .")
+    
+            await env.activate(2)
+            assert.strictEqual(input.value, "del ~/mar")
+    
+            await env.activate(0)
+            assert.strictEqual(input.value, "")
+    
+            input.hide()
+            assert(!await result)
+        })
+    
         test("should get completions with prefix", async () => {
             client = util.mockClient(
                 ["get_completions", ["open "], {items: [
