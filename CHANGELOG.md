@@ -1,4 +1,4 @@
-0.3.4 - unreleased
+0.3.4 - 2021-05-31
 
 - Add `replace` command.
 - Allow command from history to be edited before execution.
