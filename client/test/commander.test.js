@@ -262,7 +262,6 @@ suite('Commander', () => {
         assert.strictEqual(input.value, "")
 
         input._fireDidChangeValue("open ")
-        input.value = "open x"
         input = await env.inputItemsChanged()
         assert.strictEqual(input.pyxt_completions.value, "open ")
         env.assertItems(input, ["dir/", "file1"])

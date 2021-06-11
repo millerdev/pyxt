@@ -51,7 +51,7 @@ async function commandInput(client, cmd="", value="", completions) {
             getCompletions(input, client, cmd + value)
         }
         input.show()
-        input.value = value
+        setValueSansEvent(input, value)
         const result = await getCommandResult(input, client)
         input.hide()
         return dispatch(result, client, cmd, input.value)
@@ -168,7 +168,7 @@ function distributeDetails(input) {
 
 function updateValue(input, item) {
     if (item.is_history) {
-        input.value = item.label.slice(input.pyxt_cmd.length)
+        setValueSansEvent(input, item.label.slice(input.pyxt_cmd.length))
         input.pyxt_is_history = true
     } else if (input.pyxt_is_history && input.pyxt_completions) {
         // HACK timeout to avoid update before edit value from history.
@@ -176,12 +176,22 @@ function updateValue(input, item) {
         input.pyxt_value_timeout = setTimeout(() => {
             delete input.pyxt_value_timeout
             const command = input.pyxt_completions.value
-            input.value = command.slice(input.pyxt_cmd.length)
+            setValueSansEvent(input, command.slice(input.pyxt_cmd.length))
         })
     }
 }
 
+function setValueSansEvent(input, value) {
+    // HACK work around https://github.com/microsoft/vscode/pull/122948
+    input.pyxt_ignore_value_changed = value
+    input.value = value
+}
+
 function updateCompletions(input, client, value) {
+    if (input.pyxt_ignore_value_changed === value) {
+        delete input.pyxt_ignore_value_changed
+        return  // ignore event
+    }
     if (input.pyxt_value_timeout) {
         clearTimeout(input.pyxt_value_timeout)
         delete input.pyxt_value_timeout
@@ -233,7 +243,7 @@ function doCommand(input, client) {
             command = command.slice(0, item.offset) + item.label
             if (item.is_completion) {
                 input.busy = true
-                input.value = command.slice(input.pyxt_cmd.length)
+                setValueSansEvent(input, command.slice(input.pyxt_cmd.length))
                 return exec(client, "get_completions", command)
             }
         }
