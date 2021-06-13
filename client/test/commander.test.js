@@ -169,12 +169,39 @@ suite('Commander', () => {
         input = await env.inputItemsChanged()
         await env.activate(1)
         assert.strictEqual(input.value, "ag  .")
+        assert(input.pyxt_is_history, "pyxt_is_history should be set")
 
         await env.activate(2)
         assert.strictEqual(input.value, "ag del ~/mar")
+        assert(input.pyxt_is_history, "pyxt_is_history should be set")
 
         await env.activate(0)
         assert.strictEqual(input.value, "ag ")
+        assert(!input.pyxt_is_history, "pyxt_is_history should not be set")
+
+        input.hide()
+        assert(!await result)
+    })
+
+    test("should not update value with history item starting with typed text", async () => {
+        client = util.mockClient(
+            ["get_completions", ["ag "], {type: "items", items: [
+                {label: "", description: "ag xyz ~/project", offset: 0},
+                {label: "ag \\bdel ~/mar", is_history: true, offset: 0},
+            ]}],
+            ["get_completions", ["ag \\"], {type: "items", items: [
+                {label: "ag \\bdel ~/mar", is_history: true, offset: 0},
+            ]}],
+        )
+        let input
+        const result = commander.commandInput(client, "", "ag ")
+        input = await env.inputItemsChanged()
+        input.value = "ag \\"
+        input = await env.inputItemsChanged()
+        assert.strictEqual(input.value, "ag \\")
+        // HACK wait for updateValue -> updateCompletions (should not happen)
+        await env.delay(100)
+        assert.strictEqual(input.value, "ag \\")
 
         input.hide()
         assert(!await result)

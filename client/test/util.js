@@ -56,6 +56,7 @@ function setup(commander) {
                 resolve(input)
             })
         }),
+        delay: ms => new Promise(resolve => setTimeout(resolve, ms)),
 
         assertItems: (input, expected) => {
             items = input.items.map(itemText)

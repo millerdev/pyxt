@@ -170,14 +170,17 @@ function updateValue(input, item) {
     if (item.is_history) {
         setValueSansEvent(input, item.label.slice(input.pyxt_cmd.length))
         input.pyxt_is_history = true
-    } else if (input.pyxt_is_history && input.pyxt_completions) {
-        // HACK timeout to avoid update before edit value from history.
-        // Edit history triggers onDidChangeValue -> updateCompletions.
-        input.pyxt_value_timeout = setTimeout(() => {
-            delete input.pyxt_value_timeout
-            const command = input.pyxt_completions.value
-            setValueSansEvent(input, command.slice(input.pyxt_cmd.length))
-        })
+    } else if (input.pyxt_is_history) {
+        if (input.pyxt_completions) {
+            // HACK timeout to avoid update before edit value from history.
+            // Edit history triggers onDidChangeValue -> updateCompletions.
+            input.pyxt_value_timeout = setTimeout(() => {
+                delete input.pyxt_value_timeout
+                const command = input.pyxt_completions.value
+                setValueSansEvent(input, command.slice(input.pyxt_cmd.length))
+            })
+        }
+        input.pyxt_is_history = false
     }
 }
 
@@ -213,6 +216,9 @@ function setCompletions(input, value, completions, transformItem) {
         input.placeholder = completions.placeholder
     }
     const items = completions.items.map(transformItem || toAlwaysShown)
+    if (items[0] && items[0].is_history) {
+        items.splice(0, 0, toAlwaysShown(""))
+    }
     input.items = items
     input.pyxt_completions = {value, ...completions, items}
 }
