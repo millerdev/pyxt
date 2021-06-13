@@ -50,7 +50,7 @@ class Editor:
     def selections(self, ranges=None):
         return self.editor.selections(ranges)
 
-    def get_text(self, range):
+    def get_text(self, range=None):
         return self.editor.get_text(range)
 
     def get_texts(self, ranges):

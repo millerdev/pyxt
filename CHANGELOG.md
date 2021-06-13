@@ -1,5 +1,6 @@
 0.3.5 - tbd
 
+- Fix `replace ... all` fails with error.
 - Fix edit history command.
 - Fix type new command matching first characters of history item.
 - Fix tests in VS Code 1.57.0
