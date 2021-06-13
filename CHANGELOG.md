@@ -1,3 +1,9 @@
+0.3.5 - tbd
+
+- Fix edit history command.
+- Fix type new command matching first characters of history item.
+- Fix tests in VS Code 1.57.0
+
 0.3.4 - 2021-05-31
 
 - Add `replace` command.
