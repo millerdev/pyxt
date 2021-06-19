@@ -1,4 +1,4 @@
-0.3.5 - tbd
+0.3.5 - 2021-06-18
 
 - Fix `replace ... all` fails with error.
 - Fix edit history command.
