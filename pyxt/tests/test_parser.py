@@ -663,6 +663,48 @@ def test_String():
     yield test, " ", 0, ('""', '')
 
 
+def test_UnlimitedString():
+    field = mod.UnlimitedString("command")
+    eq_(str(field), 'command')
+    eq_(repr(field), "UnlimitedString('command')")
+
+    test = make_consume_checker(field)
+    yield test, '', 0, (None, 1)
+    yield test, 'a', 0, ('a', 2)
+    yield test, 'abc', 0, ('abc', 4)
+    yield test, 'abc def', 0, ('abc def', 8)
+    yield test, 'abc', 1, ('bc', 4)
+    yield test, 'a"c', 0, ('a"c', 4)
+    yield test, '\\"c', 0, ('\\"c', 4)
+    yield test, 'a\\ c', 0, ('a\\ c', 5)
+    yield test, '"a c"', 0, ('"a c"', 6)
+    yield test, "'a c'", 0, ("'a c'", 6)
+    yield test, "'a c' ", 0, ("'a c' ", 7)
+    yield test, "'a c", 0, ("'a c", 5)
+    yield test, r"'a c\' '", 0, ("'a c\\' '", 9)
+
+    test = make_arg_string_checker(field)
+    yield test, "str", "str"
+    yield test, "a b", "a b"
+    yield test, "a 'b", "a 'b"
+    yield test, """a "'b""", """a "'b"""
+    yield test, 5, Error("invalid value: command=5")
+
+    test = make_placeholder_checker(field)
+    yield test, "", 0, ("", "command")
+    yield test, "a", 0, ("a", "")
+    yield test, "s", 0, ("s", "")
+    yield test, "'a", 0, ("'a", "")
+
+    test = make_placeholder_checker(mod.UnlimitedString('cmd', default='d e f'))
+    yield test, "", 0, ("", 'd e f')
+    yield test, "a", 0, ("a", "")
+
+    test = make_placeholder_checker(mod.UnlimitedString('cmd', default=''))
+    yield test, "", 0, ("", "")
+    yield test, " ", 0, (' ', '')
+
+
 def test_File():
     field = File('path')
     eq_(str(field), 'path')

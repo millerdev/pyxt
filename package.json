@@ -6,7 +6,7 @@
   "repository": "https://github.com/millerdev/pyxt",
   "license": "See LICENSE file",
   "homepage": "https://github.com/millerdev/pyxt",
-  "version": "0.3.5",
+  "version": "0.3.6-rc.1",
   "publisher": "millerdev",
   "engines": {
     "vscode": "^1.50.0"

@@ -784,6 +784,36 @@ class String(Field):
         return str(arg) + delim, ""
 
 
+class UnlimitedString(String):
+
+    async def consume(self, text, index):
+        """Consume string value to the end of text
+
+        :returns: (<string or default value>, <index>)
+        """
+        if index >= len(text):
+            if index == len(text):
+                index += 1
+            return self.default, index
+        return text[index:], len(text) + 1
+
+    async def arg_string(self, value):
+        if value == self.default:
+            return ""
+        if not isinstance(value, str):
+            raise Error("invalid value: {}={!r}".format(self.name, value))
+        return value
+
+    async def get_placeholder(self, arg):
+        if not arg:
+            if isinstance(self.default, str):
+                if arg.defaulted:
+                    return self.default, ""
+                return "", self.default
+            return "", str(self)
+        return str(arg), ""
+
+
 class File(String):
     """File path field
 
