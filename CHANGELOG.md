@@ -1,3 +1,8 @@
+0.3.6 - 2022-01-04
+
+- No user-facing changes.
+- (internal) Add `UnlimitedString` parser argument type
+
 0.3.5 - 2021-06-18
 
 - Fix `replace ... all` fails with error.
