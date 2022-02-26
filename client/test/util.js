@@ -25,6 +25,7 @@ function setup(commander) {
         get input() { return inputs.length ? inputs[inputs.length - 1] : null},
         accept: input => input._fireDidAccept(),
         activate: (index) => new Promise(resolve => {
+            console.log(`  activate(${index || ''})`)
             const input = env.input
             const event = input.onDidChangeActive(() => {
                 event.dispose()
@@ -36,13 +37,30 @@ function setup(commander) {
                 }
                 setTimeout(() => resolve(input))
             })
-            input.activeItems = [input.items[index]]
+            if (index !== undefined) {
+                input.activeItems = [input.items[index]]
+            }
         }),
         changeValue: async (value) => {
-            const itemsChanged = env.inputItemsChanged()
-            env.input.value = value
-            await itemsChanged
+            // Change value as if typing (value !== undefined)
+            // or return promise for next onDidChangeValue event
+            if (value !== undefined) {
+                console.log(`  changeValue(${JSON.stringify(value)})`)
+                const itemsChanged = env.inputItemsChanged()
+                env.input.value = value
+                await itemsChanged
+            } else {
+                console.log(`  changeValue()`)
+                return env._valueChanged()
+            }
         },
+        _valueChanged: () => new Promise(resolve => {
+            const input = env.input
+            const event = input.onDidChangeValue(() => {
+                event.dispose()
+                setTimeout(() => resolve(input.value))
+            })
+        }),
         inputItemsChanged: () => new Promise(resolve => {
             function callback(input) {
                 _.pull(callbacks.inputItems, callback)
@@ -62,6 +80,11 @@ function setup(commander) {
         assertItems: (input, expected) => {
             items = input.items.map(itemText)
             assert.strictEqual(JSON.stringify(items), JSON.stringify(expected))
+        },
+        assertActiveIndex: (index) => {
+            const input = env.input
+            const [item] = input.activeItems
+            assert.strictEqual(input.items.indexOf(item), index, `active item: ${item}`)
         },
 
         sandbox,

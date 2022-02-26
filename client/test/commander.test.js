@@ -232,6 +232,78 @@ suite('Commander', () => {
         assert(!await result)
     })
 
+    test("should change active item", async () => {
+        client = util.mockClient(
+            ["get_completions", ["ag "], {type: "items", items: [
+                {label: "", description: "ag xyz ~/project", offset: 0},
+                {label: "ag  .", is_history: true, offset: 0},
+                {label: "ag del ~/mar", is_history: true, offset: 0},
+            ]}],
+        )
+        let input
+        const events = []
+        const result = commander.commandInput(client, "", "ag ")
+        input = await env.inputItemsChanged()
+        await env.activate()
+        assert.strictEqual(input.value, "ag ")
+        env.assertActiveIndex(0)
+
+        /*
+        Expected event sequence:
+
+        <Up/Down Arrow key press>
+        onDidChangeActive <item>
+            updateValue <item>
+                setValueForActiveItem <item.label>
+        onDidChangeValue <value>
+            updateCompletions (ignore due to input.pyxt_ignore_value_changed)
+        */
+        await env.activate(1)  // simulate arrow key press
+        await env.changeValue()
+        env.assertActiveIndex(1)
+        assert.strictEqual(input.value, "ag  .")
+
+        input.hide()
+        assert(!await result)
+    })
+
+    test("should not change value on typing -> get completions", async () => {
+        client = util.mockClient(
+            ["get_completions", ["ag "], {type: "items", items: [
+                {label: "", description: "ag xyz ~/project", offset: 0},
+                {label: "ag  .", is_history: true, offset: 0},
+                {label: "ag del ~/mar", is_history: true, offset: 0},
+            ]}],
+            ["get_completions", ["ag d"], {type: "items", items: [
+                {label: "ag del ~/mar", is_history: true, offset: 0},
+            ]}],
+        )
+        let input
+        const events = []
+        const result = commander.commandInput(client, "", "ag ")
+        input = await env.inputItemsChanged()
+        await env.activate()  // consume pending onDidChangeActive
+
+        /*
+        Expected event sequence:
+
+        <key press (typing in input)>
+        onDidChangeValue <typed value>
+            updateCompletions <typed value>
+        onDidChangeActive undefined (ingored/unexpected)
+        onDidChangeActive <new first item>
+            updateValue <new first item> (noop: !is_history)
+        */
+        await env.changeValue("ag d")
+        await env.activate()
+        env.assertActiveIndex(0)
+        assert.equal(input.items[0].label, "")
+        assert.strictEqual(input.value, "ag d")
+
+        input.hide()
+        assert(!await result)
+    })
+
     test("should do command with command bar value", async () => {
         client = util.mockClient(
             ["get_completions", ["ag x"], {type: "items", items: [

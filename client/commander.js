@@ -42,6 +42,9 @@ async function commandInput(client, cmd="", value="", completions) {
     const input = vscode.window.createQuickPick()
     try {
         input.placeholder = cmd.trim() || "PyXT Command"
+        // Disable filter on value change
+        // https://github.com/microsoft/vscode/issues/142941
+        input._pendingUpdate["matchOnLabel"] = false
         input.sortByLabel = false
         input.ignoreFocusOut = true
         input.pyxt_cmd = cmd
