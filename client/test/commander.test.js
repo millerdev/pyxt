@@ -207,6 +207,31 @@ suite('Commander', () => {
         assert(!await result)
     })
 
+    test("should reset pyxt_is_history on fetch completions", async () => {
+        client = util.mockClient(
+            ["get_completions", ["ag "], {type: "items", items: [
+                {label: "", description: "ag xyz ~/project", offset: 0},
+                {label: "ag  .", is_history: true, offset: 0},
+                {label: "ag del ~/mar", is_history: true, offset: 0},
+            ]}],
+            ["get_completions", ["ag del ~/ma"], {type: "items", items: [
+                {label: "ag del ~/mar", is_history: true, offset: 0},
+            ]}],
+        )
+        let input
+        const result = commander.commandInput(client, "", "ag ")
+        input = await env.inputItemsChanged()
+        await env.activate(2)
+        assert.strictEqual(input.value, "ag del ~/mar")
+        assert(input.pyxt_is_history, "pyxt_is_history should be set")
+
+        await env.changeValue(input, "ag del ~/ma")
+        assert(!input.pyxt_is_history, "pyxt_is_history should not be set")
+
+        input.hide()
+        assert(!await result)
+    })
+
     test("should do command with command bar value", async () => {
         client = util.mockClient(
             ["get_completions", ["ag x"], {type: "items", items: [

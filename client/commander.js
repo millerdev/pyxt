@@ -175,6 +175,7 @@ function updateValue(input, item) {
             // HACK timeout to avoid update before edit value from history.
             // Edit history triggers onDidChangeValue -> updateCompletions.
             input.pyxt_value_timeout = setTimeout(() => {
+                // Reset value on select non-history item (usually the first item)
                 delete input.pyxt_value_timeout
                 const command = input.pyxt_completions.value
                 setValueSansEvent(input, command.slice(input.pyxt_cmd.length))
@@ -219,6 +220,7 @@ function setCompletions(input, value, completions, transformItem) {
     if (items[0] && items[0].is_history) {
         items.splice(0, 0, toAlwaysShown(""))
     }
+    input.pyxt_is_history = false
     input.items = items
     input.pyxt_completions = {value, ...completions, items}
 }
