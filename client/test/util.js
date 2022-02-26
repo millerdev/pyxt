@@ -22,9 +22,10 @@ function setup(commander) {
         return input
     })
     const env = {
+        get input() { return inputs.length ? inputs[inputs.length - 1] : null},
         accept: input => input._fireDidAccept(),
         activate: (index) => new Promise(resolve => {
-            const input = inputs[inputs.length - 1]
+            const input = env.input
             const event = input.onDidChangeActive(() => {
                 event.dispose()
                 if (input.pyxt_value_timeout) {
@@ -37,9 +38,9 @@ function setup(commander) {
             })
             input.activeItems = [input.items[index]]
         }),
-        changeValue: async (input, value) => {
+        changeValue: async (value) => {
             const itemsChanged = env.inputItemsChanged()
-            input.value = value
+            env.input.value = value
             await itemsChanged
         },
         inputItemsChanged: () => new Promise(resolve => {
@@ -50,7 +51,7 @@ function setup(commander) {
             callbacks.inputItems.push(callback)
         }),
         inputSelectionChanged: () => new Promise(resolve => {
-            const input = inputs[inputs.length - 1]
+            const input = env.input
             const event = input.onDidChangeSelection(() => {
                 event.dispose()
                 resolve(input)

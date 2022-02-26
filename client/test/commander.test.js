@@ -225,7 +225,7 @@ suite('Commander', () => {
         assert.strictEqual(input.value, "ag del ~/mar")
         assert(input.pyxt_is_history, "pyxt_is_history should be set")
 
-        await env.changeValue(input, "ag del ~/ma")
+        await env.changeValue("ag del ~/ma")
         assert(!input.pyxt_is_history, "pyxt_is_history should not be set")
 
         input.hide()
@@ -292,7 +292,7 @@ suite('Commander', () => {
         let input
         const result = commander.commandInput(client)
         input = await env.inputItemsChanged()
-        await env.changeValue(input, "ope")
+        await env.changeValue("ope")
         env.assertItems(input, ["open"])
 
         input.hide()
@@ -335,7 +335,7 @@ suite('Commander', () => {
         input = await env.inputItemsChanged()
         env.assertItems(input, ["dir/", "file1"])
 
-        await env.changeValue(input, "open dir/")
+        await env.changeValue("open dir/")
         env.assertItems(input, ["file2"])
 
         input.hide()
@@ -353,7 +353,7 @@ suite('Commander', () => {
         let input
         const result = commander.commandInput(client)
         input = await env.inputItemsChanged()
-        await env.changeValue(input, "open ")
+        await env.changeValue("open ")
         env.assertItems(input, ["dir/", "file"])
 
         input.hide()
@@ -378,9 +378,9 @@ suite('Commander', () => {
         const result = commander.commandInput(client, "", "open ")
         input = await env.inputItemsChanged()
 
-        await env.changeValue(input, "open d")
+        await env.changeValue("open d")
         env.assertItems(input, ["dir/"])
-        await env.changeValue(input, "open ")
+        await env.changeValue("open ")
         env.assertItems(input, ["dir/", "file"])
 
         input.hide()
@@ -399,9 +399,9 @@ suite('Commander', () => {
         let input
         const result = commander.commandInput(client, "", "open ")
         input = await env.inputItemsChanged()
-        await env.changeValue(input, "open d")
+        await env.changeValue("open d")
         env.assertItems(input, ["dir/"])
-        await env.changeValue(input, "open")
+        await env.changeValue("open")
         env.assertItems(input, ["open"])
 
         input.hide()
@@ -416,7 +416,7 @@ suite('Commander', () => {
         let input
         const result = commander.commandInput(client)
         input = await env.inputItemsChanged()
-        await env.changeValue(input, "ox")
+        await env.changeValue("ox")
         env.assertItems(input, [])
 
         input.hide()
@@ -596,7 +596,7 @@ suite('Commander', () => {
             input = await env.inputItemsChanged()
             env.assertItems(input, ["dir/", "file1"])
 
-            await env.changeValue(input, "dir/")
+            await env.changeValue("dir/")
             env.assertItems(input, ["file2"])
 
             input.hide()
@@ -623,10 +623,10 @@ suite('Commander', () => {
             assert.strictEqual(input.value, "dir/")
             assert.strictEqual(input.pyxt_completions.value, "open dir/")
 
-            await env.changeValue(input, "dir/d")
+            await env.changeValue("dir/d")
             env.assertItems(input, ["dir/"])
             assert.strictEqual(input.value, "dir/d")
-            await env.changeValue(input, "dir/")
+            await env.changeValue("dir/")
             env.assertItems(input, ["dir/", "file"])
             assert.strictEqual(input.value, "dir/")
 
