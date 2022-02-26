@@ -51,7 +51,7 @@ async function commandInput(client, cmd="", value="", completions) {
             getCompletions(input, client, cmd + value)
         }
         input.show()
-        setValueSansEvent(input, value)
+        setValueForActiveItem(input, value)
         const result = await getCommandResult(input, client)
         input.hide()
         return dispatch(result, client, cmd, input.value)
@@ -168,7 +168,7 @@ function distributeDetails(input) {
 
 function updateValue(input, item) {
     if (item.is_history) {
-        setValueSansEvent(input, item.label.slice(input.pyxt_cmd.length))
+        setValueForActiveItem(input, item.label.slice(input.pyxt_cmd.length))
         input.pyxt_is_history = true
     } else if (input.pyxt_is_history) {
         if (input.pyxt_completions) {
@@ -178,14 +178,14 @@ function updateValue(input, item) {
                 // Reset value on select non-history item (usually the first item)
                 delete input.pyxt_value_timeout
                 const command = input.pyxt_completions.value
-                setValueSansEvent(input, command.slice(input.pyxt_cmd.length))
+                setValueForActiveItem(input, command.slice(input.pyxt_cmd.length))
             })
         }
         input.pyxt_is_history = false
     }
 }
 
-function setValueSansEvent(input, value) {
+function setValueForActiveItem(input, value) {
     // HACK work around https://github.com/microsoft/vscode/pull/122948
     input.pyxt_ignore_value_changed = value
     input.value = value
@@ -251,7 +251,7 @@ function doCommand(input, client) {
             command = command.slice(0, item.offset) + item.label
             if (item.is_completion) {
                 input.busy = true
-                setValueSansEvent(input, command.slice(input.pyxt_cmd.length))
+                setValueForActiveItem(input, command.slice(input.pyxt_cmd.length))
                 return exec(client, "get_completions", command)
             }
         }
