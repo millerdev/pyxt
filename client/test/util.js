@@ -33,19 +33,19 @@ function setup(commander) {
                     clearTimeout(input.pyxt_value_timeout)
                     delete input.pyxt_value_timeout
                 }
-                resolve(input)
+                setTimeout(() => resolve(input))
             })
-            input._fireDidChangeActive([index])
+            input.activeItems = [input.items[index]]
         }),
         changeValue: async (input, value) => {
             const itemsChanged = env.inputItemsChanged()
-            input._fireDidChangeValue(value)
+            input.value = value
             await itemsChanged
         },
         inputItemsChanged: () => new Promise(resolve => {
             function callback(input) {
                 _.pull(callbacks.inputItems, callback)
-                resolve(input)
+                setTimeout(() => resolve(input))
             }
             callbacks.inputItems.push(callback)
         }),
