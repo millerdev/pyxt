@@ -189,6 +189,7 @@ function updateValue(input, item) {
 }
 
 function setValueForActiveItem(input, value) {
+    if (input.value === value) return
     // HACK work around https://github.com/microsoft/vscode/pull/122948
     input.pyxt_ignore_value_changed = value
     input.value = value
