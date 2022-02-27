@@ -1,3 +1,7 @@
+0.3.7 - 2022-02-27
+
+- Fix cannot navigate command completions with arrow keys.
+
 0.3.6 - 2022-01-04
 
 - No user-facing changes.
