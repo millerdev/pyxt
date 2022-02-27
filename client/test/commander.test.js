@@ -254,7 +254,7 @@ suite('Commander', () => {
         <Up/Down Arrow key press>
         onDidChangeActive <item>
             updateValue <item>
-                setValueForActiveItem <item.label>
+                setValue <item.label>
         onDidChangeValue <value>
             updateCompletions (ignore due to input.pyxt_ignore_value_changed)
         */
