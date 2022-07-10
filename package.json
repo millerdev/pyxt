@@ -6,7 +6,7 @@
   "repository": "https://github.com/millerdev/pyxt",
   "license": "See LICENSE file",
   "homepage": "https://github.com/millerdev/pyxt",
-  "version": "0.3.7",
+  "version": "0.3.8-rc.1",
   "publisher": "millerdev",
   "engines": {
     "vscode": "^1.50.0"
@@ -17,6 +17,7 @@
   "activationEvents": [
     "onCommand:pyxt.command",
     "onCommand:pyxt.ag",
+    "onCommand:pyxt.argwrap",
     "onCommand:pyxt.isort",
     "onCommand:pyxt.open",
     "onCommand:pyxt.python",
@@ -31,6 +32,10 @@
       {
         "command": "pyxt.ag",
         "title": "PyXT: Ag (The Silver Searcher)"
+      },
+      {
+        "command": "pyxt.argwrap",
+        "title": "PyXT: ArgWrap"
       },
       {
         "command": "pyxt.isort",

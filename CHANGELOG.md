@@ -1,3 +1,7 @@
+0.3.7 - 2022-07-10
+
+- Add `argwrap` command for wrapping/unwrapping.
+
 0.3.7 - 2022-02-27
 
 - Fix cannot navigate command completions with arrow keys.

@@ -44,6 +44,20 @@ class Editor:
         path = self.vscode.workspace.getConfiguration('pyxt').get('pythonPath')
         return await path or "python"
 
+    @cached_property
+    async def eol(self):
+        eol = await self.vscode.window.activeTextEditor.document.eol
+        CRLF = await self.vscode.EndOfLine.CRLF
+        return "\r\n" if eol == CRLF else "\n"
+
+    @cached_property
+    async def insert_spaces(self):
+        return await self.vscode.window.activeTextEditor.options.insertSpaces
+
+    @cached_property
+    async def tab_size(self):
+        return await self.vscode.window.activeTextEditor.options.tabSize
+
     def selection(self, range=None):
         return self.editor.selection(range)
 

@@ -29,6 +29,9 @@ _PyXT: Open File_), and may be assigned a keyboard shortcut.
 - `ag MATCH PATH OPTIONS...` - [The Silver Searcher](https://github.com/ggreer/the_silver_searcher) code
   search. Ag must be installed separately.  
   VS Code command: _PyXT: Ag (The Silver Searcher)_.
+- `argwrap` - Wrap/unwrap function or collection arguments based on the current
+  selection. Wrap if a single line is selected, otherwise unwrap.  
+  VS Code command: _PyXT: ArgWrap_.
 - `history ACTION COMMAND` - redo most recent command or clear command history.
 - `isort FIRSTPARTY SELECTION` - [isort](https://pycqa.github.io/isort/) your
   imports so you don't have to. Sort selection or entire file. `FIRSTPARTY` is a

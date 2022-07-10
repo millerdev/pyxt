@@ -185,11 +185,17 @@ class FakeEditor:
     text: str = ""
     _ag_path: str = "ag"
     _python_path: str = "python"
+    _eol: str = "\n"
+    _insert_spaces: bool = True
+    _tab_size: int = 4
 
     file_path = async_property("_file_path")
     project_path = async_property("_project_path")
     ag_path = async_property("_ag_path")
     python_path = async_property("_python_path")
+    eol = async_property("_eol")
+    insert_spaces = async_property("_insert_spaces")
+    tab_size = async_property("_tab_size")
 
     @property
     async def dirname(self):
@@ -242,7 +248,7 @@ class FakeEditor:
             value,
             self.text[end:],
         ])
-        self._selection = (start, len(value)) if select else (end, end)
+        self.selection = (start, start + len(value)) if select else (end, end)
 
     async def set_texts(self, values, ranges, select=True):
         if len(values) != len(ranges):

@@ -9,6 +9,7 @@ from .types import PyXTServer
 # register commands by importing them
 from .cmd import (  # noqa: F401
     ag,
+    argwrap,
     history,
     isort,
     openfile,
