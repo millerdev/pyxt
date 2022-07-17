@@ -30,7 +30,9 @@ _PyXT: Open File_), and may be assigned a keyboard shortcut.
   search. Ag must be installed separately.  
   VS Code command: _PyXT: Ag (The Silver Searcher)_.
 - `argwrap` - Wrap/unwrap function or collection arguments based on the current
-  selection. Wrap if a single line is selected, otherwise unwrap.  
+  selection. Wrap if a single line is selected, otherwise unwrap. For nested
+  function calls or collections, place the cursor inside the delimited region to
+  be wrapped.  
   VS Code command: _PyXT: ArgWrap_.
 - `history ACTION COMMAND` - redo most recent command or clear command history.
 - `isort FIRSTPARTY SELECTION` - [isort](https://pycqa.github.io/isort/) your

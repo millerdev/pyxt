@@ -89,28 +89,41 @@ def unwrap(lines, arg_delim=","):
     return "".join(iter_parts(lines))
 
 
-def split_line(text, index, eol="\n", start_delim="("):
+def split_line(text, index, eol="\n", start_delim=None):
     text, rng = _get_line(text, index, eol)
     parts = list(_iter_split(text, index, start_delim))
     return parts, rng
 
 
 def _iter_split(text, cursor_index, start_delim):
-    end_delim = DELIMS[start_delim]
-    if not (start_delim in text and end_delim in text):
-        return
+    start_delims = start_delim or ''.join(DELIMS)
+    start_delims_regex = re.compile(f"[{re.escape(start_delims)}]")
+    for delim_iter, match_index in [
+        (start_delims_regex.finditer(text, 0, cursor_index), -1),
+        (start_delims_regex.finditer(text, cursor_index), 0),
+    ]:
+        matches = list(delim_iter)
+        if matches:
+            start_index = index = matches[match_index].start()
+            start_delim = matches[match_index].group()
+            break
+    else:
+        return  # start delimiter not found
 
+    end_delim = DELIMS[start_delim]
+    if end_delim not in text[start_index:]:
+        return
     if len(end_delim) > 1:
         raise NotImplementedError(repr(end_delim))
+
     end_delims = set(DELIMS.values())
     assert len(DELIMS) == len(end_delims), DELIMS
     parens = ''.join(re.escape(c) for c in set(DELIMS) | end_delims)
     delims = re.compile(fr"(?:[,{parens}]|\\*['\"])")
 
-    index = 0
     level = 0
     in_string = ''
-    for match in delims.finditer(text):
+    for match in delims.finditer(text, index):
         delim = match.group()
         if in_string:
             if delim.endswith(in_string) and len(delim) % 2 != 0:
@@ -121,7 +134,7 @@ def _iter_split(text, cursor_index, start_delim):
             continue
         if delim in DELIMS:
             level += 1
-            if not index:
+            if index == start_index:
                 index = match.end()
                 yield text[:index]
             continue

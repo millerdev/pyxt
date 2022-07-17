@@ -1,4 +1,4 @@
-0.3.7 - 2022-07-10
+0.3.8 - 2022-07-10
 
 - Add `argwrap` command for wrapping/unwrapping.
 

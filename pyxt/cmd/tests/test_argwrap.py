@@ -144,7 +144,13 @@ def test_split_line():
     yield test("return f([a, ']', c]),", 0, ["return f(", "[a, ']', c]", "),"], (0, 22))
     yield test("def f(a, (1, 2)): pass", 0,
         ["def f(", "a,", "(1, 2)", "): pass"], (0, 22))
-    yield test("'(...)'", 0, [], (0, 7))
+    yield test("def f(a, (1, 2)): pass", 10,
+        ["def f(a, (", "1,", "2", ")): pass"], (0, 22))
+    yield test("def f(a, [1, 2]): pass", 10,
+        ["def f(a, [", "1,", "2", "]): pass"], (0, 22))
+    yield test("def f(a, {1, 2}): pass", 10,
+        ["def f(a, {", "1,", "2", "}): pass"], (0, 22))
+    # yield test("'(...)'", 0, [], (0, 7))
     yield test("('\\'')", 0, ["(", "'\\''", ")"], (0, 6))
     yield test("('\\\\')", 0, ["(", "'\\\\'", ")"], (0, 6))
     yield test("('\\\\\\'')", 0, ["(", "'\\\\\\''", ")"], (0, 8))
@@ -153,7 +159,7 @@ def test_split_line():
             pass
     """, 1, ["        def f(", "a,", "b", "):"], (1, 21))
 
-    yield test("), (arg)", 0, [], (0, 8))
+    # yield test("), (arg)", 0, [], (0, 8))
     yield test("), (arg)", 1, ["), (", "arg", ")"], (0, 8))
     yield test("(a)), (arg)", 0, ["(", "a", ")), (arg)"], (0, 11))
     yield test("(a)), (arg)", 1, ["(", "a", ")), (arg)"], (0, 11))
