@@ -42,9 +42,7 @@ async function commandInput(client, cmd="", value="", completions) {
     const input = vscode.window.createQuickPick()
     try {
         input.placeholder = cmd.trim() || "PyXT Command"
-        // Disable filter on value change
-        // https://github.com/microsoft/vscode/issues/142941
-        input._pendingUpdate["matchOnLabel"] = false
+        disableMatchOnLabel(input)
         input.sortByLabel = false
         input.ignoreFocusOut = true
         input.pyxt_cmd = cmd
@@ -61,6 +59,21 @@ async function commandInput(client, cmd="", value="", completions) {
     } finally {
         input.dispose()
     }
+}
+
+function disableMatchOnLabel(input) {
+    // Disable filter on value change
+    // https://github.com/microsoft/vscode/issues/142941
+    // TODO PR for https://github.com/microsoft/vscode/issues/83425
+    // This used to work, but broke in VS Code 1.74.0
+    //input._pendingUpdate["matchOnLabel"] = false
+    Object.values(input).forEach(obj => {
+        if (typeof obj !== 'object') return
+        if (obj.hasOwnProperty("id") && obj.type === "quickPick"
+                && obj.placeholder === input.placeholder) {
+            obj["matchOnLabel"] = false
+        }
+    })
 }
 
 function dispatch(result, client, cmd, value) {
