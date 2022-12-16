@@ -1,3 +1,7 @@
+0.3.9 - 2022-12-16
+
+- Fix for compatibility with VS Code 1.74.
+
 0.3.8 - 2022-07-10
 
 - Add `argwrap` command for wrapping/unwrapping.
