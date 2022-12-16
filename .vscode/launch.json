@@ -21,7 +21,6 @@
                 "--extensionDevelopmentPath=${workspaceFolder}",
                 "--extensionTestsPath=${workspaceFolder}/client/test/suite"
             ],
-            "stopOnEntry": false,
         },
         {
             "name": "Launch Client",
