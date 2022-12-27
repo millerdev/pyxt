@@ -51,6 +51,11 @@ _PyXT: Open File_), and may be assigned a keyboard shortcut.
   final expression. Accept (by pressing Enter) the result to copy it to the
   clipboard.  
   VS Code command: _PyXT: Python_
+- `rename FILENAME` - Rename the active editor's file. `FILENAME` is a file
+  name or path. If the name or path of an existing file is provided, it will be
+  overwritten with the active editor's content. If a directory name is given,
+  the active file will be moved into that directory.  
+  VS Code Command: _PyXT: Rename_.
 - `replace PATTERN RANGE SEARCH_TYPE` - Find and replace text in the active
   editor. `PATTERN` is a find/replace pattern in the form `/find/replace/flags`
   where `find` is a regex or literal (depending on `SEARCH_TYPE`), `replace` is

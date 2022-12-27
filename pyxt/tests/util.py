@@ -258,6 +258,9 @@ class FakeEditor:
             raise NotImplementedError
         await self.set_text(values[0], ranges[0], select)
 
+    async def rename(self, path):
+        self._file_path = path
+
 
 class Error(Exception):
     pass

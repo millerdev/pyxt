@@ -78,3 +78,6 @@ class Editor:
 
     async def show_message(self, message):
         await self.vscode.window.showInformationMessage(message)
+
+    async def rename(self, path):
+        await self.editor.rename(path)

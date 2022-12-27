@@ -6,7 +6,7 @@
   "repository": "https://github.com/millerdev/pyxt",
   "license": "See LICENSE file",
   "homepage": "https://github.com/millerdev/pyxt",
-  "version": "0.3.9",
+  "version": "0.4.0-rc.0",
   "publisher": "millerdev",
   "engines": {
     "vscode": "^1.50.0"
@@ -21,6 +21,7 @@
     "onCommand:pyxt.isort",
     "onCommand:pyxt.open",
     "onCommand:pyxt.python",
+    "onCommand:pyxt.rename",
     "onCommand:pyxt.replace"
   ],
   "contributes": {
@@ -48,6 +49,10 @@
       {
         "command": "pyxt.python",
         "title": "PyXT: Python"
+      },
+      {
+        "command": "pyxt.rename",
+        "title": "PyXT: Rename"
       },
       {
         "command": "pyxt.replace",

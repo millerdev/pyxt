@@ -14,6 +14,7 @@ from .cmd import (  # noqa: F401
     isort,
     openfile,
     python,
+    rename,
     replace,
 )
 from . import custom
