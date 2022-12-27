@@ -4,10 +4,10 @@ const errable = require("./errors").errable
 const {createHistory} = require("./history")
 
 function withEditor(func) {
-    return function () {
+    return async function () {
         const editor = vscode.window.activeTextEditor
         if (editor) {
-            return func(editor, ...arguments)
+            return await func(editor, ...arguments)
         }
     }
 }
@@ -66,7 +66,7 @@ const editor = {
     }),
 
     set_text: withEditor((editor, text, range, select=true) => {
-        editor.edit(async builder => {
+        return editor.edit(async builder => {
             const doc = editor.document
             const rng = range ? selection(editor, range) : allTextRange(doc)
             await builder.replace(rng, text)
@@ -91,7 +91,7 @@ const editor = {
                 edits.replace(uri, rng, text)
             }
         })
-        vscode.workspace.applyEdit(edits)
+        return vscode.workspace.applyEdit(edits)
     }),
 }
 
@@ -108,32 +108,35 @@ function publish(client, context) {
     }))
 }
 
-function resolve(params) {
+async function resolve(params) {
     try {
-        return get(namespace[params.root], params)
+        return await get(namespace[params.root], params)
     } catch (error) {
         console.error(error)
         return ["__error__", error.message, error.stack]
     }
 }
 
-function get(obj, params) {
+async function get(obj, params) {
     let value = obj[params.name]
     if (params.args) {
         if (!value) {
             console.error("not callable", params, value)
             return undefined
         }
-        const args = _.map(params.args, arg =>
-            _.isObject(arg) && arg.__resolve__ ? resolve(arg) : arg
-        )
-        value = value.apply(obj, args)
+        const args = []
+        for (var i = 0; i < params.args.length; i++) {
+            const arg = params.args[i]
+            const shouldResolve = _.isObject(arg) && arg.__resolve__
+            args.push(shouldResolve ? await resolve(arg) : arg)
+        }
+        value = await value.apply(obj, args)
     }
     if (value === undefined) {
         return value
     }
     const next = params.next
-    return !next ? value : get(value, next)
+    return !next ? value : await get(value, next)
 }
 
 module.exports = {
