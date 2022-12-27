@@ -562,7 +562,7 @@ class Choice(Field):
                 default_value = map[names[0]]
             else:
                 default_value = default() if callable(default) else default
-            self.placeholder = self.reverse_map[default_value]
+            self.placeholder = self.reverse_map.get(default_value, " ")
         else:
             default = map[names[0]]
             self.placeholder = names[0]

@@ -1,3 +1,7 @@
+0.4.0 - ?
+
+- Add a command to `rename` the active editor's file.
+
 0.3.9 - 2022-12-16
 
 - Fix for compatibility with VS Code 1.74.

@@ -94,10 +94,10 @@ const editor = {
         return vscode.workspace.applyEdit(edits)
     }),
 
-    rename: withEditor((editor, path) => {
+    rename: withEditor((editor, path, overwrite) => {
         const oldUri = editor.document.uri
         const newUri = vscode.Uri.file(path)
-        return vscode.workspace.fs.rename(oldUri, newUri, {overwrite: true})
+        return vscode.workspace.fs.rename(oldUri, newUri, {overwrite})
     }),
 }
 
