@@ -1,3 +1,7 @@
+0.4.1 - 2023-02-24
+
+- 0.4.0 was a bad release. Please upgrade.
+
 0.4.0 - 2023-02-24
 
 - Add a command to `rename` the active editor's file.
