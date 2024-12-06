@@ -1,7 +1,7 @@
 import ast
 import logging
 import os
-from distutils.spawn import find_executable
+from shutil import which
 from textwrap import dedent
 
 from ..command import command, Incomplete
@@ -14,7 +14,7 @@ log = logging.getLogger(__name__)
 
 async def get_python_executable(editor=None):
     path = await editor.python_path
-    return path if os.path.sep in path else find_executable(path)
+    return path if os.path.sep in path else which(path)
 
 
 async def default_scope(editor):
