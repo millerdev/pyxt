@@ -1,4 +1,5 @@
-from testil import eq, replattr
+from unittest.mock import patch
+from testil import eq
 
 from .. import command
 from .. import history
@@ -92,7 +93,7 @@ def test_get_completions():
 
     def err_completions(self, arg):
         raise Exception("boink!")
-    with replattr(String, "get_completions", err_completions):
+    with patch.object(String, "get_completions", err_completions):
         yield test, "count error", result(["boink!"])
 
 

@@ -3,8 +3,9 @@ import os
 import re
 from functools import partial
 from os.path import isabs, join
+from unittest.mock import patch
 
-from testil import assert_raises, eq as eq_, replattr, tempdir, Config
+from testil import assert_raises, eq as eq_, tempdir, Config
 
 from .util import FakeEditor, async_test, await_coroutine
 from .. import parser as mod
@@ -738,13 +739,12 @@ def test_File():
 
         test = make_completions_checker(field)
         yield test, ".../", ["a.txt", "B file", "b.txt"], 4
-        with replattr(editor, "_project_path", project_path + "/"):
+        with patch.object(editor, "_project_path", project_path + "/"):
             yield test, ".../", ["a.txt", "B file", "b.txt"], 4
             yield test, "...//", ["a.txt", "B file", "b.txt"], 5
-        with replattr(
-            (editor, "_project_path", None),
-            (editor, "_file_path", join(tmp, "space dir/file")),
-            sigcheck=False
+        with (
+            patch.object(editor, "_project_path", None),
+            patch.object(editor, "_file_path", join(tmp, "space dir/file")),
         ):
             yield test, "", ["file"], 0
             yield test, "../", ["dir/", "file.doc", "file.txt", "space dir/"], 3
@@ -789,7 +789,7 @@ def test_File():
         async def test(input, output):
             if input.startswith("/"):
                 input = tmp + "/"
-            with replattr(os.path, "expanduser", expanduser):
+            with patch.object(os.path, "expanduser", expanduser):
                 arg = await mod.Arg(field, input, 0, None)
                 eq_(await field.get_completions(arg), output)
 
@@ -868,7 +868,7 @@ def test_File():
         def test(input, output, *args):
             if input.startswith("/"):
                 input = tmp + "/"
-            with replattr(os.path, "expanduser", expanduser):
+            with patch.object(os.path, "expanduser", expanduser):
                 check(input, output, *args)
         yield test, "", [], 0
 

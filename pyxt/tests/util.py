@@ -1,13 +1,13 @@
 import asyncio
 import sys
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from dataclasses import dataclass
 from functools import wraps
 from inspect import iscoroutine
 from os.path import dirname
+from unittest.mock import patch
 
 from nose.tools import nottest
-from testil import replattr
 
 from .. import command
 from .. import history
@@ -103,10 +103,10 @@ async def do_command(input_value, editor=None):
     if editor is None:
         editor = FakeEditor()
     srv = object()
-    with replattr(
-        (server, "Editor", lambda srv: editor),
-        (server, "error", reraise),
-        (history, "update_history", do_not_update_history),
+    with (
+        patch.object(server, "Editor", lambda srv: editor),
+        patch.object(server, "error", reraise),
+        patch.object(history, "update_history", do_not_update_history),
     ):
         return await server.do_command(srv, [input_value])
 
@@ -117,9 +117,9 @@ async def get_completions(input_value, editor=None):
     if editor is None:
         editor = FakeEditor()
     srv = object()
-    with replattr(
-        (server, "Editor", lambda srv: editor),
-        (server, "get_history", no_history),
+    with (
+        patch.object(server, "Editor", lambda srv: editor),
+        patch.object(server, "get_history", no_history),
     ):
         return await server.get_completions(srv, [input_value])
 
@@ -131,10 +131,11 @@ def test_command(*args, name="cmd", with_history=False):
         return []
     if not args:
         args = Choice("a b", name="value"),
-    replaces = []
-    if not with_history:
-        replaces.append((server, "get_history", no_history))
-    with replattr((command, "REGISTRY", {}), *replaces):
+    if with_history:
+        history_patch = nullcontext()
+    else:
+        history_patch = patch.object(server, "get_history", no_history)
+    with patch.object(command, "REGISTRY", {}), history_patch:
         @command.command(name=name, has_placeholder_item=False, *args)
         async def cmd(editor, args):
             if args.value == "error":
@@ -156,10 +157,10 @@ def fake_history(cache=None):
         server["calls"].append(path)
         return server.get(path, path)
 
-    with replattr(
-        (history, "async_do", async_do),
-        (history, "cache", cache or {}),
-        (jsproxy, "_get", get),
+    with (
+        patch.object(history, "async_do", async_do),
+        patch.object(history, "cache", cache or {}),
+        patch.object(jsproxy, "_get", get),
     ):
         yield
 

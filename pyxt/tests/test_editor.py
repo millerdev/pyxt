@@ -1,6 +1,7 @@
 from contextlib import contextmanager
+from unittest.mock import patch
 
-from testil import eq, replattr
+from testil import eq
 
 from .. import editor as mod
 from .. import jsproxy
@@ -103,9 +104,9 @@ FIRST_WORKSPACE = "vscode.workspace.workspaceFolders[0].uri.fsPath"
 
 @contextmanager
 def setup_editor(srv=None):
-    with replattr(
-        (mod, "expanduser", lambda path: "/home/user"),
-        (jsproxy, "_get", fake_get),
+    with (
+        patch.object(mod, "expanduser", lambda path: "/home/user"),
+        patch.object(jsproxy, "_get", fake_get),
     ):
         yield mod.Editor(srv or {})
 

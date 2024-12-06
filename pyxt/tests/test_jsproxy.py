@@ -1,4 +1,3 @@
-from nose.tools import nottest
 from testil import assert_raises, eq
 
 from ..tests.util import async_test
@@ -63,10 +62,12 @@ async def test_proxy_error():
         await proxy.attr
 
 
-@nottest
 def test_proxy(server=None):
     server = server or FakeServer()
     return JSProxy(server, root="JSProxy")
+
+
+test_proxy.__test__ = False
 
 
 class FakeServer:
