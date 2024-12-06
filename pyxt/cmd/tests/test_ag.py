@@ -5,8 +5,8 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from os.path import isabs, join
 from pathlib import Path
+from unittest import SkipTest
 
-from nose.plugins.skip import SkipTest
 from testil import eq, Regex, tempdir
 
 from .. import ag as mod

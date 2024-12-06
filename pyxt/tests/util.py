@@ -7,8 +7,6 @@ from inspect import iscoroutine
 from os.path import dirname
 from unittest.mock import patch
 
-from nose.tools import nottest
-
 from .. import command
 from .. import history
 from .. import jsproxy
@@ -17,7 +15,6 @@ from ..parser import Choice
 from ..results import error, result
 
 
-@nottest
 def async_test(func):
     @wraps(func)
     def test(*args, **kw):
@@ -27,6 +24,9 @@ def async_test(func):
         finally:
             loop.close()
     return test
+
+
+async_test.__test__ = False
 
 
 def await_coroutine(value):
@@ -124,7 +124,6 @@ async def get_completions(input_value, editor=None):
         return await server.get_completions(srv, [input_value])
 
 
-@nottest
 @contextmanager
 def test_command(*args, name="cmd", with_history=False):
     async def no_history(server, command_name, argstr=""):
@@ -142,6 +141,9 @@ def test_command(*args, name="cmd", with_history=False):
                 return error("error")
             return result(value=args.value)
         yield
+
+
+test_command.__test__ = False
 
 
 @contextmanager
