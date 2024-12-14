@@ -178,7 +178,7 @@ has been loaded.
 Python tests may also be run in a terminal
 
 ```sh
-nosetests
+pytest
 ```
 
 ### Packaging

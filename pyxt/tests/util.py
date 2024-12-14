@@ -267,3 +267,46 @@ class FakeEditor:
 
 class Error(Exception):
     pass
+
+
+def yield_test(testfunc):
+    """Adapt yield tests to pytest
+
+    Works with tests that have exactly as many literal yield
+    statements (at the beginning of a line) as there are tests.
+    """
+    # HACK adapt yield tests to pytest
+    # TODO rewrite yield tests with pytest.mark.parametrize
+    import pytest
+    import re
+    from inspect import getsource
+    from unmagic import fixture
+
+    @fixture(scope="module")
+    def yield_tester():
+        tests = testfunc()
+        yield tests
+        teardown_generator(tests)
+
+    def teardown_generator(tests):
+        name = testfunc.__name__
+        print(f"{name} executed {yield_count} yield tests")
+        with pytest.raises(StopIteration):
+            value = next(tests)  # should raise
+            print(f"unexpected yield value for {name}:", repr(value))
+
+    YIELD = re.compile(r"^\s+yield\b", re.MULTILINE)
+    yield_count = sum(1 for x in YIELD.finditer(getsource(testfunc)))
+
+    @pytest.mark.parametrize("i", range(yield_count))
+    def run_test(i):
+        tests = yield_tester()
+        test, *args = next(tests)
+        name = getattr(test, "__name__", "test")
+        print(f"{name}{tuple(args)}")
+        test(*args)
+        if i + 1 >= yield_count:
+            teardown_generator(tests)
+
+    run_test.__name__ = testfunc.__name__
+    return run_test

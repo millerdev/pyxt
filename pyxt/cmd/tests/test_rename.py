@@ -9,9 +9,11 @@ from ...tests.util import (
     FakeEditor,
     gentest,
     get_completions,
+    yield_test,
 )
 
 
+@yield_test
 def test_rename():
     @gentest
     @async_test
@@ -31,6 +33,7 @@ def test_rename():
         yield test(join(tmp, "somewhere"), join(tmp, "somewhere/file.py"))
 
 
+@yield_test
 def test_rename_completions():
     with tempdir() as tmp:
         os.mkdir(join(tmp, "dir"))

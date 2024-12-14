@@ -6,9 +6,16 @@ from .. import history
 from .. import server as mod
 from ..parser import Choice, String
 from ..results import error, result
-from ..tests.util import async_test, fake_history, gentest, test_command
+from ..tests.util import (
+    async_test,
+    fake_history,
+    gentest,
+    test_command,
+    yield_test,
+)
 
 
+@yield_test
 def test_do_command():
     @async_test
     async def test(input_value, expected_result):
@@ -27,6 +34,7 @@ def test_do_command():
     )
 
 
+@yield_test
 def test_do_command_with_history():
     @gentest
     @async_test
@@ -71,6 +79,7 @@ def test_do_command_with_history():
     yield test(["cmd error"], {}, [])
 
 
+@yield_test
 def test_get_completions():
     @async_test
     async def test(input_value, expected_result):
@@ -97,6 +106,7 @@ def test_get_completions():
         yield test, "count error", result(["boink!"])
 
 
+@yield_test
 def test_get_completions_with_placeholder_item():
     server = object()
 
@@ -145,6 +155,7 @@ def test_get_completions_with_placeholder_item():
     ], "prog ' ' y"))
 
 
+@yield_test
 def test_get_completions_with_history():
     @gentest
     @async_test
@@ -179,6 +190,7 @@ def test_get_completions_with_history():
     ], value="cmd a"), {"cmd": ["a", "b"]})
 
 
+@yield_test
 def test_parse_command():
     def test(input_value, expected_args, found=True):
         with test_command():

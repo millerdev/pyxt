@@ -1,11 +1,12 @@
 from contextlib import contextmanager
 from unittest.mock import patch
 
+import pytest
 from testil import eq
 
 from .. import editor as mod
 from .. import jsproxy
-from ..tests.util import async_test, gentest
+from ..tests.util import async_test, gentest, yield_test
 
 
 @async_test
@@ -15,6 +16,7 @@ async def test_file_path():
         eq(await editor.file_path, fsPath)
 
 
+@yield_test
 def test_project_path():
     @async_test
     async def test(expected_result, calls=None):
@@ -35,6 +37,7 @@ def test_project_path():
     }
 
 
+@yield_test
 def test_dirname():
     @gentest
     @async_test

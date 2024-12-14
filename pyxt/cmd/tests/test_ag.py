@@ -16,9 +16,11 @@ from ...tests.util import (
     get_completions,
     FakeEditor,
     gentest,
+    yield_test,
 )
 
 
+@yield_test
 def test_ag():
     if not mod.is_ag_installed():
         raise SkipTest("ag not installed")
@@ -171,6 +173,7 @@ async def test_ag_not_installed():
         eq(result["message"], Regex(f"{ag_path} not found. "))
 
 
+@yield_test
 def test_ag_completions():
     with tempdir() as tmp:
         (Path(tmp) / "dir").mkdir()

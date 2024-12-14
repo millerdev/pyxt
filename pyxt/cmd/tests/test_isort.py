@@ -9,9 +9,11 @@ from ...tests.util import (
     do_command,
     FakeEditor,
     gentest,
+    yield_test,
 )
 
 
+@yield_test
 def test_isort_command():
     @gentest
     @async_test
@@ -34,6 +36,7 @@ from editxt import Object, Object2, Object3
 """ + UNSORTED_IMPORTS[107:])
 
 
+@yield_test
 def test_default_package():
     with tempdir() as tmp:
         os.mkdir(join(tmp, "dir"))

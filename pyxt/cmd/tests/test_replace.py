@@ -5,9 +5,11 @@ from ...tests.util import (
     do_command,
     FakeEditor,
     gentest,
+    yield_test,
 )
 
 
+@yield_test
 def test_replace_command():
     @gentest
     @async_test

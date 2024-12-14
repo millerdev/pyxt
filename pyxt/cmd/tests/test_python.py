@@ -1,9 +1,16 @@
 from testil import eq, Regex
 
 from ...process import ProcessError
-from ...tests.util import async_test, do_command, FakeEditor, gentest
+from ...tests.util import (
+    async_test,
+    do_command,
+    FakeEditor,
+    gentest,
+    yield_test,
+)
 
 
+@yield_test
 def test_doc():
     @gentest
     @async_test

@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 from testil import assert_raises, eq as eq_, tempdir, Config
 
-from .util import FakeEditor, async_test, await_coroutine
+from .util import FakeEditor, async_test, await_coroutine, yield_test
 from .. import parser as mod
 from ..parser import (Arg, Choice, Int, String, Regex, RegexPattern,
     File, CommandParser, SubArgs, SubParser, VarArgs, CompleteWord, Conditional,
@@ -40,6 +40,7 @@ command = Options(name="cmd", lookup_with_parser=False)
 arg_parser = create_parser(yesno)
 
 
+@yield_test
 def test_CommandParser():
     @async_test
     async def test_parser(argstr, options, parser):
@@ -179,6 +180,7 @@ async def test_CommandParser_incomplete():
         await parser.parse('a')
 
 
+@yield_test
 def test_CommandParser_arg_string():
     @async_test
     async def test(options, argstr):
@@ -201,6 +203,7 @@ def test_CommandParser_arg_string():
     yield test, Options(yes=None), Error("invalid value: yes=None")
 
 
+@yield_test
 def test_CommandParser_with_SubParser():
     sub = SubArgs("num", Int("n", default=0), abc="xyz")
     arg = SubParser("var", sub)
@@ -263,6 +266,7 @@ async def test_CommandParser_with_SubParser_errors():
         await parser.parse('num x')
 
 
+@yield_test
 def test_CommandParser_with_Conditional():
     def not_off(arg):
         return arg.args.level.value != 0
@@ -314,6 +318,7 @@ def test_CommandParser_with_Conditional():
     yield test, "lo", Options(level=1, yes=True)
 
 
+@yield_test
 def test_CommandParser_order():
     @async_test
     async def test(text, result):
@@ -338,6 +343,7 @@ def test_CommandParser_order():
     yield test, 's', Options(selection=True, reverse=False)
 
 
+@yield_test
 def test_CommandParser_completions_after_string():
     @async_test
     async def test(text, expected_items, index=None):
@@ -356,6 +362,7 @@ def test_CommandParser_completions_after_string():
     yield test, "\\  ", ["yes", "no"], 3
 
 
+@yield_test
 def test_CommandParser_completions_after_regex():
     @async_test
     async def test(text, expected_items, index=None):
@@ -376,6 +383,7 @@ def test_CommandParser_completions_after_regex():
     yield test, "\\  ", ["yes", "no"], 3
 
 
+@yield_test
 def test_Arg():
     @async_test
     async def test(arg, strval):
@@ -398,6 +406,7 @@ def test_Arg():
     yield test, mod.Arg(string, '  \\ ', 0, opts), ''
 
 
+@yield_test
 def test_identifier():
     def test(name, ident):
         eq_(identifier(name), ident)
@@ -406,6 +415,7 @@ def test_identifier():
     yield test, "arg-ument", "arg_ument"
 
 
+@yield_test
 def test_Choice():
     field = Choice('arg-ument', 'nope', 'nah')
     eq_(str(field), 'arg-ument')
@@ -492,6 +502,7 @@ def test_Choice():
         ParseError("'arg-ument' does not match any of: argument, find", field, 0, 9)
 
 
+@yield_test
 def test_Choice_default_first():
     field = Choice(('true on', True), ('false off', False))
     eq_(str(field), 'true')
@@ -527,6 +538,7 @@ def test_Choice_strings():
     eq_(repr(field), "Choice('maybe yes no', name='yes')")
 
 
+@yield_test
 def test_Choice_repr():
     def test(rep, args):
         eq_(repr(Choice(*args[0], **args[1])), rep)
@@ -535,6 +547,7 @@ def test_Choice_repr():
     yield test, "Choice('y', 'n', name='abc')", Args('y', 'n', name='abc')
 
 
+@yield_test
 def test_Int():
     field = Int('num')
     eq_(str(field), 'num')
@@ -556,6 +569,7 @@ def test_Int():
     yield test, "arg", Error("invalid value: num='arg'")
 
 
+@yield_test
 def test_Float():
     field = mod.Float('num')
     eq_(str(field), 'num')
@@ -579,6 +593,7 @@ def test_Float():
     yield test, "arg", Error("invalid value: num='arg'")
 
 
+@yield_test
 def test_String():
     field = String('str')
     eq_(str(field), 'str')
@@ -633,9 +648,19 @@ def test_String():
     yield test, "\u0168", "\u0168"
     yield test, '\u0168" \u0168', """'\u0168" \u0168'"""
     yield test, "\u0168' \u0168", '''"\u0168' \u0168"'''
-    for char, esc in String.ESCAPES.items():
-        if char not in "\"\\'":
-            yield test, esc, "\\" + char
+
+    assert set(String.ESCAPES) == {'\\', "'", '"', 'a', 'b', 'f', 'n', 'r', 't', 'v'}
+    yield test, '\\', '\\\\'
+    #yield test, "'", ...
+    #yield test, '"', ...
+    yield test, '\a', '\\a'
+    yield test, '\b', '\\b'
+    yield test, '\f', '\\f'
+    yield test, '\n', '\\n'
+    yield test, '\r', '\\r'
+    yield test, '\t', '\\t'
+    yield test, '\v', '\\v'
+
     yield test, "\\x", "\\\\x"
     yield test, "\\", '\\\\'
     yield test, "\\\\", '\\\\\\\\'
@@ -664,6 +689,7 @@ def test_String():
     yield test, " ", 0, ('""', '')
 
 
+@yield_test
 def test_UnlimitedString():
     field = mod.UnlimitedString("command")
     eq_(str(field), 'command')
@@ -706,6 +732,7 @@ def test_UnlimitedString():
     yield test, " ", 0, (' ', '')
 
 
+@yield_test
 def test_File():
     field = File('path')
     eq_(str(field), 'path')
@@ -877,6 +904,7 @@ def test_File():
         yield test, " ", 0, ("~/dir", "")
 
 
+@yield_test
 def test_DynamicList():
     def get_items(editor):
         return [
@@ -919,6 +947,7 @@ def test_DynamicList():
     yield test, "Hammer", ""
 
 
+@yield_test
 def test_Regex():
     field = Regex('regex')
     eq_(str(field), 'regex')
@@ -1040,6 +1069,7 @@ def test_Regex():
     yield test, ("str", 42), Error("invalid value: regex=('str', 42)")
 
 
+@yield_test
 def test_RegexPattern():
     yield eq_, RegexPattern("a"), RegexPattern("a")
     yield eq_, RegexPattern("a", re.I), RegexPattern("a", re.I)
@@ -1059,6 +1089,7 @@ def test_RegexPattern():
     yield lt, RegexPattern("a"), RegexPattern("a", re.I)
 
 
+@yield_test
 def test_VarArgs():
     field = VarArgs("var", Choice('arg', 'nope', 'nah'))
     eq_(str(field), 'arg ...')
@@ -1102,6 +1133,7 @@ def test_VarArgs():
     # field = VarArgs("var", String("str"))
 
 
+@yield_test
 def test_SubParser():
     class is_enabled:
         def __call__(self, editor):

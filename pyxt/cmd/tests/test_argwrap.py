@@ -1,9 +1,17 @@
 from testil import eq
 
 from .. import argwrap as mod
-from ...tests.util import async_test, do_command, FakeEditor, gentest
+from ...tests.util import (
+    async_test,
+    do_command,
+    FakeEditor,
+    gentest,
+    yield_test,
+)
 
 
+
+@yield_test
 def test_argwrap():
     @gentest
     @async_test
@@ -52,6 +60,7 @@ def test_argwrap():
     )
 
 
+@yield_test
 def test_should_wrap():
     @gentest
     def test(text, rng, expect, eol="\n"):
@@ -66,6 +75,7 @@ def test_should_wrap():
     yield test("def f(\n    a,\n): pass", (0, 21), False)
 
 
+@yield_test
 def test_wrap():
     @gentest
     def test(
@@ -106,6 +116,7 @@ def test_wrap():
     )
 
 
+@yield_test
 def test_unwrap():
     @gentest
     def test(lines, expect, **kw):
@@ -123,6 +134,7 @@ def test_unwrap():
     yield test(["  def f(", "    a", "  ): pass"], "  def f(a): pass")
 
 
+@yield_test
 def test_split_line():
     @gentest
     def test(text, index, expect, expect_range):
@@ -165,6 +177,7 @@ def test_split_line():
     yield test("(a)), (arg)", 1, ["(", "a", ")), (arg)"], (0, 11))
 
 
+@yield_test
 def test_split_lines():
     @gentest
     def test(text, rng, expect, eol="\n"):

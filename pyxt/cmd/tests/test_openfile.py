@@ -6,9 +6,10 @@ from testil import eq, tempdir
 
 from .. import openfile as mod
 from ...results import result
-from ...tests.util import FakeEditor, async_test, do_command
+from ...tests.util import FakeEditor, async_test, do_command, yield_test
 
 
+@yield_test
 def test_open_file():
     with fake_editor() as editor:
         @async_test
@@ -39,6 +40,7 @@ def test_open_file():
         ], value="open dir/")
 
 
+@yield_test
 def test_create_new_file():
     def test(relpath):
         with tempdir() as base:
