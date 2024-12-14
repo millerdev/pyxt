@@ -1062,6 +1062,8 @@ class RegexPattern(str):
 
     def __eq__(self, other):
         streq = super(RegexPattern, self).__eq__(other)
+        if streq is NotImplemented:
+            return NotImplemented
         if streq and isinstance(other, RegexPattern):
             return self.flags == other.flags
         return streq
