@@ -29,7 +29,7 @@ async def process_lines(command, *, got_output, kill_on_cancel=True, **kw):
         proc = await create_subprocess_exec(
             *command, stdout=PIPE, stderr=STDOUT, **kw)
     except Exception as err:
-        log.warn("cannot open process: %s", cmd, exc_info=True)
+        log.warning("cannot open process: %s", cmd, exc_info=True)
         got_output(None, -1, str(err))
         return
     try:
