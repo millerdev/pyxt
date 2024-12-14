@@ -1,6 +1,6 @@
 import logging
 
-from . import command as cmd
+from . import __version__, command as cmd
 from .editor import Editor
 from .history import get_history, should_update_history, update_history
 from .results import error, handle_cancel, result
@@ -20,7 +20,7 @@ from .cmd import (  # noqa: F401
 from . import custom
 
 log = logging.getLogger(__name__)
-pyxt_server = PyXTServer()
+pyxt_server = PyXTServer("pyxt", __version__)
 
 
 def pyxt_command(func):
