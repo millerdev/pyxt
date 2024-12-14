@@ -18,11 +18,7 @@ from ..results import error, result
 def async_test(func):
     @wraps(func)
     def test(*args, **kw):
-        loop = asyncio.new_event_loop()
-        try:
-            return loop.run_until_complete(func(*args, **kw))
-        finally:
-            loop.close()
+        return asyncio.run(func(*args, **kw))
     return test
 
 
@@ -31,11 +27,7 @@ async_test.__test__ = False
 
 def await_coroutine(value):
     """HACK synchronously await coroutine"""
-    loop = asyncio.new_event_loop()
-    try:
-        return loop.run_until_complete(value)
-    finally:
-        loop.close()
+    return asyncio.run(value)
 
 
 def gentest(test):
