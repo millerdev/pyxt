@@ -1,3 +1,14 @@
+0.4.2 - 2024-12-20
+
+- Switched test runner from nose to pytest (dev only).
+- Removed distutils dependency to support newer Python versions.
+- Upgraded dependencies. Will require installing new dependencies in your
+  virtualenv:
+  ```sh
+  /path/to/your/virtualenv/bin/pip install -r \
+    https://github.com/millerdev/PyXT/raw/0.4.2/requirements.txt
+  ```
+
 0.4.1 - 2023-02-24
 
 - 0.4.0 was a bad release. Please upgrade.

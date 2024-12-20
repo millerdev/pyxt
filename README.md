@@ -185,6 +185,11 @@ pytest
 
 Build .vsix package
 
+- Update change log
+- Update version in `pyxt/__init__.py`
+- Update version in `package.json`
+- Run `npm install` to update version in lockfile. Verify lockfile changes.
+
 ```sh
 npm run pkg
 ```
