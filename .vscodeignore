@@ -1,4 +1,5 @@
 .*
+.pytest_cache
 .vscode
 .vscode-dev
 client

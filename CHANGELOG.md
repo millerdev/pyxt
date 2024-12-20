@@ -1,3 +1,7 @@
+0.4.3 - 2024-12-20
+
+- Upgrade JS dev depencies.
+
 0.4.2 - 2024-12-20
 
 - Switched test runner from nose to pytest (dev only).
